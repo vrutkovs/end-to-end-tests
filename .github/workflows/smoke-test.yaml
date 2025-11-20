@@ -22,6 +22,18 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.PAT }}
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          check-latest: true
+          cache: true
+        id: go
+
+      - name: Install ginkgo
+        run: |
+          go install github.com/onsi/ginkgo/v2/ginkgo
+
       - name: Install helm
         uses: yokawasa/action-setup-kube-tools@v0.13.1
         with:
@@ -45,3 +57,7 @@ jobs:
           kubectl wait --namespace vm \
             --for=jsonpath='{.status.clusterStatus}'=operational vmcluster/vmks \
             --timeout=30m
+
+      - name: Run e2e tests
+        run: |
+          ginkgo -procs=0 -timeout=30m -junit-report=report.xml ./tests/...

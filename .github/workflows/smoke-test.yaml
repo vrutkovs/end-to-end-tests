@@ -41,7 +41,7 @@ jobs:
           kubectl create namespace vm
           helm -n vm upgrade -i \
             vmks vm/victoria-metrics-k8s-stack \
-            -f manifests/vmoperator.yaml --wait
+            -f manifests/smoke.yaml --wait
           kubectl wait --namespace vm \
             --for=jsonpath='{.status.clusterStatus}'=operational vmcluster/vmks \
             --timeout=30m

@@ -2,6 +2,7 @@ package end_to_end_tests_test
 
 import (
 	"flag"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -57,7 +58,11 @@ var _ = ReportAfterSuite("allure report", func(report types.Report) {
 		panic(err)
 	}
 
-	fileManager := fmngr.NewFileManager("./allure-results")
+	reportPath, err := filepath.Abs("../allure-results")
+	if err != nil {
+		panic(err)
+	}
+	fileManager := fmngr.NewFileManager(reportPath)
 	errs := convert.PrintAllureReports(allureReports, fileManager)
 	if len(errs) > 0 {
 		panic(errs)

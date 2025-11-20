@@ -1,0 +1,15 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAgent
+metadata:
+  finalizers:
+  - apps.victoriametrics.com/finalizer
+  name: vmks
+  namespace: vm
+spec:
+  remoteWrite:
+  - url: http://vminsert-vmks.vm.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write
+  - url: http://vmsingle-overwatch.vm.svc.cluster.local.:8428/prometheus/api/v1/write
+    inlineUrlRelabelConfig:
+    - source_labels: [__name__]
+      regex: 'vm.*'
+      action: keep

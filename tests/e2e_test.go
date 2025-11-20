@@ -1,6 +1,7 @@
 package end_to_end_tests_test
 
 import (
+	"flag"
 	"testing"
 	"time"
 
@@ -17,8 +18,13 @@ const (
 )
 
 var (
-	retries = int(resourceWaitTimeout.Seconds() / pollingInterval.Seconds())
+	retries      = int(resourceWaitTimeout.Seconds() / pollingInterval.Seconds())
+	vmClusterUrl string
 )
+
+func init() {
+	flag.StringVar(&vmClusterUrl, "vmcluster", "", "VMCluster URL")
+}
 
 func TestEndToEndTests(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -38,5 +44,5 @@ type myTestingT struct {
 
 // Extends GinkgoTInterface to have #Name() method, that is compatible with testing.TestingT
 func (mt *myTestingT) Name() string {
-	return "[TerraTest+Ginkgo]"
+	return "[TerraTest]"
 }

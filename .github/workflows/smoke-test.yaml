@@ -34,6 +34,10 @@ jobs:
         run: |
           go install github.com/onsi/ginkgo/v2/ginkgo
 
+      - name: Download go packages
+        run: |
+          go mod download
+
       - name: Install helm
         uses: yokawasa/action-setup-kube-tools@v0.13.1
         with:
@@ -45,6 +49,11 @@ jobs:
         uses: helm/kind-action@v1.13.0
         with:
           cloud_provider: true
+
+      - name: Deploy Ingress-nginx
+        run: |
+          kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
+          until [ -n "$(kubectl get services -n ingress-nginx ingress-nginx-controller -o jsonpath="{.status.loadBalancer.ingress[0].ip}")" ]; do :; done
 
       - name: Install VictoriaMetrics
         run: |
@@ -58,6 +67,16 @@ jobs:
             --for=jsonpath='{.status.clusterStatus}'=operational vmcluster/vmks \
             --timeout=30m
 
+      - name: Install overwatch
+        run: |
+          kubectl apply -f manifests/overwatch/vmsingle.yaml
+          kubectl wait --namespace vm \
+            --for=jsonpath='{.status.singleStatus}'=operational vmsingle/overwatch \
+            --timeout=30m
+          kubectl apply -f manifests/overwatch/vmagent.yaml
+
       - name: Run e2e tests
         run: |
-          ginkgo -procs=0 -timeout=30m -junit-report=report.xml ./tests/...
+          export VMCLUSTER_HOST=$(kubectl get services -n vm vmks -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+          export VMCLUSTER_PORT=$(kubectl get services -n vm vmks -o jsonpath="{.spec.ports[0].nodePort}")
+          ginkgo -procs=0 -timeout=30m -junit-report=report.xml -- -vmcluster=http://$VMCLUSTER_HOST:$VMCLUSTER_PORT ./tests/...

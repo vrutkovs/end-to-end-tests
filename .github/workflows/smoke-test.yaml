@@ -56,29 +56,8 @@ jobs:
       - name: Create Kind cluster
         uses: helm/kind-action@v1.13.0
 
-      - name: Install VictoriaMetrics
-        run: |
-          helm repo add vm https://victoriametrics.github.io/helm-charts/
-          helm repo update
-          kubectl create namespace vm
-          helm -n vm upgrade -i \
-            vmks vm/victoria-metrics-k8s-stack \
-            -f manifests/smoke.yaml --wait
-          kubectl wait --namespace vm \
-            --for=jsonpath='{.status.clusterStatus}'=operational vmcluster/vmks \
-            --timeout=30m
-
-      - name: Install overwatch
-        run: |
-          kubectl apply -f manifests/overwatch/vmsingle.yaml
-          kubectl wait --namespace vm \
-            --for=jsonpath='{.status.singleStatus}'=operational vmsingle/overwatch \
-            --timeout=30m
-          kubectl apply -f manifests/overwatch/vmagent.yaml
-
       - name: Run e2e tests
         run: |
-          kubectl -n vm port-forward svc/vmselect-vmks 8481:8481 &
           mkdir -p ./allure-results/
           ginkgo -procs=0 -timeout=30m -junit-report=report.xml ./tests/... -- -vmcluster=localhost:8481
 

@@ -19,7 +19,7 @@ import (
 const (
 	pollingInterval     = 5 * time.Second
 	pollingTimeout      = 10 * time.Minute
-	resourceWaitTimeout = 1 * time.Minute
+	resourceWaitTimeout = 10 * time.Minute
 )
 
 var (

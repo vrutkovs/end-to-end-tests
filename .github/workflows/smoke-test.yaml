@@ -56,6 +56,11 @@ jobs:
       - name: Create Kind cluster
         uses: helm/kind-action@v1.13.0
 
+      - name: Add helm repo
+        run: |
+          helm repo add vm https://victoriametrics.github.io/helm-charts/
+          helm repo update
+
       - name: Run e2e tests
         run: |
           mkdir -p ./allure-results/

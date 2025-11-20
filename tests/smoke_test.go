@@ -3,6 +3,7 @@ package end_to_end_tests_test
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
 
@@ -29,12 +30,23 @@ var _ = Describe("Smoke test", Label("smoke"), func() {
 
 		It("should handle select request", Label("id=37076a52-94ca-4de1-b1c8-029f8ce56bb7"), func() {
 			const (
-				request = "up"
-				step    = "60s"
+				query = "up"
+				step  = "60s"
 			)
-			requestUrl := fmt.Sprintf("%s/select/0/prometheus/api/v1/query_range", vmClusterUrl)
+			reqURL := url.URL{
+				Scheme: "http",
+				Host:   vmClusterUrl,
+				Path:   "/select/0/prometheus/api/v1/query_range",
+			}
+			q := reqURL.Query()
+			q.Add("query", query)
+			q.Add("step", step)
+			reqURL.RawQuery = q.Encode()
 
-			res, err := http.Get(requestUrl)
+			req, err := http.NewRequest(http.MethodGet, reqURL.String(), nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			res, err := http.DefaultClient.Do(req)
 			Expect(res).ToNot(BeNil())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res.StatusCode).To(Equal(http.StatusOK))

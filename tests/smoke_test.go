@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/gruntwork-io/terratest/modules/helm"
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/stretchr/testify/require"
 
@@ -40,13 +41,13 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 
 		t := GetT()
 		kubeOpts := k8s.NewKubectlOptions("", "", namespace)
-		// helmOpts := &helm.Options{
-		// 	KubectlOptions: kubeOpts,
-		// 	ValuesFiles:    []string{valuesFile},
-		// 	ExtraArgs: map[string][]string{
-		// 		"upgrade": {"--create-namespace", "--wait"},
-		// 	},
-		// }
+		helmOpts := &helm.Options{
+			KubectlOptions: kubeOpts,
+			ValuesFiles:    []string{valuesFile},
+			ExtraArgs: map[string][]string{
+				"upgrade": {"--create-namespace", "--wait"},
+			},
+		}
 
 		kubeConfigPath, err := kubeOpts.GetConfigPath(t)
 		require.NoError(t, err)
@@ -59,7 +60,7 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 
 		It("should install the stack from the chart", Label("id=69ec6c61-f40d-4c48-ad1f-d60ab5988ee6"), func() {
 			By("should install vm/victoria-metrics-k8s-stack chart")
-			// helm.Upgrade(t, helmOpts, "vm/victoria-metrics-k8s-stack", releaseName)
+			helm.Upgrade(t, helmOpts, "vm/victoria-metrics-k8s-stack", releaseName)
 			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmagent-vmks", retries, pollingInterval)
 			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmalert-vmks", retries, pollingInterval)
 			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vminsert-vmks", retries, pollingInterval)

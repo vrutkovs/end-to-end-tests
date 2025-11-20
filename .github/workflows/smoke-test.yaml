@@ -1,0 +1,47 @@
+name: "Smoke Tests"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  smoke-tests:
+    name: Run smoke tests
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+
+      - name: Install helm
+        uses: yokawasa/action-setup-kube-tools@v0.13.1
+        with:
+          setup-tools: |
+            helmv3
+            kubectl
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@v1.13.0
+        with:
+          cloud_provider: true
+
+      - name: Install VictoriaMetrics
+        run: |
+          helm repo add vm https://victoriametrics.github.io/helm-charts/
+          helm repo update
+          kubectl create namespace vm
+          helm -n vm upgrade -i \
+            vmks vm/victoria-metrics-k8s-stack \
+            -f manifests/vmoperator.yaml --wait
+          kubectl wait --namespace vm \
+            --for=jsonpath='{.status.clusterStatus}'=operational vmcluster/vmks \
+            --timeout=30m

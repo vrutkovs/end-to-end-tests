@@ -47,13 +47,6 @@ jobs:
 
       - name: Create Kind cluster
         uses: helm/kind-action@v1.13.0
-        with:
-          cloud_provider: true
-
-      - name: Deploy Ingress-nginx
-        run: |
-          kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
-          until [ -n "$(kubectl get services -n ingress-nginx ingress-nginx-controller -o jsonpath="{.status.loadBalancer.ingress[0].ip}")" ]; do :; done
 
       - name: Install VictoriaMetrics
         run: |
@@ -77,6 +70,5 @@ jobs:
 
       - name: Run e2e tests
         run: |
-          export VMCLUSTER_HOST=$(kubectl get services -n vm vmks -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
-          export VMCLUSTER_PORT=$(kubectl get services -n vm vmks -o jsonpath="{.spec.ports[0].nodePort}")
-          ginkgo -procs=0 -timeout=30m -junit-report=report.xml -- -vmcluster=http://$VMCLUSTER_HOST:$VMCLUSTER_PORT ./tests/...
+          kubectl -n vm port-forward svc/vmselect-vmks 8481:8481 &
+          ginkgo -procs=0 -timeout=30m -junit-report=report.xml ./tests/... -- -vmcluster=http://localhost:8481

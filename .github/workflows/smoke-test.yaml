@@ -59,7 +59,7 @@ jobs:
       - name: Run e2e tests
         run: |
           mkdir -p ./allure-results/
-          ginkgo -procs=0 -timeout=30m -junit-report=report.xml ./tests/...
+          ginkgo -procs=0 -v -timeout=30m ./tests/...
 
       - name: Create allure report
         uses: simple-elf/allure-report-action@master

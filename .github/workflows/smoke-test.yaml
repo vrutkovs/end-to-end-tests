@@ -92,4 +92,4 @@ jobs:
             context: 'Test report'
             state: 'success'
             sha: ${{ github.event.pull_request.head.sha }}
-            target_url: victoriametrics.github.io/end-to-end-tests/allure-history/${{ github.run_number }}
+            target_url: https://victoriametrics.github.io/end-to-end-tests/allure-history/${{ github.run_number }}

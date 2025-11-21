@@ -488,8 +488,8 @@ github.com/valyala/quicktemplate v1.8.0 h1:zU0tjbIqTRgKQzFY1L42zq0qR3eh4WoQQdIdq
 github.com/valyala/quicktemplate v1.8.0/go.mod h1:qIqW8/igXt8fdrUln5kOSb+KWMaJ4Y8QUsfd1k6L2jM=
 github.com/virtuald/go-ordered-json v0.0.0-20170621173500-b18e6e673d74 h1:JwtAtbp7r/7QSyGz8mKUbYJBg2+6Cd7OjM8o/GNOcVo=
 github.com/virtuald/go-ordered-json v0.0.0-20170621173500-b18e6e673d74/go.mod h1:RmMWU37GKR2s6pgrIEB4ixgpVCt/cf7dnJv3fuH1J1c=
-github.com/vrutkovs/ginkgo2allure v0.0.0-20251121075202-44a237d5e7ed h1:Hyg9MpkMKawxSe+q2+3PonrNlMbdGFcuamWVbQgpr1E=
-github.com/vrutkovs/ginkgo2allure v0.0.0-20251121075202-44a237d5e7ed/go.mod h1:FtSSyPGTjD5k+OoVI3fler/YCbQPg82ohVFj8LJlE6A=
+github.com/vrutkovs/ginkgo2allure v0.0.0-20251121135444-e68cdba29d42 h1:Nq/fy3Ckj009ssT0bbKe1jG6wYnoCkD5yhJY19ssnhc=
+github.com/vrutkovs/ginkgo2allure v0.0.0-20251121135444-e68cdba29d42/go.mod h1:FtSSyPGTjD5k+OoVI3fler/YCbQPg82ohVFj8LJlE6A=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

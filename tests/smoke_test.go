@@ -58,6 +58,16 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 		vmclient := vmclient.NewForConfigOrDie(restConfig)
 		require.NoError(t, err)
 
+		AfterAll(func() {
+			timeBoundContext, cancel := context.WithTimeout(ctx, resourceWaitTimeout)
+			defer cancel()
+
+			cmd := exec.CommandContext(timeBoundContext, "kubectl", "-n", "vm", "get", "all")
+			output, err := cmd.Output()
+			require.NoError(t, err)
+			AddReportEntry("k8s", string(output))
+		})
+
 		It("should install the stack from the chart", Label("id=69ec6c61-f40d-4c48-ad1f-d60ab5988ee6"), func() {
 			By("should install vm/victoria-metrics-k8s-stack chart")
 			helm.Upgrade(t, helmOpts, "vm/victoria-metrics-k8s-stack", releaseName)

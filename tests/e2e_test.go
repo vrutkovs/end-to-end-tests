@@ -19,7 +19,7 @@ import (
 const (
 	pollingInterval     = 30 * time.Second
 	pollingTimeout      = 10 * time.Minute
-	resourceWaitTimeout = 30 * time.Minute
+	resourceWaitTimeout = 10 * time.Minute
 )
 
 var (
@@ -47,9 +47,8 @@ type myTestingT struct {
 	GinkgoTInterface
 }
 
-// Extends GinkgoTInterface to have #Name() method, that is compatible with testing.TestingT
 func (mt *myTestingT) Name() string {
-	return "[TerraTest]"
+	return ""
 }
 
 var _ = ReportAfterSuite("allure report", func(report types.Report) {
@@ -63,6 +62,7 @@ var _ = ReportAfterSuite("allure report", func(report types.Report) {
 		panic(err)
 	}
 	fileManager := fmngr.NewFileManager(reportPath)
+
 	errs := convert.PrintAllureReports(allureReports, fileManager)
 	if len(errs) > 0 {
 		panic(errs)

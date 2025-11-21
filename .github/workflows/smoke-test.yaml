@@ -68,6 +68,16 @@ jobs:
           platform: linux
           arch: amd64
 
+      - name: Install VMExporter
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: VictoriaMetrics/support
+          platform: linux
+          arch: amd64
+          token: ${{ secrets.PAT }}
+          extension-matching: disable
+          chmod: 0755
+
       - name: Run e2e tests
         run: |
           mkdir -p ./allure-results/

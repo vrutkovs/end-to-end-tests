@@ -3,14 +3,17 @@ package end_to_end_tests_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/helm"
 	"github.com/gruntwork-io/terratest/modules/k8s"
+	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/stretchr/testify/require"
 
 	vmclient "github.com/VictoriaMetrics/operator/api/client/versioned"
@@ -79,8 +82,13 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 			require.NoError(t, cmd.Run())
 
 			// Add crust-gather.tar.gz to report
-			tarGzFileContent, err := os.ReadFile(tarGzFileName)
-			require.NoError(t, err, "failed to read "+tarGzFileName)
+			absPath, err := filepath.Abs(tarGzFileName)
+			require.NoError(t, err, fmt.Sprintf("failed to get absolute path for %s", tarGzFileName))
+
+			tarGzFileContent, err := os.ReadFile(absPath)
+			require.NoError(t, err, fmt.Sprintf("failed to read %s", tarGzFileName))
+
+			logger.Default.Logf(t, "Saved crust-gather.tar.gz to %s", absPath)
 
 			AddReportEntry(tarGzFileName, string(tarGzFileContent))
 		})

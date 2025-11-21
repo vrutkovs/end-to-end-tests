@@ -32,7 +32,6 @@ func K8sAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout ti
 		logger.Default.Logf(t, "crust-gather collect failed: %v, stdout: %s, stderr: %s", err, outb.String(), errb.String())
 		require.NoError(t, err, "crust-gather collect failed")
 	} else {
-		logger.Default.Logf(t, "crust-gather collect stdout: %s", outb.String())
 		if errb.Len() > 0 {
 			logger.Default.Logf(t, "crust-gather collect stderr: %s", errb.String())
 		}
@@ -50,7 +49,6 @@ func K8sAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout ti
 		logger.Default.Logf(t, "tar command failed: %v, stdout: %s, stderr: %s", err, outb.String(), errb.String())
 		require.NoError(t, err, "tar command failed")
 	} else {
-		logger.Default.Logf(t, "tar command stdout: %s", outb.String())
 		if errb.Len() > 0 {
 			logger.Default.Logf(t, "tar command stderr: %s", errb.String())
 		}

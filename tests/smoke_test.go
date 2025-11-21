@@ -1,9 +1,11 @@
 package end_to_end_tests_test
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	"time"
 
@@ -62,10 +64,25 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 			timeBoundContext, cancel := context.WithTimeout(ctx, resourceWaitTimeout)
 			defer cancel()
 
-			cmd := exec.CommandContext(timeBoundContext, "kubectl", "-n", "vm", "get", "all")
-			output, err := cmd.Output()
-			require.NoError(t, err)
-			AddReportEntry("k8s", string(output))
+			// Collect crust-gather folder
+			cmd := exec.CommandContext(timeBoundContext, "crust-gather", "collect", "-f", "../crust-gather")
+			var outb, errb bytes.Buffer
+			cmd.Stdout = &outb
+			cmd.Stderr = &errb
+			require.NoError(t, cmd.Run())
+
+			// Archive crust-gather folder
+			tarGzFileName := "crust-gather.tar.gz"
+			cmd = exec.CommandContext(timeBoundContext, "tar", "-czvf", "crust-gather.tar.gz", "../crust-gather")
+			cmd.Stdout = &outb
+			cmd.Stderr = &errb
+			require.NoError(t, cmd.Run())
+
+			// Add crust-gather.tar.gz to report
+			tarGzFileContent, err := os.ReadFile(tarGzFileName)
+			require.NoError(t, err, "failed to read "+tarGzFileName)
+
+			AddReportEntry(tarGzFileName, string(tarGzFileContent))
 		})
 
 		It("should install the stack from the chart", Label("id=69ec6c61-f40d-4c48-ad1f-d60ab5988ee6"), func() {

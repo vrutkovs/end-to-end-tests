@@ -62,9 +62,11 @@ jobs:
           helm repo update
 
       - name: Install crust-gather
-        uses: sigoden/install-binary@v1
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
         with:
           repo: crust-gather/crust-gather
+          platform: linux
+          arch: amd64
 
       - name: Run e2e tests
         run: |

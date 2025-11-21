@@ -35,3 +35,6 @@ go.work.sum
 .allure/
 allure-results/
 allure-report/
+
+crust-gather/
+tests/crust-gather.tar.gz

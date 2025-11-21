@@ -48,7 +48,7 @@ func VMAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout tim
 
 	// Prepare the request body using the exporter.RequestBody struct
 	// Set start and end times dynamically
-	endTime := time.Now().UTC()
+	endTime := time.Now()
 	startTime := endTime.Add(-1 * time.Hour)
 
 	// nil for TenantID as per JSON specification
@@ -98,6 +98,7 @@ func VMAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout tim
 	startReq, err := http.NewRequest(http.MethodPost, exportStartURL.String(), bytes.NewBuffer(marshaledBody))
 	require.NoError(t, err, "failed to create HTTP request for /api/export/start")
 	startReq.Header.Set("Content-Type", "application/json")
+	logger.Default.Logf(t, "vmexporter /api/export/start request body: %s", string(marshaledBody))
 
 	res, err := http.DefaultClient.Do(startReq)
 	require.NoError(t, err, "failed to perform HTTP request to /api/export/start")

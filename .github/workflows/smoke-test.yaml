@@ -76,6 +76,7 @@ jobs:
           arch: amd64
           token: ${{ secrets.PAT }}
           extension-matching: disable
+          rename-to: vmexporter
           chmod: 0755
 
       - name: Run e2e tests

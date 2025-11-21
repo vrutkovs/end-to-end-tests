@@ -1,19 +1,14 @@
 package end_to_end_tests_test
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/helm"
 	"github.com/gruntwork-io/terratest/modules/k8s"
-	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/stretchr/testify/require"
 
 	vmclient "github.com/VictoriaMetrics/operator/api/client/versioned"
@@ -26,15 +21,20 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/gather"
 )
 
 var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 
 	Context("k8s-stack", func() {
 		const (
-			namespace   = "vm"
-			releaseName = "vmks"
-			valuesFile  = "../manifests/smoke.yaml"
+			namespace           = "vm"
+			releaseName         = "vmks"
+			valuesFile          = "../manifests/smoke.yaml"
+			resourceWaitTimeout = 5 * time.Minute
+			retries             = 50
+			pollingInterval     = 5 * time.Second
 		)
 
 		ctx := context.Background()
@@ -64,33 +64,10 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 		require.NoError(t, err)
 
 		AfterAll(func() {
-			timeBoundContext, cancel := context.WithTimeout(ctx, resourceWaitTimeout)
-			defer cancel()
-
-			// Collect crust-gather folder
-			cmd := exec.CommandContext(timeBoundContext, "crust-gather", "collect", "-f", "../crust-gather")
-			var outb, errb bytes.Buffer
-			cmd.Stdout = &outb
-			cmd.Stderr = &errb
-			require.NoError(t, cmd.Run())
-
-			// Archive crust-gather folder
-			tarGzFileName := "crust-gather.tar.gz"
-			cmd = exec.CommandContext(timeBoundContext, "tar", "-czvf", "crust-gather.tar.gz", "../crust-gather")
-			cmd.Stdout = &outb
-			cmd.Stderr = &errb
-			require.NoError(t, cmd.Run())
-
-			// Add crust-gather.tar.gz to report
-			absPath, err := filepath.Abs(tarGzFileName)
-			require.NoError(t, err, fmt.Sprintf("failed to get absolute path for %s", tarGzFileName))
-
-			tarGzFileContent, err := os.ReadFile(absPath)
-			require.NoError(t, err, fmt.Sprintf("failed to read %s", tarGzFileName))
-
-			logger.Default.Logf(t, "Saved crust-gather.tar.gz to %s", absPath)
-
-			AddReportEntry(tarGzFileName, string(tarGzFileContent))
+			gather.K8sAfterAll(t, ctx, resourceWaitTimeout)
+		})
+		AfterAll(func() {
+			gather.VMAfterAll(t, ctx, resourceWaitTimeout)
 		})
 
 		It("should install the stack from the chart", Label("id=69ec6c61-f40d-4c48-ad1f-d60ab5988ee6"), func() {

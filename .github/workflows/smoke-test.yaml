@@ -61,6 +61,11 @@ jobs:
           helm repo add vm https://victoriametrics.github.io/helm-charts/
           helm repo update
 
+      - name: Install crust-gather
+        uses: sigoden/install-binary@v1
+        with:
+          repo: crust-gather/crust-gather
+
       - name: Run e2e tests
         run: |
           mkdir -p ./allure-results/

@@ -354,10 +354,12 @@ vmcluster:
               requests:
                 storage: 40Gi
       resources:
-        {}
-        # limits:
-        #   cpu: "1"
-        #   memory: 1500Mi
+        limits:
+          cpu: 500m
+          memory: 1500Mi
+        requests:
+          cpu: 10m
+          memory: 500Mi
     vmselect:
       # -- Set this value to false to disable VMSelect
       enabled: true
@@ -372,13 +374,12 @@ vmcluster:
               requests:
                 storage: 2Gi
       resources:
-        {}
-        # limits:
-        #   cpu: "1"
-        #   memory: "1000Mi"
-        # requests:
-        #   cpu: "0.5"
-        #   memory: "500Mi"
+        limits:
+          cpu: 250m
+          memory: 1000Mi
+        requests:
+          cpu: 100m
+          memory: 500Mi
     vminsert:
       # -- Set this value to false to disable VMInsert
       enabled: true
@@ -386,13 +387,12 @@ vmcluster:
       replicaCount: 2
       extraArgs: {}
       resources:
-        {}
-        # limits:
-        #   cpu: "1"
-        #   memory: 1000Mi
-        # requests:
-        #   cpu: "0.5"
-        #   memory: "500Mi"
+        limits:
+          cpu: 250m
+          memory: 500Mi
+        requests:
+          cpu: 150m
+          memory: 200Mi
 
   ingress:
     storage:

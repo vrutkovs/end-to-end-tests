@@ -78,7 +78,7 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 				require.NoError(t, err)
 				defer watchInterface.Stop()
 
-				timeBoundContext, cancel := context.WithTimeout(ctx, 10*time.Minute)
+				timeBoundContext, cancel := context.WithTimeout(ctx, resourceWaitTimeout)
 				defer cancel()
 
 				_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {
@@ -98,7 +98,7 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 				require.NoError(t, err)
 				defer watchInterface.Stop()
 
-				timeBoundContext, cancel := context.WithTimeout(ctx, 10*time.Minute)
+				timeBoundContext, cancel := context.WithTimeout(ctx, resourceWaitTimeout)
 				defer cancel()
 
 				_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {
@@ -115,6 +115,7 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 			By("should port-forward vmselect address")
 			cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmselect-vmks", "8481:8481")
 			go cmd.Run()
+			// Hack: give it some time to start
 			time.Sleep(1 * time.Second)
 		})
 

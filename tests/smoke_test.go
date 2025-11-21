@@ -131,28 +131,40 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 			time.Sleep(1 * time.Second)
 		})
 
-		It("should handle select request", Label("id=37076a52-94ca-4de1-b1c8-029f8ce56bb7"), func() {
+		It("should handle select requests", Label("id=37076a52-94ca-4de1-b1c8-029f8ce56bb7"), func() {
 			const (
 				query = "up"
 				step  = "60s"
 			)
-			reqURL := url.URL{
-				Scheme: "http",
-				Host:   "localhost:8481",
-				Path:   "/select/0/prometheus/api/v1/query_range",
+
+			ticker := time.NewTicker(time.Second)
+			defer ticker.Stop()
+
+			started := time.Now()
+			for ; true; <-ticker.C {
+				reqURL := url.URL{
+					Scheme: "http",
+					Host:   "localhost:8481",
+					Path:   "/select/0/prometheus/api/v1/query_range",
+				}
+				q := reqURL.Query()
+				q.Add("query", query)
+				q.Add("step", step)
+				reqURL.RawQuery = q.Encode()
+
+				req, err := http.NewRequest(http.MethodGet, reqURL.String(), nil)
+				Expect(err).ToNot(HaveOccurred())
+
+				res, err := http.DefaultClient.Do(req)
+				Expect(res).ToNot(BeNil())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(res.StatusCode).To(Equal(http.StatusOK))
+
+				now := <-ticker.C
+				if now.Sub(started) > 5*time.Minute {
+					break
+				}
 			}
-			q := reqURL.Query()
-			q.Add("query", query)
-			q.Add("step", step)
-			reqURL.RawQuery = q.Encode()
-
-			req, err := http.NewRequest(http.MethodGet, reqURL.String(), nil)
-			Expect(err).ToNot(HaveOccurred())
-
-			res, err := http.DefaultClient.Do(req)
-			Expect(res).ToNot(BeNil())
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res.StatusCode).To(Equal(http.StatusOK))
 		})
 	})
 })

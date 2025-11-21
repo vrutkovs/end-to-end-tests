@@ -167,4 +167,4 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-replace github.com/Moon1706/ginkgo2allure => github.com/vrutkovs/ginkgo2allure v0.0.0-20251121135444-e68cdba29d42
+replace github.com/Moon1706/ginkgo2allure => github.com/vrutkovs/ginkgo2allure v0.0.0-20251121142356-61a4fe105250

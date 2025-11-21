@@ -23,7 +23,7 @@ func K8sAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout ti
 	defer cancel()
 
 	// Collect crust-gather folder
-	cmd := exec.CommandContext(timeBoundContext, "crust-gather", "collect", "-f", "../crust-gather")
+	cmd := exec.CommandContext(timeBoundContext, "kubectl-crust-gather", "collect", "-f", "../crust-gather")
 	var outb, errb bytes.Buffer
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb

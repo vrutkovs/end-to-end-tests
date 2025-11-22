@@ -104,10 +104,10 @@ jobs:
 
       - name: Post the link to the report
         if: always()
-        uses: Sibz/github-status-action@v1
+        uses: guibranco/github-status-action-v2@latest
         with:
             authToken: ${{secrets.PAT}}
             context: 'Test report'
             state: 'success'
-            sha: ${{ github.event.pull_request.head.sha }}
+            sha: ${{github.event.pull_request.head.sha || github.sha}}
             target_url: https://victoriametrics.github.io/end-to-end-tests/${{ github.run_number }}

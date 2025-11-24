@@ -18,14 +18,10 @@ import (
 	watchtools "k8s.io/client-go/tools/watch"
 
 	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/gather"
-
-	promapi "github.com/prometheus/client_golang/api"
-	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
-	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/promquery"
 )
 
 var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
@@ -63,14 +59,12 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 		vmclient := vmclient.NewForConfigOrDie(restConfig)
 		require.NoError(t, err)
 
-		AfterAll(func() {
-			gather.K8sAfterAll(t, ctx, consts.ResourceWaitTimeout)
-		})
-		AfterAll(func() {
-			gather.VMAfterAll(t, ctx, consts.ResourceWaitTimeout)
-		})
+		overwatch, err := promquery.NewPrometheusClient("http://localhost:8481/select/0/prometheus")
+		require.NoError(t, err)
 
-		It("should install the stack from the chart", Label("id=69ec6c61-f40d-4c48-ad1f-d60ab5988ee6"), func() {
+		BeforeAll(func() {
+			overwatch.Start = time.Now()
+
 			By("should install vm/victoria-metrics-k8s-stack chart")
 			helm.Upgrade(t, helmOpts, "vm/victoria-metrics-k8s-stack", releaseName)
 			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmagent-vmks", consts.Retries, consts.PollingInterval)
@@ -123,30 +117,32 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 				})
 				require.NoError(t, err)
 			}()
+		})
+		AfterEach(func() {
+			gather.K8sAfterAll(t, ctx, consts.ResourceWaitTimeout)
+			gather.VMAfterAll(t, ctx, consts.ResourceWaitTimeout)
+		})
 
-			By("should port-forward vmselect address")
+		It("should handle select requests", Label("id=37076a52-94ca-4de1-b1c8-029f8ce56bb7"), func() {
+			By("port-forward vmselect address")
 			cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmselect-vmks", "8481:8481")
 			go cmd.Run()
 			// Hack: give it some time to start
 			time.Sleep(1 * time.Second)
-		})
 
-		It("should handle select requests", Label("id=37076a52-94ca-4de1-b1c8-029f8ce56bb7"), func() {
+			By("send requests for 5 minutes")
 			tickerPeriod := time.Second
 
-			promClient, err := promapi.NewClient(promapi.Config{
-				Address: "http://localhost:8481/select/0/prometheus/api/v1/query_range",
-			})
+			promAPI, err := promquery.NewPrometheusClient("http://localhost:8481/select/0/prometheus")
+			promAPI.Start = overwatch.Start
 			require.NoError(t, err)
-			promv1api := promv1.NewAPI(promClient)
+
 			ticker := time.NewTicker(tickerPeriod)
 			defer ticker.Stop()
 
 			started := time.Now()
 			for ; true; <-ticker.C {
-				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-				defer cancel()
-				_, _, err := promv1api.Query(ctx, "up", time.Now(), v1.WithTimeout(tickerPeriod))
+				_, _, err := promAPI.Query(ctx, "up")
 				require.NoError(t, err)
 
 				now := <-ticker.C
@@ -154,6 +150,12 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 					break
 				}
 			}
+
+			// Expect to make at least 40k requests
+			By("at least 10k requests were made")
+			value, err := overwatch.VectorValue(ctx, "sum(vm_requests_total)")
+			require.NoError(t, err)
+			require.GreaterOrEqual(t, value, float64(10000))
 		})
 	})
 })

@@ -2,8 +2,6 @@ package end_to_end_tests_test
 
 import (
 	"context"
-	"net/http"
-	"net/url"
 	"os/exec"
 	"time"
 
@@ -24,6 +22,10 @@ import (
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/gather"
+
+	promapi "github.com/prometheus/client_golang/api"
+	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
 var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
@@ -130,33 +132,22 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 		})
 
 		It("should handle select requests", Label("id=37076a52-94ca-4de1-b1c8-029f8ce56bb7"), func() {
-			const (
-				query = "up"
-				step  = "60s"
-			)
+			tickerPeriod := time.Second
 
-			ticker := time.NewTicker(time.Second)
+			promClient, err := promapi.NewClient(promapi.Config{
+				Address: "http://localhost:8481/select/0/prometheus/api/v1/query_range",
+			})
+			require.NoError(t, err)
+			promv1api := promv1.NewAPI(promClient)
+			ticker := time.NewTicker(tickerPeriod)
 			defer ticker.Stop()
 
 			started := time.Now()
 			for ; true; <-ticker.C {
-				reqURL := url.URL{
-					Scheme: "http",
-					Host:   "localhost:8481",
-					Path:   "/select/0/prometheus/api/v1/query_range",
-				}
-				q := reqURL.Query()
-				q.Add("query", query)
-				q.Add("step", step)
-				reqURL.RawQuery = q.Encode()
-
-				req, err := http.NewRequest(http.MethodGet, reqURL.String(), nil)
-				Expect(err).ToNot(HaveOccurred())
-
-				res, err := http.DefaultClient.Do(req)
-				Expect(res).ToNot(BeNil())
-				Expect(err).ToNot(HaveOccurred())
-				Expect(res.StatusCode).To(Equal(http.StatusOK))
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+				_, _, err := promv1api.Query(ctx, "up", time.Now(), v1.WithTimeout(tickerPeriod))
+				require.NoError(t, err)
 
 				now := <-ticker.C
 				if now.Sub(started) > 5*time.Minute {

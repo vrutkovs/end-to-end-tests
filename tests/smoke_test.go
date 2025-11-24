@@ -22,6 +22,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/gather"
 )
 
@@ -29,12 +30,9 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 
 	Context("k8s-stack", func() {
 		const (
-			namespace           = "vm"
-			releaseName         = "vmks"
-			valuesFile          = "../manifests/smoke.yaml"
-			resourceWaitTimeout = 5 * time.Minute
-			retries             = 50
-			pollingInterval     = 5 * time.Second
+			namespace   = "vm"
+			releaseName = "vmks"
+			valuesFile  = "../manifests/smoke.yaml"
 		)
 
 		ctx := context.Background()
@@ -64,22 +62,22 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 		require.NoError(t, err)
 
 		AfterAll(func() {
-			gather.K8sAfterAll(t, ctx, resourceWaitTimeout)
+			gather.K8sAfterAll(t, ctx, consts.ResourceWaitTimeout)
 		})
 		AfterAll(func() {
-			gather.VMAfterAll(t, ctx, resourceWaitTimeout)
+			gather.VMAfterAll(t, ctx, consts.ResourceWaitTimeout)
 		})
 
 		It("should install the stack from the chart", Label("id=69ec6c61-f40d-4c48-ad1f-d60ab5988ee6"), func() {
 			By("should install vm/victoria-metrics-k8s-stack chart")
 			helm.Upgrade(t, helmOpts, "vm/victoria-metrics-k8s-stack", releaseName)
-			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmagent-vmks", retries, pollingInterval)
-			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmalert-vmks", retries, pollingInterval)
-			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vminsert-vmks", retries, pollingInterval)
+			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmagent-vmks", consts.Retries, consts.PollingInterval)
+			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmalert-vmks", consts.Retries, consts.PollingInterval)
+			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vminsert-vmks", consts.Retries, consts.PollingInterval)
 
 			By("should install VMSingle overwatch instance")
 			k8s.KubectlApply(t, kubeOpts, "../manifests/overwatch/vmsingle.yaml")
-			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmsingle-overwatch", retries, pollingInterval)
+			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmsingle-overwatch", consts.Retries, consts.PollingInterval)
 
 			By("should reconfigure VMAgent to send data to VMSingle")
 			k8s.KubectlApply(t, kubeOpts, "../manifests/overwatch/vmagent.yaml")
@@ -90,7 +88,7 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 				require.NoError(t, err)
 				defer watchInterface.Stop()
 
-				timeBoundContext, cancel := context.WithTimeout(ctx, resourceWaitTimeout)
+				timeBoundContext, cancel := context.WithTimeout(ctx, consts.ResourceWaitTimeout)
 				defer cancel()
 
 				_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {
@@ -110,7 +108,7 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 				require.NoError(t, err)
 				defer watchInterface.Stop()
 
-				timeBoundContext, cancel := context.WithTimeout(ctx, resourceWaitTimeout)
+				timeBoundContext, cancel := context.WithTimeout(ctx, consts.ResourceWaitTimeout)
 				defer cancel()
 
 				_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {

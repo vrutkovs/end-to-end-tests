@@ -4,7 +4,6 @@ import (
 	"flag"
 	"path/filepath"
 	"testing"
-	"time"
 
 	terratesting "github.com/gruntwork-io/terratest/modules/testing"
 
@@ -16,14 +15,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const (
-	pollingInterval     = 30 * time.Second
-	pollingTimeout      = 10 * time.Minute
-	resourceWaitTimeout = 10 * time.Minute
-)
-
 var (
-	retries      = int(resourceWaitTimeout.Seconds() / pollingInterval.Seconds())
 	vmClusterUrl string
 )
 

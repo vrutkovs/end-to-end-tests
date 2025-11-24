@@ -5,22 +5,13 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/gruntwork-io/terratest/modules/helm"
-	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/stretchr/testify/require"
-
-	vmclient "github.com/VictoriaMetrics/operator/api/client/versioned"
-	vmv1beta1 "github.com/VictoriaMetrics/operator/api/operator/v1beta1"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/tools/clientcmd"
-	watchtools "k8s.io/client-go/tools/watch"
 
 	. "github.com/onsi/ginkgo/v2"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/gather"
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/install"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/promquery"
 )
 
@@ -41,82 +32,13 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 		})
 
 		t := GetT()
-		kubeOpts := k8s.NewKubectlOptions("", "", namespace)
-		helmOpts := &helm.Options{
-			KubectlOptions: kubeOpts,
-			ValuesFiles:    []string{valuesFile},
-			ExtraArgs: map[string][]string{
-				"upgrade": {"--create-namespace", "--wait"},
-			},
-		}
-
-		kubeConfigPath, err := kubeOpts.GetConfigPath(t)
-		require.NoError(t, err)
-		clientConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-			&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeConfigPath}, &clientcmd.ConfigOverrides{})
-		restConfig, err := clientConfig.ClientConfig()
-		require.NoError(t, err)
-		vmclient := vmclient.NewForConfigOrDie(restConfig)
-		require.NoError(t, err)
 
 		overwatch, err := promquery.NewPrometheusClient("http://localhost:8481/select/0/prometheus")
 		require.NoError(t, err)
 
 		BeforeAll(func() {
 			overwatch.Start = time.Now()
-
-			By("should install vm/victoria-metrics-k8s-stack chart")
-			helm.Upgrade(t, helmOpts, "vm/victoria-metrics-k8s-stack", releaseName)
-			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmagent-vmks", consts.Retries, consts.PollingInterval)
-			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmalert-vmks", consts.Retries, consts.PollingInterval)
-			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vminsert-vmks", consts.Retries, consts.PollingInterval)
-
-			By("should install VMSingle overwatch instance")
-			k8s.KubectlApply(t, kubeOpts, "../manifests/overwatch/vmsingle.yaml")
-			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmsingle-overwatch", consts.Retries, consts.PollingInterval)
-
-			By("should reconfigure VMAgent to send data to VMSingle")
-			k8s.KubectlApply(t, kubeOpts, "../manifests/overwatch/vmagent.yaml")
-
-			By("should wait for VMCluster object to become operational")
-			func() {
-				watchInterface, err := vmclient.OperatorV1beta1().VMClusters(namespace).Watch(ctx, metav1.ListOptions{})
-				require.NoError(t, err)
-				defer watchInterface.Stop()
-
-				timeBoundContext, cancel := context.WithTimeout(ctx, consts.ResourceWaitTimeout)
-				defer cancel()
-
-				_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {
-					obj := event.Object
-					vmCluster := obj.(*vmv1beta1.VMCluster)
-					if vmCluster.Status.UpdateStatus == vmv1beta1.UpdateStatusOperational {
-						return true, nil
-					}
-					return false, nil
-				})
-				require.NoError(t, err)
-			}()
-
-			By("should wait for overwatch VMSingle to become operational")
-			func() {
-				watchInterface, err := vmclient.OperatorV1beta1().VMSingles(namespace).Watch(ctx, metav1.ListOptions{})
-				require.NoError(t, err)
-				defer watchInterface.Stop()
-
-				timeBoundContext, cancel := context.WithTimeout(ctx, consts.ResourceWaitTimeout)
-				defer cancel()
-
-				_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {
-					obj := event.Object
-					vmSingle := obj.(*vmv1beta1.VMSingle)
-					if vmSingle.Status.UpdateStatus == vmv1beta1.UpdateStatusOperational {
-						return true, nil
-					}
-					return false, nil
-				})
-				require.NoError(t, err)
-			}()
+			install.InstallWithHelm(ctx, "vm/victoria-metrics-k8s-stack", valuesFile, t, namespace, releaseName)
 		})
 		AfterEach(func() {
 			gather.K8sAfterAll(t, ctx, consts.ResourceWaitTimeout)

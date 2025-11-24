@@ -7,7 +7,6 @@ import (
 
 	promapi "github.com/prometheus/client_golang/api"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
-	"github.com/prometheus/common/model"
 	prommodel "github.com/prometheus/common/model"
 )
 
@@ -55,10 +54,10 @@ func (p PrometheusClient) VectorValue(ctx context.Context, query string) (prommo
 	if err != nil {
 		return 0, err
 	}
-	if result.Type() != model.ValVector {
+	if result.Type() != prommodel.ValVector {
 		return 0, fmt.Errorf("unexpected result type: %s", result.Type())
 	}
-	vec := result.(model.Vector)
+	vec := result.(prommodel.Vector)
 	if len(vec) == 0 {
 		return 0, fmt.Errorf("no data returned")
 	}

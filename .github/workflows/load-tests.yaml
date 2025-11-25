@@ -93,18 +93,18 @@ jobs:
 
       - name: Deploy report to Github Pages
         if: always()
-        uses: peaceiris/actions-gh-pages@v2
-        env:
-          PERSONAL_TOKEN: ${{ secrets.PAT }}
-          PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: allure-history
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          publish_dir: allure-history
+          github_token: ${{ secrets.PAT }}
+          destination_dir: load-test
 
       - name: Post the link to the report
         if: always()
         uses: guibranco/github-status-action-v2@latest
         with:
             authToken: ${{secrets.PAT}}
-            context: 'Test report'
+            context: 'Load test report'
             state: 'success'
             sha: ${{github.event.pull_request.head.sha || github.sha}}
-            target_url: https://victoriametrics.github.io/end-to-end-tests/${{ github.run_number }}
+            target_url: https://victoriametrics.github.io/end-to-end-tests/load-test/${{ github.run_number }}

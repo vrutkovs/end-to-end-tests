@@ -3,15 +3,16 @@ package install
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2" // nolint
 	"github.com/stretchr/testify/require"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
-	watchtools "k8s.io/client-go/tools/watch"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	"github.com/gruntwork-io/terratest/modules/helm"
@@ -56,15 +57,19 @@ func RunChaosScenario(ctx context.Context, t terratesting.TestingT, scenario, ch
 	manifestPath := fmt.Sprintf("../../manifests/chaos-tests/%s.yaml", scenario)
 	k8s.KubectlApply(t, kubeOpts, manifestPath)
 
+	ticker := time.NewTicker(consts.ChaosTestMaxDuration)
+	defer ticker.Stop()
+
 	// Wait for object of expected type to be deleted
-	watchInterface, err := dynClient.Resource(gvr).Namespace(namespace).Watch(ctx, metav1.ListOptions{})
-	_, err = watchtools.UntilWithoutRetry(chaosTestOverCtx, watchInterface, func(event watch.Event) (bool, error) {
-		metaObject, ok := event.Object.(metav1.Object)
-		if !ok {
-			return false, fmt.Errorf("object does not implement metav1.Object")
+	for {
+		select {
+		case <-chaosTestOverCtx.Done():
+			return fmt.Errorf("timed out waiting for chaos scenario %s to finish", scenario)
+		case <-ticker.C:
+			_, err := dynClient.Resource(gvr).Namespace(namespace).Get(ctx, filepath.Base(scenario), metav1.GetOptions{})
+			if k8serrors.IsNotFound(err) {
+				return nil
+			}
 		}
-		return metaObject.GetName() == scenario && event.Type == watch.Deleted, nil
-	})
-	require.NoError(t, err)
-	return nil
+	}
 }

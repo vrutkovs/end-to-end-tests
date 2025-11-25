@@ -101,6 +101,7 @@ jobs:
         with:
           publish_dir: allure-history
           github_token: ${{ secrets.PAT }}
+          subfolder: smoke-test
 
       - name: Post the link to the report
         if: always()

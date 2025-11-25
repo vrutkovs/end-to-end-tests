@@ -35,7 +35,7 @@ func InstallChaosMesh(ctx context.Context, helmChart, valuesFile string, t terra
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "chaos-controller-manager", consts.Retries, consts.PollingInterval)
 }
 
-func RunChaosScenario(ctx context.Context, t terratesting.TestingT, scenario, chaosType string) error {
+func RunChaosScenario(ctx context.Context, t terratesting.TestingT, scenarioFolder, scenario, chaosType string) error {
 	namespace := "vm"
 	gvr := schema.GroupVersionResource{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: chaosType}
 
@@ -54,7 +54,7 @@ func RunChaosScenario(ctx context.Context, t terratesting.TestingT, scenario, ch
 	require.NoError(t, err)
 
 	// Apply manifest, this starts the chaos scenario
-	manifestPath := fmt.Sprintf("../../manifests/chaos-tests/%s.yaml", scenario)
+	manifestPath := fmt.Sprintf("../../manifests/chaos-tests/%s/%s.yaml", scenarioFolder, scenario)
 	k8s.KubectlApply(t, kubeOpts, manifestPath)
 
 	ticker := time.NewTicker(consts.ChaosTestMaxDuration)

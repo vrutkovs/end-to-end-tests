@@ -57,8 +57,9 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 
 	It("Run vminsert-request-abort scenario", Label("id=2195bf4c-7dca-4bb1-a363-89dbc898a507"), func() {
 		By("Run scenario")
-		scenario := "http/vminsert-request-abort"
-		err := install.RunChaosScenario(ctx, t, scenario, "HTTPChaos")
+		scenarioFolder := "http"
+		scenario := "vminsert-request-abort"
+		err := install.RunChaosScenario(ctx, t, scenarioFolder, scenario, "HTTPChaos")
 		require.NoError(t, err)
 
 		// Expect to make at least 40k requests

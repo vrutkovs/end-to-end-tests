@@ -2,7 +2,6 @@ package load_test
 
 import (
 	"context"
-	"os/exec"
 	"testing"
 	"time"
 
@@ -69,12 +68,6 @@ var _ = Describe("Load tests", Ordered, Label("load-test"), func() {
 	})
 
 	It("Default installation should handle 50vus-30mins load test scenario", Label("id=d37b1987-a9e7-4d13-87b7-f2ded679c249"), func() {
-		By("Port-forward vmselect address")
-		cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmselect-vmks", "8481:8481")
-		go cmd.Run()
-		// Hack: give it some time to start
-		time.Sleep(1 * time.Second)
-
 		By("Run 50vus-30mins scenario")
 		scenario := "vmselect-50vus-30mins"
 		err := install.RunK6Scenario(ctx, t, k6TestsNamespace, scenario, "http://localhost:8481", 3)

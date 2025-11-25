@@ -87,10 +87,9 @@ jobs:
         id: allure-report
         with:
           allure_results: /tmp/allure-results
-          gh_pages: gh-pages
+          gh_pages: gh-pages/load-test
           allure_report: allure-report
           allure_history: allure-history
-          subfolder: load-test
 
       - name: Deploy report to Github Pages
         if: always()

@@ -1,0 +1,316 @@
+name: "Tests"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  SUITE_SMOKE: "smoke_test"
+  SUITE_LOAD: "load_test"
+  SUITE_CHAOS: "chaos_test"
+  GH_PAGES_URL: "https://victoriametrics.github.io/end-to-end-tests"
+
+jobs:
+  smoke-test:
+    name: Run smoke tests
+    runs-on: ubuntu-latest
+    outputs:
+      tests: ${{ steps.tests.outcome }}
+    permissions:
+      checks: write
+      contents: write
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          check-latest: true
+          cache: true
+        id: go
+
+      - name: Install ginkgo
+        run: |
+          go install github.com/onsi/ginkgo/v2/ginkgo
+
+      - name: Download go packages
+        run: |
+          go mod download
+
+      - name: Install helm
+        uses: yokawasa/action-setup-kube-tools@v0.13.1
+        with:
+          setup-tools: |
+            helmv3
+            kubectl
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@v1.13.0
+
+      - name: Add helm repo
+        run: |
+          helm repo add vm https://victoriametrics.github.io/helm-charts/
+          helm repo update
+
+      - name: Install crust-gather
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: crust-gather/crust-gather
+          platform: linux
+          arch: amd64
+
+      - name: Install VMExporter
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: VictoriaMetrics/support
+          platform: linux
+          arch: amd64
+          token: ${{ secrets.PAT }}
+          extension-matching: disable
+          rename-to: vmexporter
+          chmod: 0755
+
+      - name: Run e2e tests
+        id: tests
+        run: |
+          mkdir -p /tmp/allure-results
+          ginkgo -procs=0 -timeout=30m ./tests/${{ env.SUITE_SMOKE }}
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SUITE_SMOKE }}
+          path: /tmp/allure-results
+
+  load-test:
+    name: Run load tests
+    runs-on: ubuntu-latest
+    outputs:
+      tests: ${{ steps.tests.outcome }}
+    permissions:
+      checks: write
+      contents: write
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          check-latest: true
+          cache: true
+        id: go
+
+      - name: Install ginkgo
+        run: |
+          go install github.com/onsi/ginkgo/v2/ginkgo
+
+      - name: Download go packages
+        run: |
+          go mod download
+
+      - name: Install helm
+        uses: yokawasa/action-setup-kube-tools@v0.13.1
+        with:
+          setup-tools: |
+            helmv3
+            kubectl
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@v1.13.0
+
+      - name: Add helm repo
+        run: |
+          helm repo add vm https://victoriametrics.github.io/helm-charts/
+          helm repo update
+
+      - name: Install crust-gather
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: crust-gather/crust-gather
+          platform: linux
+          arch: amd64
+
+      - name: Install VMExporter
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: VictoriaMetrics/support
+          platform: linux
+          arch: amd64
+          token: ${{ secrets.PAT }}
+          extension-matching: disable
+          rename-to: vmexporter
+          chmod: 0755
+
+      - name: Run e2e tests
+        id: tests
+        run: |
+          mkdir -p /tmp/allure-results
+          ginkgo -procs=0 -timeout=30m ./tests/${{ env.SUITE_LOAD }}
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SUITE_LOAD }}
+          path: /tmp/allure-results
+
+  chaos-test:
+    name: Run chaos tests
+    runs-on: ubuntu-latest
+    outputs:
+      tests: ${{ steps.tests.outcome }}
+    permissions:
+      checks: write
+      contents: write
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          check-latest: true
+          cache: true
+        id: go
+
+      - name: Install ginkgo
+        run: |
+          go install github.com/onsi/ginkgo/v2/ginkgo
+
+      - name: Download go packages
+        run: |
+          go mod download
+
+      - name: Install helm
+        uses: yokawasa/action-setup-kube-tools@v0.13.1
+        with:
+          setup-tools: |
+            helmv3
+            kubectl
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@v1.13.0
+
+      - name: Add helm repo
+        run: |
+          helm repo add vm https://victoriametrics.github.io/helm-charts/
+          helm repo add chaos-mesh https://charts.chaos-mesh.org
+          helm repo update
+
+      - name: Install crust-gather
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: crust-gather/crust-gather
+          platform: linux
+          arch: amd64
+
+      - name: Install VMExporter
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: VictoriaMetrics/support
+          platform: linux
+          arch: amd64
+          token: ${{ secrets.PAT }}
+          extension-matching: disable
+          rename-to: vmexporter
+          chmod: 0755
+
+      - name: Run e2e tests
+        id: tests
+        run: |
+          mkdir -p /tmp/allure-results
+          ginkgo -procs=0 -timeout=30m ./tests/${{ env.SUITE_CHAOS }}
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SUITE_CHAOS }}
+          path: /tmp/allure-results
+
+  deploy-report:
+    if: always()
+    name: Generate and deploy Allure Report
+    needs: [smoke-test, load-test, chaos-test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+          token: ${{ secrets.PAT }}
+        continue-on-error: true
+
+      - name: Download artifacts - Smoke
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SUITE_SMOKE }}
+          path: allure-results
+
+      - name: Download artifacts - Load
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SUITE_LOAD }}
+          path: allure-results
+
+      - name: Download artifacts - Chaos
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.SUITE_CHAOS }}
+          path: allure-results
+
+      - name: Generate Allure Report
+        uses: simple-elf/allure-report-action@master
+        if: always()
+        id: allure-report
+        with:
+          allure_results: allure-results
+          gh_pages: gh-pages
+          allure_report: allure-report
+          allure_history: allure-history
+          keep_reports: 20
+
+      - name: Deploy to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v2
+        env:
+          PERSONAL_TOKEN: ${{ secrets.PAT }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: allure-history
+
+      - name: Post reports link
+        if: always()
+        uses: guibranco/github-status-action-v2@latest
+        with:
+          authToken: ${{ secrets.GITHUB_TOKEN }}
+          context: 'Test report'
+          state: ${{ needs.smoke-tests.outputs.tests == 'success' && needs.load-tests.outputs.tests == 'success' && needs.chaos-tests.outputs.tests == 'success' && 'success' || 'failure' }}
+          sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          target_url: ${{ env.GH_PAGES_URL }}/${{ github.run_number }}/

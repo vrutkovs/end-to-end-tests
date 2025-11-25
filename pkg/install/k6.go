@@ -1,7 +1,6 @@
 package install
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -32,9 +31,6 @@ func RunK6Scenario(ctx context.Context, t terratesting.TestingT, namespace, scen
 	if err != nil {
 		return fmt.Errorf("failed to read scenario file: %w", err)
 	}
-
-	// Replace the VMSELECT_URL placeholder in the scenario content
-	scenarioContent = bytes.ReplaceAll(scenarioContent, []byte("VMSELECT_URL"), []byte(vmselectURL))
 
 	// Create a configmap with a script
 	configMap := corev1.ConfigMap{

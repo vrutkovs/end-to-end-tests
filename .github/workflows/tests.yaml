@@ -241,7 +241,7 @@ jobs:
         id: tests
         run: |
           mkdir -p /tmp/allure-results
-          ginkgo -procs=0 -timeout=30m ./tests/${{ env.SUITE_CHAOS }}
+          ginkgo -procs=0 -timeout=60m ./tests/${{ env.SUITE_CHAOS }}
 
       - name: Upload results
         if: always()

@@ -56,6 +56,7 @@ jobs:
       - name: Add helm repo
         run: |
           helm repo add vm https://victoriametrics.github.io/helm-charts/
+          helm repo add chaos-mesh https://charts.chaos-mesh.org
           helm repo update
 
       - name: Install crust-gather

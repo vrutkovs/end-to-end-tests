@@ -309,7 +309,7 @@ jobs:
         if: always()
         uses: guibranco/github-status-action-v2@latest
         with:
-          authToken: ${{ secrets.GITHUB_TOKEN }}
+          authToken: ${{ secrets.PAT }}
           context: 'Test report'
           state: ${{ needs.smoke-tests.outputs.tests == 'success' && needs.load-tests.outputs.tests == 'success' && needs.chaos-tests.outputs.tests == 'success' && 'success' || 'failure' }}
           sha: ${{ github.event.pull_request.head.sha || github.sha }}

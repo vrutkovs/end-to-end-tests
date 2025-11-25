@@ -1,24 +1,24 @@
 import http from "k6/http";
-import { check, group } from "k6";
+import { check } from "k6";
 import { randomIntBetween } from "https://jslib.k6.io/k6-utils/1.2.0/index.js";
 
 export const options = {
   scenarios: {
     test_metric: {
       executor: "constant-vus",
-      duration: "10m",
+      maxDuration: "10m",
       exec: "test_metric",
       vus: 50,
     },
     test_sum: {
       executor: "constant-vus",
-      duration: "10m",
+      maxDuration: "10m",
       vus: 50,
       exec: "test_sum",
     },
     test_rate: {
       executor: "constant-vus",
-      duration: "10m",
+      maxDuration: "10m",
       vus: 50,
       exec: "test_rate",
     },

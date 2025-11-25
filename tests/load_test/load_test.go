@@ -36,12 +36,6 @@ var _ = Describe("Load tests", Ordered, Label("load-test"), func() {
 	)
 
 	ctx := context.Background()
-
-	ctxCancel, cancel := context.WithCancel(ctx)
-	AfterAll(func() {
-		cancel()
-	})
-
 	t := tests.GetT()
 
 	overwatch, err := promquery.NewPrometheusClient("http://localhost:8481/select/0/prometheus")

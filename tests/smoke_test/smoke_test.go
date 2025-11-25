@@ -1,26 +1,36 @@
-package end_to_end_tests_test
+package smoke_test
 
 import (
 	"context"
 	"os/exec"
+	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/gather"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/install"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/promquery"
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/tests"
 )
+
+func TestSmokeTests(t *testing.T) {
+	RegisterFailHandler(Fail)
+	suiteConfig, reporterConfig := GinkgoConfiguration()
+	// suiteConfig.LabelFilter = "smoke"
+	RunSpecs(t, "Smoke test Suite", suiteConfig, reporterConfig)
+}
 
 var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 	const (
 		namespace   = "vm"
 		releaseName = "vmks"
 		helmChart   = "vm/victoria-metrics-k8s-stack"
-		valuesFile  = "../manifests/smoke.yaml"
+		valuesFile  = "../../manifests/smoke.yaml"
 	)
 
 	ctx := context.Background()
@@ -30,7 +40,7 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 		cancel()
 	})
 
-	t := GetT()
+	t := tests.GetT()
 
 	overwatch, err := promquery.NewPrometheusClient("http://localhost:8481/select/0/prometheus")
 	require.NoError(t, err)

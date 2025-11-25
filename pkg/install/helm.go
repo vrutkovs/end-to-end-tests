@@ -41,11 +41,11 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vminsert-vmks", consts.Retries, consts.PollingInterval)
 
 	By("Install VMSingle overwatch instance")
-	k8s.KubectlApply(t, kubeOpts, "../manifests/overwatch/vmsingle.yaml")
+	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmsingle.yaml")
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmsingle-overwatch", consts.Retries, consts.PollingInterval)
 
 	By("Reconfigure VMAgent to send data to VMSingle")
-	k8s.KubectlApply(t, kubeOpts, "../manifests/overwatch/vmagent.yaml")
+	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmagent.yaml")
 
 	WaitForVMClusterToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
 	WaitForVMSingleToBeOperational(ctx, t, kubeOpts, namespace, vmclient)

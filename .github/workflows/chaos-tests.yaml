@@ -1,4 +1,4 @@
-name: "Load Tests"
+name: "Chaos Tests"
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Run load tests
+    name: Run chaos tests
     runs-on: ubuntu-latest
     permissions:
       checks: write
@@ -79,7 +79,7 @@ jobs:
       - name: Run e2e tests
         run: |
           mkdir -p ./allure-results/
-          ginkgo -procs=0 -timeout=60m ./tests/load_test
+          ginkgo -procs=0 -timeout=60m ./tests/chaos_test
 
       - name: Create allure report
         uses: simple-elf/allure-report-action@master

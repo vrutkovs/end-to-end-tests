@@ -82,7 +82,7 @@ jobs:
       - name: Run e2e tests
         run: |
           mkdir -p ./allure-results/
-          ginkgo -procs=0 -timeout=30m --label-filter=smoke ./tests/...
+          ginkgo -procs=0 -timeout=30m ./tests/smoke_test
 
       - name: Create allure report
         uses: simple-elf/allure-report-action@master

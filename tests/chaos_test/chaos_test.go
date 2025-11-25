@@ -55,17 +55,30 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 		gather.VMAfterAll(t, ctx, consts.ResourceWaitTimeout, vmNamespace)
 	})
 
-	It("Run vminsert-request-abort scenario", Label("id=2195bf4c-7dca-4bb1-a363-89dbc898a507"), func() {
+	It("Run vminsert-pod-failure scenario", Label("id=17f2e31b-9249-4283-845b-aae0bc81e5f2"), func() {
 		By("Run scenario")
-		scenarioFolder := "http"
-		scenario := "vminsert-request-abort"
-		err := install.RunChaosScenario(ctx, t, scenarioFolder, scenario, "HTTPChaos")
+		scenarioFolder := "pods"
+		scenario := "vminsert-pod-failure"
+		err := install.RunChaosScenario(ctx, t, scenarioFolder, scenario, "PodChaos")
 		require.NoError(t, err)
 
-		// Expect to make at least 40k requests
 		By("No alerts are firing")
 		value, err := overwatch.VectorValue(ctx, "min_over_time(up) == 0")
 		require.NoError(t, err)
 		require.GreaterOrEqual(t, value, float64(1))
 	})
+
+	// Requires proper CNI in the cluster
+	// It("Run vminsert-request-abort scenario", Label("id=2195bf4c-7dca-4bb1-a363-89dbc898a507"), func() {
+	// 	By("Run scenario")
+	// 	scenarioFolder := "http"
+	// 	scenario := "vminsert-request-abort"
+	// 	err := install.RunChaosScenario(ctx, t, scenarioFolder, scenario, "HTTPChaos")
+	// 	require.NoError(t, err)
+
+	// 	By("No alerts are firing")
+	// 	value, err := overwatch.VectorValue(ctx, "min_over_time(up) == 0")
+	// 	require.NoError(t, err)
+	// 	require.GreaterOrEqual(t, value, float64(1))
+	// })
 })

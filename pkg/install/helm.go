@@ -47,7 +47,10 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	By("Reconfigure VMAgent to send data to VMSingle")
 	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmagent.yaml")
 
+	By("Wait for VMCluster object to become operational")
 	WaitForVMClusterToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
+
+	By("Wait for overwatch VMSingle to become operational")
 	WaitForVMSingleToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
 }
 
@@ -64,7 +67,6 @@ func GetVMClient(t terratesting.TestingT, kubeOpts *k8s.KubectlOptions) *vmclien
 }
 
 func WaitForVMSingleToBeOperational(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient *vmclient.Clientset) {
-	By("Wait for overwatch VMSingle to become operational")
 	watchInterface, err := vmclient.OperatorV1beta1().VMSingles(namespace).Watch(ctx, metav1.ListOptions{})
 	require.NoError(t, err)
 	defer watchInterface.Stop()
@@ -84,7 +86,6 @@ func WaitForVMSingleToBeOperational(ctx context.Context, t terratesting.TestingT
 }
 
 func WaitForVMClusterToBeOperational(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient *vmclient.Clientset) {
-	By("Wait for VMCluster object to become operational")
 	watchInterface, err := vmclient.OperatorV1beta1().VMClusters(namespace).Watch(ctx, metav1.ListOptions{})
 	require.NoError(t, err)
 	defer watchInterface.Stop()

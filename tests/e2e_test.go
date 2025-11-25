@@ -25,7 +25,9 @@ func init() {
 
 func TestEndToEndTests(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "EndToEndTests Suite")
+	suiteConfig, reporterConfig := GinkgoConfiguration()
+	// suiteConfig.FocusStrings = []string{"50vus-30mins"}
+	RunSpecs(t, "End2End Suite", suiteConfig, reporterConfig)
 }
 
 // GetT returns a testing.T compatible object that can be used in terratesting.RunE2ETests

@@ -10,24 +10,28 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/gruntwork-io/terratest/modules/testing"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	ginkgo "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/exporter"
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/install"
 )
 
 // VMAfterAll provides cleanup and data collection logic for VictoriaMetrics components.
 // It starts vmexporter, calls its /api/export/start, polls /api/export/status,
 // calls /api/export/download endpoints, and adds the downloaded archive to the report.
-func VMAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout time.Duration) {
+func VMAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout time.Duration, namespace string) {
 	timeBoundContext, cancel := context.WithTimeout(ctx, resourceWaitTimeout)
 	defer cancel()
 
 	// Port-forward vmsingle-overwatch service
-	portForwardCmd := exec.CommandContext(timeBoundContext, "kubectl", "-n", "vm", "port-forward", "svc/vmsingle-overwatch", "8429:8429")
+	portForwardCmd := exec.CommandContext(timeBoundContext, "kubectl", "-n", namespace, "port-forward", "svc/vmsingle-overwatch", "8429:8429")
 	go portForwardCmd.Run()
 	// Hack: give it some time to start
 	time.Sleep(1 * time.Second)
@@ -195,12 +199,13 @@ OuterLoop:
 	var zipBuffer bytes.Buffer
 	_, err = zipBuffer.ReadFrom(res.Body)
 	require.NoError(t, err, "failed to read downloaded zip to buffer")
-	res.Body.Close()
+	err = res.Body.Close()
+	require.NoError(t, err, "failed to close response body")
 
 	logger.Default.Logf(t, "Downloaded vmexporter archive into buffer, size: %d bytes", zipBuffer.Len())
 
 	// Add the downloaded zip file content to the report
-	ginkgo.AddReportEntry("vmexporter-report.zip", string(zipBuffer.Bytes()))
+	ginkgo.AddReportEntry("vmexporter-report.zip", zipBuffer.String())
 
 	// Shutdown vmexporter command
 	if vmexporterCmd.Process != nil {
@@ -211,4 +216,23 @@ OuterLoop:
 	if portForwardCmd.Process != nil {
 		portForwardCmd.Process.Kill()
 	}
+
+	// Restart overwatch instaner
+	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+
+	pods := k8s.ListPods(t, kubeOpts, metav1.ListOptions{
+		LabelSelector: "app.kubernetes.io/instance=overwatch",
+	})
+	require.NotEmpty(t, pods, "no vmsingle pods found in namespace %s", namespace)
+	firstPod := pods[0]
+	k8s.ExecPod(t, kubeOpts, firstPod.Name, "vmsingle", "sh", "-c", "rm -rf /victoria-metrics-data/*")
+
+	client, err := k8s.GetKubernetesClientE(t)
+	require.NoError(t, err, "failed to get Kubernetes client")
+	err = client.CoreV1().Pods(namespace).Delete(ctx, firstPod.Name, metav1.DeleteOptions{})
+	require.NoError(t, err, "failed to delete pod %s", firstPod.Name)
+
+	// Wait for overwatch VMSingle to become operational
+	vmclient := install.GetVMClient(t, kubeOpts)
+	install.WaitForVMSingleToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
 }

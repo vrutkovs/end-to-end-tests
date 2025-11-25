@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    name: Run tests
+    name: Run smoke tests
     runs-on: ubuntu-latest
     permissions:
       checks: write
@@ -82,7 +82,7 @@ jobs:
       - name: Run e2e tests
         run: |
           mkdir -p ./allure-results/
-          ginkgo -procs=0 -timeout=30m ./tests/...
+          ginkgo -procs=0 -timeout=30m --label-filter=smoke ./tests/...
 
       - name: Create allure report
         uses: simple-elf/allure-report-action@master

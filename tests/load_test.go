@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/stretchr/testify/require"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -15,12 +16,14 @@ import (
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/promquery"
 )
 
-var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
+var _ = Describe("Load tests", Ordered, Label("load-test"), func() {
 	const (
-		namespace   = "vm"
-		releaseName = "vmks"
-		helmChart   = "vm/victoria-metrics-k8s-stack"
-		valuesFile  = "../manifests/smoke.yaml"
+		vmNamespace         = "vm"
+		k6OperatorNamespace = "k6-operator-system"
+		k6TestsNamespace    = "k6-tests"
+		releaseName         = "vmks"
+		helmChart           = "vm/victoria-metrics-k8s-stack"
+		valuesFile          = "../manifests/smoke.yaml"
 	)
 
 	ctx := context.Background()
@@ -37,42 +40,36 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 
 	BeforeAll(func() {
 		overwatch.Start = time.Now()
+		install.InstallWithHelm(ctx, helmChart, valuesFile, t, vmNamespace, releaseName)
 
-		install.InstallWithHelm(ctx, helmChart, valuesFile, t, namespace, releaseName)
+		// Install k6 operator
+		install.InstallK6(ctx, t, k6OperatorNamespace)
+
+		// Prepare namespace for k6 tests
+		kubeOpts := k8s.NewKubectlOptions("", "", k6TestsNamespace)
+		k8s.CreateNamespace(t, kubeOpts, k6TestsNamespace)
 	})
 	AfterEach(func() {
 		gather.K8sAfterAll(t, ctx, consts.ResourceWaitTimeout)
-		gather.VMAfterAll(t, ctx, consts.ResourceWaitTimeout, namespace)
+
+		kubeOpts := k8s.NewKubectlOptions("", "", k6TestsNamespace)
+		k8s.DeleteNamespace(t, kubeOpts, k6TestsNamespace)
+
+		gather.VMAfterAll(t, ctx, consts.ResourceWaitTimeout, vmNamespace)
 	})
 
-	It("Default installation should handle select requests for 5 mins", Label("id=37076a52-94ca-4de1-b1c8-029f8ce56bb7"), func() {
-
+	It("Default installation should handle 50vus-30mins load test scenario", Label("id=d37b1987-a9e7-4d13-87b7-f2ded679c249"), func() {
 		By("Port-forward vmselect address")
 		cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmselect-vmks", "8481:8481")
 		go cmd.Run()
 		// Hack: give it some time to start
 		time.Sleep(1 * time.Second)
 
-		By("Send requests for 5 minutes")
-		tickerPeriod := time.Second
-
-		promAPI, err := promquery.NewPrometheusClient("http://localhost:8481/select/0/prometheus")
-		promAPI.Start = overwatch.Start
+		By("Run 50vus-30mins scenario")
+		scenario := "vmselect-50vus-30mins"
+		err := install.RunK6Scenario(ctx, t, k6TestsNamespace, scenario, "http://localhost:8481", 3)
 		require.NoError(t, err)
-
-		ticker := time.NewTicker(tickerPeriod)
-		defer ticker.Stop()
-
-		started := time.Now()
-		for ; true; <-ticker.C {
-			_, _, err := promAPI.Query(ctx, "up")
-			require.NoError(t, err)
-
-			now := <-ticker.C
-			if now.Sub(started) > 5*time.Minute {
-				break
-			}
-		}
+		install.WaitForK6JobsToComplete(ctx, t, k6TestsNamespace, scenario, 3)
 
 		// Expect to make at least 40k requests
 		By("At least 10k requests were made")

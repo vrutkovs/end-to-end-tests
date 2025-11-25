@@ -38,3 +38,4 @@ allure-report/
 
 crust-gather/
 tests/crust-gather.tar.gz
+tests/exports/

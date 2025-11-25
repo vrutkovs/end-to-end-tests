@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  load-test:
     name: Run load tests
     runs-on: ubuntu-latest
     permissions:
@@ -90,6 +90,7 @@ jobs:
           gh_pages: gh-pages
           allure_report: allure-report
           allure_history: allure-history
+          subfolder: load-test
 
       - name: Deploy report to Github Pages
         if: always()
@@ -97,7 +98,6 @@ jobs:
         with:
           publish_dir: allure-history
           github_token: ${{ secrets.PAT }}
-          destination_dir: load-test
 
       - name: Post the link to the report
         if: always()

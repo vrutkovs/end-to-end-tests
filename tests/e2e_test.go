@@ -1,7 +1,6 @@
 package end_to_end_tests_test
 
 import (
-	"flag"
 	"path/filepath"
 	"testing"
 
@@ -15,19 +14,18 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var (
-	vmClusterUrl string
-)
-
-func init() {
-	flag.StringVar(&vmClusterUrl, "vmcluster", "", "VMCluster URL")
-}
-
-func TestEndToEndTests(t *testing.T) {
+func TestSmokeTests(t *testing.T) {
 	RegisterFailHandler(Fail)
 	suiteConfig, reporterConfig := GinkgoConfiguration()
-	// suiteConfig.FocusStrings = []string{"50vus-30mins"}
-	RunSpecs(t, "End2End Suite", suiteConfig, reporterConfig)
+	suiteConfig.LabelFilter = "smoke"
+	RunSpecs(t, "Smoke test Suite", suiteConfig, reporterConfig)
+}
+
+func TestLoadTestsTests(t *testing.T) {
+	RegisterFailHandler(Fail)
+	suiteConfig, reporterConfig := GinkgoConfiguration()
+	suiteConfig.LabelFilter = "load-test"
+	RunSpecs(t, "Load test Suite", suiteConfig, reporterConfig)
 }
 
 // GetT returns a testing.T compatible object that can be used in terratesting.RunE2ETests

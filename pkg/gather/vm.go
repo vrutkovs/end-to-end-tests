@@ -219,16 +219,14 @@ OuterLoop:
 
 	// Restart overwatch instaner
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+	client, err := k8s.GetKubernetesClientE(t)
+	require.NoError(t, err, "failed to get Kubernetes client")
 
 	pods := k8s.ListPods(t, kubeOpts, metav1.ListOptions{
 		LabelSelector: "app.kubernetes.io/instance=overwatch",
 	})
-	require.NotEmpty(t, pods, "no vmsingle pods found in namespace %s", namespace)
 	firstPod := pods[0]
-	k8s.ExecPod(t, kubeOpts, firstPod.Name, "vmsingle", "sh", "-c", "rm -rf /victoria-metrics-data/*")
 
-	client, err := k8s.GetKubernetesClientE(t)
-	require.NoError(t, err, "failed to get Kubernetes client")
 	err = client.CoreV1().Pods(namespace).Delete(ctx, firstPod.Name, metav1.DeleteOptions{})
 	require.NoError(t, err, "failed to delete pod %s", firstPod.Name)
 

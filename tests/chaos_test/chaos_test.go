@@ -58,7 +58,7 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 	It("Run vminsert-pod-failure scenario", Label("id=17f2e31b-9249-4283-845b-aae0bc81e5f2"), func() {
 		By("Run scenario")
 		namespace := "vm"
-		install.RunChaosScenario(ctx, t, namespace, "pods", "vminsert-pod-failure", "PodChaos")
+		install.RunChaosScenario(ctx, t, namespace, "pods", "vminsert-pod-failure", "podchaos")
 
 		By("No alerts are firing")
 		value, err := overwatch.VectorValue(ctx, "min_over_time(up) == 0")

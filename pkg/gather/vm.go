@@ -137,7 +137,7 @@ OuterLoop:
 		select {
 		case <-pollCtx.Done():
 			// Exit loop if context is cancelled, check archivePath later
-			break
+			break OuterLoop
 		default:
 			statusReq, err := http.NewRequest(http.MethodGet, statusURL.String(), nil)
 			require.NoError(t, err, "failed to create HTTP request for /api/export/status")

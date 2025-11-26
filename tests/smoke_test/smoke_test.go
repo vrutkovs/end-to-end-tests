@@ -42,7 +42,7 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 
 	t := tests.GetT()
 
-	overwatch, err := promquery.NewPrometheusClient("http://localhost:8429/select/0/prometheus")
+	overwatch, err := promquery.NewPrometheusClient("http://localhost:8429/prometheus")
 	require.NoError(t, err)
 
 	BeforeAll(func() {

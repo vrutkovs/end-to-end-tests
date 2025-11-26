@@ -42,7 +42,7 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 
 	t := tests.GetT()
 
-	overwatch, err := promquery.NewPrometheusClient("http://localhost:8481/select/0/prometheus")
+	overwatch, err := promquery.NewPrometheusClient("http://localhost:8429/select/0/prometheus")
 	require.NoError(t, err)
 
 	BeforeAll(func() {
@@ -83,6 +83,12 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 				break
 			}
 		}
+
+		By("Setup port-forwarding for overwatch")
+		cmd = exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmsingle-overwatch", "8429:8429")
+		go cmd.Run()
+		// Hack: give it some time to start
+		time.Sleep(1 * time.Second)
 
 		// Expect to make at least 40k requests
 		By("At least 10k requests were made")

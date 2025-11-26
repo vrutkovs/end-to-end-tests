@@ -2,6 +2,7 @@ package load_test
 
 import (
 	"context"
+	"os/exec"
 	"testing"
 	"time"
 
@@ -36,9 +37,15 @@ var _ = Describe("Load tests", Ordered, Label("load-test"), func() {
 	)
 
 	ctx := context.Background()
+
+	ctxCancel, cancel := context.WithCancel(ctx)
+	AfterAll(func() {
+		cancel()
+	})
+
 	t := tests.GetT()
 
-	overwatch, err := promquery.NewPrometheusClient("http://localhost:8481/select/0/prometheus")
+	overwatch, err := promquery.NewPrometheusClient("http://localhost:8429/select/0/prometheus")
 	require.NoError(t, err)
 
 	BeforeAll(func() {
@@ -67,6 +74,12 @@ var _ = Describe("Load tests", Ordered, Label("load-test"), func() {
 		err := install.RunK6Scenario(ctx, t, k6TestsNamespace, scenario, 3)
 		require.NoError(t, err)
 		install.WaitForK6JobsToComplete(ctx, t, k6TestsNamespace, scenario, 3)
+
+		By("Setup port-forwarding for overwatch")
+		cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmsingle-overwatch", "8429:8429")
+		go cmd.Run()
+		// Hack: give it some time to start
+		time.Sleep(1 * time.Second)
 
 		// Expect to make at least 40k requests
 		By("At least 10k requests were made")

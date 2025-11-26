@@ -2,6 +2,7 @@ package chaos_test
 
 import (
 	"context"
+	"os/exec"
 	"testing"
 	"time"
 
@@ -38,6 +39,10 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 	)
 
 	ctx := context.Background()
+	ctxCancel, cancel := context.WithCancel(ctx)
+	AfterAll(func() {
+		cancel()
+	})
 	t := tests.GetT()
 
 	overwatch, err := promquery.NewPrometheusClient("http://localhost:8429/prometheus")
@@ -59,6 +64,12 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 		By("Run scenario")
 		namespace := "vm"
 		install.RunChaosScenario(ctx, t, namespace, "pods", "vminsert-pod-failure", "podchaos")
+
+		By("Setup port-forwarding for overwatch")
+		cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmsingle-overwatch", "8429:8429")
+		go cmd.Run()
+		// Hack: give it some time to start
+		time.Sleep(1 * time.Second)
 
 		By("No alerts are firing")
 		value, err := overwatch.VectorValue(ctx, "min_over_time(up) == 0")

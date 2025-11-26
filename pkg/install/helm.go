@@ -47,6 +47,9 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	By("Reconfigure VMAgent to send data to VMSingle")
 	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmagent.yaml")
 
+	By("Reconfigure VMAlert to send data to VMSingle")
+	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmalert.yaml")
+
 	By("Wait for VMCluster object to become operational")
 	WaitForVMClusterToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
 

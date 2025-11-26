@@ -87,6 +87,6 @@ func WaitForK6JobsToComplete(ctx context.Context, t terratesting.TestingT, names
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 
 	for idx := 0; idx < parallelism; idx++ {
-		k8s.WaitUntilJobSucceed(t, kubeOpts, fmt.Sprintf("%s-%d", scenario, idx+1), consts.K6Retries, consts.PollingInterval)
+		k8s.WaitUntilJobSucceed(t, kubeOpts, fmt.Sprintf("%s-%d", scenario, idx+1), consts.K6Retries, consts.K6JobPollingInterval)
 	}
 }

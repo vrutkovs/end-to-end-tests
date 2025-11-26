@@ -2,6 +2,7 @@ package chaos_test
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"testing"
 	"time"
@@ -72,6 +73,10 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 		time.Sleep(1 * time.Second)
 
 		By("No alerts are firing")
+		_, err := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog|TooManyLogs|RecordingRulesError|AlertingRulesError)"})`)
+		require.ErrorIs(t, err, fmt.Errorf("no data returned"))
+
+		By("No services were down")
 		value, err := overwatch.VectorValue(ctx, "min_over_time(up) == 0")
 		require.NoError(t, err)
 		require.GreaterOrEqual(t, value, float64(1))

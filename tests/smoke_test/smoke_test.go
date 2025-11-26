@@ -90,9 +90,14 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 		// Hack: give it some time to start
 		time.Sleep(1 * time.Second)
 
-		// Expect to make at least 40k requests
+		By("No alerts are firing")
+		value, err := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog)"})`)
+		require.NoError(t, err)
+		require.Zero(t, value)
+
+		// Expect to make at least 10k requests
 		By("At least 10k requests were made")
-		value, err := overwatch.VectorValue(ctx, "sum(vm_requests_total)")
+		value, err = overwatch.VectorValue(ctx, "sum(vm_requests_total)")
 		require.NoError(t, err)
 		require.GreaterOrEqual(t, value, float64(10000))
 	})

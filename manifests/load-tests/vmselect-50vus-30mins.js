@@ -6,19 +6,19 @@ export const options = {
   scenarios: {
     test_metric: {
       executor: "constant-vus",
-      maxDuration: "10m",
+      duration: "10m",
       exec: "test_metric",
       vus: 50,
     },
     test_sum: {
       executor: "constant-vus",
-      maxDuration: "10m",
+      duration: "10m",
       vus: 50,
       exec: "test_sum",
     },
     test_rate: {
       executor: "constant-vus",
-      maxDuration: "10m",
+      duration: "10m",
       vus: 50,
       exec: "test_rate",
     },

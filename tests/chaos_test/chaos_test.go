@@ -40,7 +40,7 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 	ctx := context.Background()
 	t := tests.GetT()
 
-	overwatch, err := promquery.NewPrometheusClient("http://localhost:8481/select/0/prometheus")
+	overwatch, err := promquery.NewPrometheusClient("http://localhost:8429/prometheus")
 	require.NoError(t, err)
 
 	BeforeAll(func() {

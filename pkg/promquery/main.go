@@ -22,7 +22,7 @@ type PrometheusClient struct {
 
 func NewPrometheusClient(url string) (PrometheusClient, error) {
 	promClient, err := promapi.NewClient(promapi.Config{
-		Address: "http://localhost:8481/select/0/prometheus",
+		Address: url,
 	})
 	if err != nil {
 		return PrometheusClient{}, err

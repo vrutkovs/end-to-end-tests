@@ -23,7 +23,7 @@ func InstallK6(ctx context.Context, t terratesting.TestingT, namespace string) {
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "k6-operator-controller-manager", consts.Retries, consts.PollingInterval)
 }
 
-func RunK6Scenario(ctx context.Context, t terratesting.TestingT, namespace, scenario, vmselectURL string, parallelism int) error {
+func RunK6Scenario(ctx context.Context, t terratesting.TestingT, namespace, scenario string, parallelism int) error {
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 
 	scenarioPath := fmt.Sprintf("../../manifests/load-tests/%s.js", scenario)
@@ -87,6 +87,6 @@ func WaitForK6JobsToComplete(ctx context.Context, t terratesting.TestingT, names
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 
 	for idx := 0; idx < parallelism; idx++ {
-		k8s.WaitUntilJobSucceed(t, kubeOpts, fmt.Sprintf("%s-%d", scenario, idx+1), consts.K6Retries, consts.PollingInterval)
+		k8s.WaitUntilJobSucceed(t, kubeOpts, fmt.Sprintf("%s-%d", scenario, idx+1), consts.K6Retries, consts.K6JobPollingInterval)
 	}
 }

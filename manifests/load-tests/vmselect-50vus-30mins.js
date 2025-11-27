@@ -1,24 +1,24 @@
 import http from "k6/http";
-import { check, group } from "k6";
+import { check } from "k6";
 import { randomIntBetween } from "https://jslib.k6.io/k6-utils/1.2.0/index.js";
 
 export const options = {
   scenarios: {
     test_metric: {
       executor: "constant-vus",
-      duration: "30m",
+      duration: "10m",
       exec: "test_metric",
       vus: 50,
     },
     test_sum: {
       executor: "constant-vus",
-      duration: "30m",
+      duration: "10m",
       vus: 50,
       exec: "test_sum",
     },
     test_rate: {
       executor: "constant-vus",
-      duration: "30m",
+      duration: "10m",
       vus: 50,
       exec: "test_rate",
     },
@@ -28,7 +28,8 @@ export const options = {
 };
 
 export function run_query(query) {
-  let url = "http://vmselect-vmks.vm.cluster.local.:8481/select/0/prometheus/api/v1/query_range";
+  let url =
+    "http://vmselect-vmks.vm.svc.cluster.local.:8481/select/0/prometheus/api/v1/query_range";
 
   // Fetch last 15 mins data with 10% jitter
   const now_ns = Date.now() * 1_000_000; // Convert current time to nanoseconds

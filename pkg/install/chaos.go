@@ -3,15 +3,16 @@ package install
 import (
 	"context"
 	"fmt"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2" // nolint
 	"github.com/stretchr/testify/require"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
-	watchtools "k8s.io/client-go/tools/watch"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	"github.com/gruntwork-io/terratest/modules/helm"
@@ -34,37 +35,67 @@ func InstallChaosMesh(ctx context.Context, helmChart, valuesFile string, t terra
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "chaos-controller-manager", consts.Retries, consts.PollingInterval)
 }
 
-func RunChaosScenario(ctx context.Context, t terratesting.TestingT, scenario, chaosType string) error {
-	namespace := "vm"
-	gvr := schema.GroupVersionResource{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: chaosType}
-
-	chaosTestOverCtx, cancel := context.WithTimeout(ctx, consts.ChaosTestMaxDuration)
-	defer cancel()
-
-	// Create dynamic client
+func RunChaosScenario(ctx context.Context, t terratesting.TestingT, namespace, scenarioFolder, scenario, chaosType string) {
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+
 	kubeConfigPath, err := kubeOpts.GetConfigPath(t)
 	require.NoError(t, err)
 	clientConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeConfigPath}, &clientcmd.ConfigOverrides{})
 	restConfig, err := clientConfig.ClientConfig()
 	require.NoError(t, err)
-	dynClient, err := dynamic.NewForConfig(restConfig)
+
+	dynamicClient := dynamic.NewForConfigOrDie(restConfig)
 	require.NoError(t, err)
 
-	// Apply manifest, this starts the chaos scenario
-	manifestPath := fmt.Sprintf("../../manifests/chaos-tests/%s.yaml", scenario)
+	manifestPath := fmt.Sprintf("../../manifests/chaos-tests/%s/%s.yaml", scenarioFolder, scenario)
 	k8s.KubectlApply(t, kubeOpts, manifestPath)
 
+	WaitForChaosScenarioToComplete(ctx, t, dynamicClient, namespace, scenario, chaosType)
+}
+
+func WaitForChaosScenarioToComplete(ctx context.Context, t terratesting.TestingT, chaosClient *dynamic.DynamicClient, namespace, scenario, chaosType string) {
+	gvr := schema.GroupVersionResource{Group: "chaos-mesh.org", Version: "v1alpha1", Resource: chaosType}
+
+	chaosTestOverCtx, cancel := context.WithTimeout(ctx, consts.ChaosTestMaxDuration)
+	defer cancel()
+
+	ticker := time.NewTicker(consts.PollingInterval)
+	defer ticker.Stop()
+
 	// Wait for object of expected type to be deleted
-	watchInterface, err := dynClient.Resource(gvr).Namespace(namespace).Watch(ctx, metav1.ListOptions{})
-	_, err = watchtools.UntilWithoutRetry(chaosTestOverCtx, watchInterface, func(event watch.Event) (bool, error) {
-		metaObject, ok := event.Object.(metav1.Object)
-		if !ok {
-			return false, fmt.Errorf("object does not implement metav1.Object")
+	for {
+		select {
+		case <-chaosTestOverCtx.Done():
+			t.Fatalf("timed out waiting for chaos scenario %s to finish", scenario)
+		case <-ticker.C:
+			obj, err := chaosClient.Resource(gvr).Namespace(namespace).Get(ctx, scenario, metav1.GetOptions{})
+			if err != nil {
+				if k8serrors.IsNotFound(err) {
+					continue
+				}
+				t.Fatalf("failed to get chaos scenario %s: %v", scenario, err)
+			}
+			status, found, err := unstructured.NestedMap(obj.Object, "status")
+			if err != nil || !found {
+				continue
+			}
+			conditions, found, err := unstructured.NestedSlice(status, "conditions")
+			if err != nil || !found {
+				continue
+			}
+			for _, condition := range conditions {
+				if condition == nil {
+					continue
+				}
+				conditionMap, ok := condition.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				if conditionMap["type"] == "AllRecovered" && conditionMap["status"] == "True" {
+					return
+				}
+			}
 		}
-		return metaObject.GetName() == scenario && event.Type == watch.Deleted, nil
-	})
-	require.NoError(t, err)
-	return nil
+	}
 }

@@ -4,6 +4,16 @@ metadata:
   name: overwatch
   namespace: vm
 spec:
+  initContainers:
+  - name: init-script
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - rm -rf /victoria-metrics-data/*
+    volumeMounts:
+      - name: data
+        mountPath: /victoria-metrics-data
   storage:
     accessModes:
       - ReadWriteOnce

@@ -23,6 +23,12 @@ import (
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 )
 
+var (
+	HelmChartVersion string
+	VMVersion        string
+	OperatorVersion  string
+)
+
 func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terratesting.TestingT, namespace string, releaseName string) {
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 	helmOpts := &helm.Options{
@@ -40,6 +46,14 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmalert-vmks", consts.Retries, consts.PollingInterval)
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vminsert-vmks", consts.Retries, consts.PollingInterval)
 
+	// Extract version information from deployment labels
+	vmAgent := k8s.GetDeployment(t, kubeOpts, "vmagent-vmks")
+	HelmChartVersion = vmAgent.Labels["helm.sh/chart"]
+	VMVersion = vmAgent.Labels["app.kubernetes.io/version"]
+
+	vmOperator := k8s.GetDeployment(t, kubeOpts, "vmks-victoria-metrics-operator")
+	OperatorVersion = vmOperator.Labels["app.kubernetes.io/version"]
+
 	By("Install VMSingle overwatch instance")
 	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmsingle.yaml")
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmsingle-overwatch", consts.Retries, consts.PollingInterval)
@@ -47,7 +61,13 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	By("Reconfigure VMAgent to send data to VMSingle")
 	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmagent.yaml")
 
+	By("Reconfigure VMAlert to send data to VMSingle")
+	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmalert.yaml")
+
+	By("Wait for VMCluster object to become operational")
 	WaitForVMClusterToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
+
+	By("Wait for overwatch VMSingle to become operational")
 	WaitForVMSingleToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
 }
 
@@ -64,45 +84,39 @@ func GetVMClient(t terratesting.TestingT, kubeOpts *k8s.KubectlOptions) *vmclien
 }
 
 func WaitForVMSingleToBeOperational(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient *vmclient.Clientset) {
-	By("Wait for overwatch VMSingle to become operational")
-	func() {
-		watchInterface, err := vmclient.OperatorV1beta1().VMSingles(namespace).Watch(ctx, metav1.ListOptions{})
-		require.NoError(t, err)
-		defer watchInterface.Stop()
+	watchInterface, err := vmclient.OperatorV1beta1().VMSingles(namespace).Watch(ctx, metav1.ListOptions{})
+	require.NoError(t, err)
+	defer watchInterface.Stop()
 
-		timeBoundContext, cancel := context.WithTimeout(ctx, consts.ResourceWaitTimeout)
-		defer cancel()
+	timeBoundContext, cancel := context.WithTimeout(ctx, consts.ResourceWaitTimeout)
+	defer cancel()
 
-		_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {
-			obj := event.Object
-			vmSingle := obj.(*vmv1beta1.VMSingle)
-			if vmSingle.Status.UpdateStatus == vmv1beta1.UpdateStatusOperational {
-				return true, nil
-			}
-			return false, nil
-		})
-		require.NoError(t, err)
-	}()
+	_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {
+		obj := event.Object
+		vmSingle := obj.(*vmv1beta1.VMSingle)
+		if vmSingle.Status.UpdateStatus == vmv1beta1.UpdateStatusOperational {
+			return true, nil
+		}
+		return false, nil
+	})
+	require.NoError(t, err)
 }
 
 func WaitForVMClusterToBeOperational(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient *vmclient.Clientset) {
-	By("Wait for VMCluster object to become operational")
-	func() {
-		watchInterface, err := vmclient.OperatorV1beta1().VMClusters(namespace).Watch(ctx, metav1.ListOptions{})
-		require.NoError(t, err)
-		defer watchInterface.Stop()
+	watchInterface, err := vmclient.OperatorV1beta1().VMClusters(namespace).Watch(ctx, metav1.ListOptions{})
+	require.NoError(t, err)
+	defer watchInterface.Stop()
 
-		timeBoundContext, cancel := context.WithTimeout(ctx, consts.ResourceWaitTimeout)
-		defer cancel()
+	timeBoundContext, cancel := context.WithTimeout(ctx, consts.ResourceWaitTimeout)
+	defer cancel()
 
-		_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {
-			obj := event.Object
-			vmCluster := obj.(*vmv1beta1.VMCluster)
-			if vmCluster.Status.UpdateStatus == vmv1beta1.UpdateStatusOperational {
-				return true, nil
-			}
-			return false, nil
-		})
-		require.NoError(t, err)
-	}()
+	_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {
+		obj := event.Object
+		vmCluster := obj.(*vmv1beta1.VMCluster)
+		if vmCluster.Status.UpdateStatus == vmv1beta1.UpdateStatusOperational {
+			return true, nil
+		}
+		return false, nil
+	})
+	require.NoError(t, err)
 }

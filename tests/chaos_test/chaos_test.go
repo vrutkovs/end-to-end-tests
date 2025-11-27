@@ -2,6 +2,7 @@ package chaos_test
 
 import (
 	"context"
+	"os/exec"
 	"testing"
 	"time"
 
@@ -38,9 +39,13 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 	)
 
 	ctx := context.Background()
+	ctxCancel, cancel := context.WithCancel(ctx)
+	AfterAll(func() {
+		cancel()
+	})
 	t := tests.GetT()
 
-	overwatch, err := promquery.NewPrometheusClient("http://localhost:8481/select/0/prometheus")
+	overwatch, err := promquery.NewPrometheusClient("http://localhost:8429/prometheus")
 	require.NoError(t, err)
 
 	BeforeAll(func() {
@@ -55,16 +60,39 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 		gather.VMAfterAll(t, ctx, consts.ResourceWaitTimeout, vmNamespace)
 	})
 
-	It("Run vminsert-request-abort scenario", Label("id=2195bf4c-7dca-4bb1-a363-89dbc898a507"), func() {
+	It("Run vminsert-pod-failure scenario", Label("id=17f2e31b-9249-4283-845b-aae0bc81e5f2"), func() {
 		By("Run scenario")
-		scenario := "http/vminsert-request-abort"
-		err := install.RunChaosScenario(ctx, t, scenario, "HTTPChaos")
-		require.NoError(t, err)
+		namespace := "vm"
+		install.RunChaosScenario(ctx, t, namespace, "pods", "vminsert-pod-failure", "podchaos")
 
-		// Expect to make at least 40k requests
+		By("Setup port-forwarding for overwatch")
+		cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmsingle-overwatch", "8429:8429")
+		go cmd.Run()
+		// Hack: give it some time to start
+		time.Sleep(1 * time.Second)
+
 		By("No alerts are firing")
-		value, err := overwatch.VectorValue(ctx, "min_over_time(up) == 0")
+		value, err := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog|TooManyLogs|RecordingRulesError|AlertingRulesError)"})`)
+		require.NoError(t, err)
+		require.Zero(t, value)
+
+		By("No services were down")
+		value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")
 		require.NoError(t, err)
 		require.GreaterOrEqual(t, value, float64(1))
 	})
+
+	// Requires proper CNI in the cluster
+	// It("Run vminsert-request-abort scenario", Label("id=2195bf4c-7dca-4bb1-a363-89dbc898a507"), func() {
+	// 	By("Run scenario")
+	// 	scenarioFolder := "http"
+	// 	scenario := "vminsert-request-abort"
+	// 	err := install.RunChaosScenario(ctx, t, scenarioFolder, scenario, "HTTPChaos")
+	// 	require.NoError(t, err)
+
+	// 	By("No alerts are firing")
+	// 	value, err := overwatch.VectorValue(ctx, "min_over_time(up) == 0")
+	// 	require.NoError(t, err)
+	// 	require.GreaterOrEqual(t, value, float64(1))
+	// })
 })

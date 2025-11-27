@@ -23,6 +23,12 @@ import (
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 )
 
+var (
+	HelmChartVersion string
+	VMVersion        string
+	OperatorVersion  string
+)
+
 func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terratesting.TestingT, namespace string, releaseName string) {
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 	helmOpts := &helm.Options{
@@ -39,6 +45,14 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmagent-vmks", consts.Retries, consts.PollingInterval)
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmalert-vmks", consts.Retries, consts.PollingInterval)
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vminsert-vmks", consts.Retries, consts.PollingInterval)
+
+	// Extract version information from deployment labels
+	vmAgent := k8s.GetDeployment(t, kubeOpts, "vmagent-vmks")
+	HelmChartVersion = vmAgent.Labels["helm.sh/chart"]
+	VMVersion = vmAgent.Labels["app.kubernetes.io/version"]
+
+	vmOperator := k8s.GetDeployment(t, kubeOpts, "vmks-victoria-metrics-operator")
+	OperatorVersion = vmOperator.Labels["app.kubernetes.io/version"]
 
 	By("Install VMSingle overwatch instance")
 	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmsingle.yaml")

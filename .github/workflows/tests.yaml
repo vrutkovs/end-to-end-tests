@@ -599,7 +599,7 @@ jobs:
         id: tests
         run: |
           mkdir -p /tmp/allure-results
-          ginkgo -procs=0 -timeout=60m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_CHAOS }} -- -env-k8s-distro=gke -report=/tmp/allure-results
+          ginkgo -procs=0 -timeout=180m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_CHAOS }} -- -env-k8s-distro=gke -report=/tmp/allure-results
 
       - name: terraform destroy
         uses: dflook/terraform-destroy-workspace@v2

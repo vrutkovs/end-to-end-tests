@@ -93,7 +93,7 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 	}
 
 	for uuid, scenarioName := range networkScenarios {
-		It(fmt.Sprintf("Run %s scenario", scenarioName), Label("kind", "gke", fmt.Sprintf("id=%s", uuid)), func() {
+		It(fmt.Sprintf("Run %s scenario", scenarioName), Label("gke", fmt.Sprintf("id=%s", uuid)), func() {
 			By("Run scenario")
 			namespace := "vm"
 			install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "NetworkChaos")

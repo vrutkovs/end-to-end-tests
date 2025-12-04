@@ -32,6 +32,11 @@ func InstallChaosMesh(ctx context.Context, helmChart, valuesFile string, t terra
 
 	By(fmt.Sprintf("Install %s chart", helmChart))
 	helm.Upgrade(t, helmOpts, helmChart, releaseName)
+
+	// Install ebtables on the node
+	manifestPath := "../../manifests/chaos-mesh-operator/ebtables.yaml"
+	k8s.KubectlApply(t, kubeOpts, manifestPath)
+
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "chaos-controller-manager", consts.Retries, consts.PollingInterval)
 }
 

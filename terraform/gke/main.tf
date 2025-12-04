@@ -148,6 +148,10 @@ resource "google_container_cluster" "primary" {
       enabled = false
     }
   }
+
+  logging_config {
+    enable_components = []
+  }
 }
 
 # Ingress firewall rule

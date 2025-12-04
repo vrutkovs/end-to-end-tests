@@ -88,8 +88,22 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 	})
 
 	networkScenarios := map[string]string{
-		"ff4a49d5-8646-442c-91a0-b4dd3c5d3666": "vmagent-to-vminsert-packet-delay",
-		"d1bfdb33-127b-4dd2-a842-438b4b9bf270": "vmagent-to-vminsert-packet-loss",
+		"148c9b15-7779-414e-9f99-9a92e54b6816": "vmagent-to-vminsert-packet-delay",
+		"f767bbe7-b84c-4c37-8bf3-eaf3f6e34909": "vmagent-to-vminsert-packet-loss",
+		"238a19bd-e674-4359-a4ee-c00421014f67": "vminsert-from-vmagent-packet-delay",
+		"0d9545bb-c1c6-4a03-856c-8ec187d581a9": "vminsert-from-vmagent-packet-loss",
+		"ef3455cd-7687-49a4-b423-7c4541aa051c": "vminsert-to-vmstorage-packet-corrupt",
+		"070679cc-3ba7-41a2-9c41-94bd9d1f61ba": "vminsert-to-vmstorage-packet-delay",
+		"cfd198c1-f307-4366-9301-530384d68190": "vminsert-to-vmstorage-packet-loss",
+		"b8364e50-4c2e-412d-8896-3c350cdef31a": "vmselect-to-vmstorage-packet-corrupt",
+		"e13108bd-00df-40f5-acc9-b134bc619dc8": "vmselect-to-vmstorage-packet-delay",
+		"8343989e-34a9-4469-bd4c-c6900e3c5a11": "vmselect-to-vmstorage-packet-loss",
+		"a8a00f36-18b0-42c0-ae0a-f14a7a5a08c7": "vmstorage-from-vminsert-packet-corrupt",
+		"1321ea2f-a0fa-4fd9-8bd4-57f6d3a636c4": "vmstorage-from-vminsert-packet-delay",
+		"490c384c-a995-4b46-a5c2-c37baa72beaf": "vmstorage-from-vminsert-packet-loss",
+		"12f1fa4e-f454-4942-b73c-3df1116daea2": "vmstorage-from-vmselect-packet-corrupt",
+		"260857d8-c49e-4ac3-92e4-220addcc4a53": "vmstorage-from-vmselect-packet-delay",
+		"63b77044-a445-49fc-9deb-96c32ccbcde2": "vmstorage-from-vmselect-packet-loss",
 	}
 
 	for uuid, scenarioName := range networkScenarios {

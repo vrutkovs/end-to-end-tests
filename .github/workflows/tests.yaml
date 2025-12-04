@@ -387,7 +387,7 @@ jobs:
       contents: write
     if: github.event.pull_request.draft == false
     env:
-      LABEL_FILTER: kind
+      LABEL_FILTER: gke
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -508,7 +508,7 @@ jobs:
       contents: write
     if: github.event.pull_request.draft == false
     env:
-      LABEL_FILTER: kind
+      LABEL_FILTER: gke
     steps:
       - name: Checkout code
         uses: actions/checkout@v5

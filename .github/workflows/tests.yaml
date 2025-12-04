@@ -365,6 +365,11 @@ jobs:
           path: terraform/gke
           workspace: main
 
+      - name: Remove unused disks
+        if: always()
+        run: |
+          gcloud compute disks delete $(gcloud compute disks list --filter="-users:*" --format "value(name)")
+
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
@@ -480,6 +485,11 @@ jobs:
         with:
           path: terraform/gke
           workspace: main
+
+      - name: Remove unused disks
+        if: always()
+        run: |
+          gcloud compute disks delete $(gcloud compute disks list --filter="-users:*" --format "value(name)")
 
       - name: Upload results
         if: always()
@@ -597,6 +607,11 @@ jobs:
         with:
           path: terraform/gke
           workspace: main
+
+      - name: Remove unused disks
+        if: always()
+        run: |
+          gcloud compute disks delete $(gcloud compute disks list --filter="-users:*" --format "value(name)")
 
       - name: Upload results
         if: always()

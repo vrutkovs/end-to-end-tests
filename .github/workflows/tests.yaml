@@ -332,12 +332,20 @@ jobs:
           echo $TF_VAR_BASE64 | base64 --decode > terraform/gke/terraform.tfvars
 
       - name: terraform apply
+        id: tests-infra
         uses: dflook/terraform-apply@v2
         with:
           path: terraform/gke
           variables: |
             cluster_name = "smoke-test-${{ github.run_number }}"
           auto_approve: true
+
+      - name: setup kubectl
+        run: |
+          gcloud container clusters get-credentials \
+            ${{ steps.tests-infra.outputs.cluster_name }} \
+            --region ${{ steps.tests-infra.outputs.region }} \
+            --project ${{ steps.tests-infra.outputs.project_id }}
 
       - name: Run e2e tests
         id: tests
@@ -400,25 +408,6 @@ jobs:
             helmv3
             kubectl
 
-      - name: Google Auth
-        uses: 'google-github-actions/auth@v3'
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
-
-      - name: Retrieve terraform variables
-        env:
-          TF_VAR_BASE64: ${{ secrets.TF_VAR_BASE64 }}
-        run: |
-          echo $TF_VAR_BASE64 | base64 --decode > terraform/gke/terraform.tfvars
-
-      - name: terraform apply
-        uses: dflook/terraform-apply@v2
-        with:
-          path: terraform/gke
-          variables: |
-            cluster_name = "load-test-${{ github.run_number }}"
-          auto_approve: true
-
       - name: Add helm repo
         run: |
           helm repo add vm https://victoriametrics.github.io/helm-charts/
@@ -441,6 +430,33 @@ jobs:
           extension-matching: disable
           rename-to: vmexporter
           chmod: 0755
+
+      - name: Google Auth
+        uses: 'google-github-actions/auth@v3'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
+      - name: Retrieve terraform variables
+        env:
+          TF_VAR_BASE64: ${{ secrets.TF_VAR_BASE64 }}
+        run: |
+          echo $TF_VAR_BASE64 | base64 --decode > terraform/gke/terraform.tfvars
+
+      - name: terraform apply
+        id: tests-infra
+        uses: dflook/terraform-apply@v2
+        with:
+          path: terraform/gke
+          variables: |
+            cluster_name = "load-test-${{ github.run_number }}"
+          auto_approve: true
+
+      - name: setup kubectl
+        run: |
+          gcloud container clusters get-credentials \
+            ${{ steps.tests-infra.outputs.cluster_name }} \
+            --region ${{ steps.tests-infra.outputs.region }} \
+            --project ${{ steps.tests-infra.outputs.project_id }}
 
       - name: Run e2e tests
         id: tests
@@ -503,25 +519,6 @@ jobs:
             helmv3
             kubectl
 
-      - name: Google Auth
-        uses: 'google-github-actions/auth@v3'
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
-
-      - name: Retrieve terraform variables
-        env:
-          TF_VAR_BASE64: ${{ secrets.TF_VAR_BASE64 }}
-        run: |
-          echo $TF_VAR_BASE64 | base64 --decode > terraform/gke/terraform.tfvars
-
-      - name: terraform apply
-        uses: dflook/terraform-apply@v2
-        with:
-          path: terraform/gke
-          variables: |
-            cluster_name = "chaos-test-${{ github.run_number }}"
-          auto_approve: true
-
       - name: Add helm repo
         run: |
           helm repo add vm https://victoriametrics.github.io/helm-charts/
@@ -545,6 +542,33 @@ jobs:
           extension-matching: disable
           rename-to: vmexporter
           chmod: 0755
+
+      - name: Google Auth
+        uses: 'google-github-actions/auth@v3'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
+      - name: Retrieve terraform variables
+        env:
+          TF_VAR_BASE64: ${{ secrets.TF_VAR_BASE64 }}
+        run: |
+          echo $TF_VAR_BASE64 | base64 --decode > terraform/gke/terraform.tfvars
+
+      - name: terraform apply
+        id: tests-infra
+        uses: dflook/terraform-apply@v2
+        with:
+          path: terraform/gke
+          variables: |
+            cluster_name = "load-test-${{ github.run_number }}"
+          auto_approve: true
+
+      - name: setup kubectl
+        run: |
+          gcloud container clusters get-credentials \
+            ${{ steps.tests-infra.outputs.cluster_name }} \
+            --region ${{ steps.tests-infra.outputs.region }} \
+            --project ${{ steps.tests-infra.outputs.project_id }}
 
       - name: Run e2e tests
         id: tests

@@ -2,6 +2,7 @@ package chaos_test
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"testing"
 	"time"
@@ -86,17 +87,44 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 		require.GreaterOrEqual(t, value, float64(1))
 	})
 
-	// Requires proper CNI in the cluster
-	// It("Run vminsert-request-abort scenario", Label("id=2195bf4c-7dca-4bb1-a363-89dbc898a507"), func() {
-	// 	By("Run scenario")
-	// 	scenarioFolder := "http"
-	// 	scenario := "vminsert-request-abort"
-	// 	err := install.RunChaosScenario(ctx, t, scenarioFolder, scenario, "HTTPChaos")
-	// 	require.NoError(t, err)
+	networkScenarios := map[string]string{
+		"ff4a49d5-8646-442c-91a0-b4dd3c5d3666": "vmagent-to-vminsert-packet-delay",
+		"d1bfdb33-127b-4dd2-a842-438b4b9bf270": "vmagent-to-vminsert-packet-loss",
+	}
 
-	// 	By("No alerts are firing")
-	// 	value, err := overwatch.VectorValue(ctx, "min_over_time(up) == 0")
-	// 	require.NoError(t, err)
-	// 	require.GreaterOrEqual(t, value, float64(1))
-	// })
+	for uuid, scenarioName := range networkScenarios {
+		It(fmt.Sprintf("Run %s scenario", scenarioName), Label("kind", "gke", fmt.Sprintf("id=%s", uuid)), func() {
+			By("Run scenario")
+			namespace := "vm"
+			install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "NetworkChaos")
+
+			By("No alerts are firing")
+			value, err := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog|TooManyLogs|RecordingRulesError|AlertingRulesError)"})`)
+			require.NoError(t, err)
+			require.Zero(t, value)
+
+			By("No services were down")
+			value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")
+			require.NoError(t, err)
+			require.GreaterOrEqual(t, value, float64(1))
+		})
+	}
+
+	// Requires proper CNI in the cluster
+	It("Run vminsert-request-abort scenario", Label("gke", "id=2195bf4c-7dca-4bb1-a363-89dbc898a507"), func() {
+		By("Run scenario")
+		namespace := "vm"
+		scenarioName := "vminsert-request-abort"
+		install.RunChaosScenario(ctx, t, namespace, "http", scenarioName, "NetworkChaos")
+
+		By("No alerts are firing")
+		value, err := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog|TooManyLogs|RecordingRulesError|AlertingRulesError)"})`)
+		require.NoError(t, err)
+		require.Zero(t, value)
+
+		By("No alerts are firing")
+		value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")
+		require.NoError(t, err)
+		require.GreaterOrEqual(t, value, float64(1))
+	})
 })

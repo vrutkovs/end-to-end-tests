@@ -39,3 +39,19 @@ allure-report/
 crust-gather/
 tests/crust-gather.tar.gz
 **/exports/
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
+*.tfplan
+*.tfstate
+*.tfstate.backup
+crash.log
+override.tf
+override.tf.json
+*.tfvars
+*.tfvars.json
+
+# Local .terraformignore (if used)
+.terraformignore

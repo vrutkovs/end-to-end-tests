@@ -1,4 +1,4 @@
-name: "Kind tests"
+name: "GKE tests"
 
 on:
   push:
@@ -12,12 +12,12 @@ env:
   SUITE_SMOKE: "smoke_test"
   SUITE_LOAD: "load_test"
   SUITE_CHAOS: "chaos_test"
-  LABEL_FILTER: "kind"
+  LABEL_FILTER: "gke"
   GH_PAGES_URL: "https://victoriametrics.github.io/end-to-end-tests"
 
 jobs:
-  kind-smoke-test:
-    name: Run smoke tests on kind
+  gke-smoke-test:
+    name: Run smoke tests on gke
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.tests.outcome }}
@@ -55,8 +55,15 @@ jobs:
             helmv3
             kubectl
 
-      - name: Create Kind cluster
-        uses: helm/kind-action@v1.13.0
+      - name: Google Auth
+        uses: 'google-github-actions/auth@v3'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
+      - name: terraform apply
+        uses: dflook/terraform-apply@v2
+        with:
+          path: my-terraform-config
 
       - name: Add helm repo
         run: |
@@ -85,7 +92,7 @@ jobs:
         id: tests
         run: |
           mkdir -p /tmp/allure-results
-          ginkgo -procs=0 -timeout=30m ./tests/${{ env.SUITE_SMOKE }} --label-filter=${{ env.LABEL_FILTER }} -- -env-k8s-distro=kind -report=/tmp/allure-results
+          ginkgo -procs=0 -timeout=30m ./tests/${{ env.SUITE_SMOKE }} --label-filter=${{ env.LABEL_FILTER }} -- -env-k8s-distro=gke -report=/tmp/allure-results
 
       - name: Upload results
         if: always()
@@ -94,8 +101,8 @@ jobs:
           name: ${{ env.SUITE_SMOKE }}
           path: /tmp/allure-results
 
-  kind-load-test:
-    name: Run load tests on kind
+  gke-load-test:
+    name: Run load tests on gke
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.tests.outcome }}
@@ -133,8 +140,8 @@ jobs:
             helmv3
             kubectl
 
-      - name: Create Kind cluster
-        uses: helm/kind-action@v1.13.0
+      - name: Create GKE cluster
+        uses: helm/gke-action@v1.13.0
 
       - name: Add helm repo
         run: |
@@ -163,7 +170,7 @@ jobs:
         id: tests
         run: |
           mkdir -p /tmp/allure-results
-          ginkgo -procs=0 -timeout=30m ./tests/${{ env.SUITE_LOAD }} --label-filter=${{ env.LABEL_FILTER }} -- -env-k8s-distro=kind -report=/tmp/allure-results
+          ginkgo -procs=0 -timeout=30m ./tests/${{ env.SUITE_LOAD }} --label-filter=${{ env.LABEL_FILTER }} -- -env-k8s-distro=gke -report=/tmp/allure-results
 
       - name: Upload results
         if: always()
@@ -172,8 +179,8 @@ jobs:
           name: ${{ env.SUITE_LOAD }}
           path: /tmp/allure-results
 
-  kind-chaos-test:
-    name: Run chaos tests on kind
+  gke-chaos-test:
+    name: Run chaos tests on gke
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.tests.outcome }}
@@ -211,8 +218,8 @@ jobs:
             helmv3
             kubectl
 
-      - name: Create Kind cluster
-        uses: helm/kind-action@v1.13.0
+      - name: Create GKE cluster
+        uses: helm/gke-action@v1.13.0
 
       - name: Add helm repo
         run: |
@@ -242,7 +249,7 @@ jobs:
         id: tests
         run: |
           mkdir -p /tmp/allure-results
-          ginkgo -procs=0 -timeout=60m ./tests/${{ env.SUITE_CHAOS }} --label-filter=${{ env.LABEL_FILTER }} -- -env-k8s-distro=kind -report=/tmp/allure-results
+          ginkgo -procs=0 -timeout=60m ./tests/${{ env.SUITE_CHAOS }} --label-filter=${{ env.LABEL_FILTER }} -- -env-k8s-distro=gke -report=/tmp/allure-results
 
       - name: Upload results
         if: always()
@@ -251,10 +258,10 @@ jobs:
           name: ${{ env.SUITE_CHAOS }}
           path: /tmp/allure-results
 
-  kind-deploy-report:
+  gke-deploy-report:
     if: always()
     name: Generate and deploy Allure Report
-    needs: [kind-smoke-test, kind-load-test, kind-chaos-test]
+    needs: [gke-smoke-test, gke-load-test, gke-chaos-test]
     runs-on: ubuntu-latest
 
     steps:
@@ -312,6 +319,6 @@ jobs:
         with:
           authToken: ${{ secrets.PAT }}
           context: 'Test report'
-          state: ${{ needs.kind-smoke-tests.outputs.tests == 'success' && needs.kind-load-tests.outputs.tests == 'success' && needs.kind-chaos-tests.outputs.tests == 'success' && 'success' || 'failure' }}
+          state: ${{ needs.gke-smoke-tests.outputs.tests == 'success' && needs.gke-load-tests.outputs.tests == 'success' && needs.gke-chaos-tests.outputs.tests == 'success' && 'success' || 'failure' }}
           sha: ${{ github.event.pull_request.head.sha || github.sha }}
           target_url: ${{ env.GH_PAGES_URL }}/${{ github.run_number }}/

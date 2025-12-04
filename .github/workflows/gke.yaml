@@ -92,7 +92,7 @@ jobs:
         id: tests
         run: |
           mkdir -p /tmp/allure-results
-          ginkgo -procs=0 -timeout=30m ./tests/${{ env.SUITE_SMOKE }} --label-filter=${{ env.LABEL_FILTER }} -- -env-k8s-distro=gke -report=/tmp/allure-results
+          ginkgo -procs=0 -timeout=30m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_SMOKE }} -- -env-k8s-distro=gke -report=/tmp/allure-results
 
       - name: Upload results
         if: always()
@@ -177,7 +177,7 @@ jobs:
         id: tests
         run: |
           mkdir -p /tmp/allure-results
-          ginkgo -procs=0 -timeout=30m ./tests/${{ env.SUITE_LOAD }} --label-filter=${{ env.LABEL_FILTER }} -- -env-k8s-distro=gke -report=/tmp/allure-results
+          ginkgo -procs=0 -timeout=30m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_LOAD }} -- -env-k8s-distro=gke -report=/tmp/allure-results
 
       - name: Upload results
         if: always()
@@ -263,7 +263,7 @@ jobs:
         id: tests
         run: |
           mkdir -p /tmp/allure-results
-          ginkgo -procs=0 -timeout=60m ./tests/${{ env.SUITE_CHAOS }} --label-filter=${{ env.LABEL_FILTER }} -- -env-k8s-distro=gke -report=/tmp/allure-results
+          ginkgo -procs=0 -timeout=60m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_CHAOS }} -- -env-k8s-distro=gke -report=/tmp/allure-results
 
       - name: Upload results
         if: always()

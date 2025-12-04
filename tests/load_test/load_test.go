@@ -23,7 +23,6 @@ import (
 func TestLoadTestsTests(t *testing.T) {
 	RegisterFailHandler(Fail)
 	suiteConfig, reporterConfig := GinkgoConfiguration()
-	suiteConfig.LabelFilter = "load-test"
 	RunSpecs(t, "Load test Suite", suiteConfig, reporterConfig)
 }
 

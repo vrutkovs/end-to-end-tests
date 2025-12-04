@@ -22,7 +22,6 @@ import (
 func TestChaosTestsTests(t *testing.T) {
 	RegisterFailHandler(Fail)
 	suiteConfig, reporterConfig := GinkgoConfiguration()
-	suiteConfig.LabelFilter = "chaos-test"
 	RunSpecs(t, "Chaos test Suite", suiteConfig, reporterConfig)
 }
 

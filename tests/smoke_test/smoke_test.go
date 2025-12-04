@@ -22,7 +22,6 @@ import (
 func TestSmokeTests(t *testing.T) {
 	RegisterFailHandler(Fail)
 	suiteConfig, reporterConfig := GinkgoConfiguration()
-	// suiteConfig.LabelFilter = "smoke"
 	RunSpecs(t, "Smoke test Suite", suiteConfig, reporterConfig)
 }
 

@@ -368,7 +368,7 @@ jobs:
       - name: Remove unused disks
         if: always()
         run: |
-          gcloud compute disks delete $(gcloud compute disks list --filter="-users:*" --format "value(name)")
+          gcloud compute disks delete $(gcloud compute disks list --filter="-users:*" --format "value(name)") --region=${{ steps.tests-infra.outputs.region }}
 
       - name: Upload results
         if: always()
@@ -489,7 +489,7 @@ jobs:
       - name: Remove unused disks
         if: always()
         run: |
-          gcloud compute disks delete $(gcloud compute disks list --filter="-users:*" --format "value(name)")
+          gcloud compute disks delete $(gcloud compute disks list --filter="-users:*" --format "value(name)") --region=${{ steps.tests-infra.outputs.region }}
 
       - name: Upload results
         if: always()
@@ -611,7 +611,7 @@ jobs:
       - name: Remove unused disks
         if: always()
         run: |
-          gcloud compute disks delete $(gcloud compute disks list --filter="-users:*" --format "value(name)")
+          gcloud compute disks delete $(gcloud compute disks list --filter="-users:*" --format "value(name)") --region=${{ steps.tests-infra.outputs.region }}
 
       - name: Upload results
         if: always()

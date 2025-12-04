@@ -15,4 +15,4 @@ spec:
   path: /vm-data/**/*
   percent: 100
   volumePath: /vm-data
-  duration: 5m
+  duration: 7m

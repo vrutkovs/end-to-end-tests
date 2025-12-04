@@ -11,7 +11,7 @@ spec:
       app.kubernetes.io/name: vmstorage
   mode: all
   action: corrupt
-  duration: 5m
+  duration: 7m
   corrupt:
     corrupt: '25'
     correlation: '0'

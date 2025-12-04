@@ -18,7 +18,7 @@ spec:
     mode: all
   mode: all
   action: delay
-  duration: 5m
+  duration: 7m
   delay:
     latency: 30s
     correlation: '0'

@@ -92,7 +92,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.SUITE_SMOKE }}
+          name: kind-${{ env.SUITE_SMOKE }}
           path: /tmp/allure-results
 
   kind-load-test:
@@ -172,7 +172,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.SUITE_LOAD }}
+          name: kind-${{ env.SUITE_LOAD }}
           path: /tmp/allure-results
 
   kind-chaos-test:
@@ -253,7 +253,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.SUITE_CHAOS }}
+          name: kind-${{ env.SUITE_CHAOS }}
           path: /tmp/allure-results
 
   gke-smoke-test:
@@ -356,7 +356,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.SUITE_SMOKE }}
+          name: gke-${{ env.SUITE_SMOKE }}
           path: /tmp/allure-results
 
   gke-load-test:
@@ -459,7 +459,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.SUITE_LOAD }}
+          name: gke-${{ env.SUITE_LOAD }}
           path: /tmp/allure-results
 
   gke-chaos-test:
@@ -563,13 +563,13 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.SUITE_CHAOS }}
+          name: gke-${{ env.SUITE_CHAOS }}
           path: /tmp/allure-results
 
   deploy-report:
     if: always()
     name: Generate and deploy Allure Report
-    needs: [kind-smoke-test, kind-load-test, kind-chaos-test]
+    needs: [kind-smoke-test, kind-load-test, kind-chaos-test, gke-smoke-test, gke-load-test, gke-chaos-test]
     runs-on: ubuntu-latest
 
     steps:
@@ -581,25 +581,46 @@ jobs:
           token: ${{ secrets.PAT }}
         continue-on-error: true
 
-      - name: Download artifacts - Smoke
+      - name: Download artifacts - Kind smoke
         if: always()
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.SUITE_SMOKE }}
+          name: kind-${{ env.SUITE_SMOKE }}
           path: allure-results
 
-      - name: Download artifacts - Load
+      - name: Download artifacts - Kind load
         if: always()
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.SUITE_LOAD }}
+          name: kind-${{ env.SUITE_LOAD }}
           path: allure-results
 
-      - name: Download artifacts - Chaos
+      - name: Download artifacts - Kind chaos
         if: always()
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.SUITE_CHAOS }}
+          name: kind-${{ env.SUITE_CHAOS }}
+          path: allure-results
+
+      - name: Download artifacts - GKE smoke
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          name: gke-${{ env.SUITE_SMOKE }}
+          path: allure-results
+
+      - name: Download artifacts - GKE load
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          name: gke-${{ env.SUITE_LOAD }}
+          path: allure-results
+
+      - name: Download artifacts - GKE chaos
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          name: gke-${{ env.SUITE_CHAOS }}
           path: allure-results
 
       - name: Generate Allure Report
@@ -627,6 +648,6 @@ jobs:
         with:
           authToken: ${{ secrets.PAT }}
           context: 'Test report'
-          state: ${{ needs.kind-smoke-tests.outputs.tests == 'success' && needs.kind-load-tests.outputs.tests == 'success' && needs.kind-chaos-tests.outputs.tests == 'success' && 'success' || 'failure' }}
+          state: ${{ needs.kind-smoke-tests.outputs.tests == 'success' && needs.kind-load-tests.outputs.tests == 'success' && needs.kind-chaos-tests.outputs.tests == 'success' && needs.gke-smoke-tests.outputs.tests == 'success' && needs.gke-load-tests.outputs.tests == 'success' && needs.gke-chaos-tests.outputs.tests == 'success' && 'success' || 'failure' }}
           sha: ${{ github.event.pull_request.head.sha || github.sha }}
           target_url: ${{ env.GH_PAGES_URL }}/${{ github.run_number }}/

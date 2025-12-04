@@ -67,7 +67,12 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 
 		By("Setup port-forwarding for overwatch")
 		cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmsingle-overwatch", "8429:8429")
-		go cmd.Run()
+		go func() {
+			err := cmd.Run()
+			if err != nil {
+				t.Errorf("Error running command: %v", err)
+			}
+		}()
 		// Hack: give it some time to start
 		time.Sleep(1 * time.Second)
 

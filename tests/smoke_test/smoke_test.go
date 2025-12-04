@@ -59,12 +59,7 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 
 		By("Port-forward vmselect address")
 		cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmselect-vmks", "8481:8481")
-		go func() {
-			err := cmd.Run()
-			if err != nil {
-				t.Errorf("Error running command: %v", err)
-			}
-		}()
+		go cmd.Run()
 		// Hack: give it some time to start
 		time.Sleep(1 * time.Second)
 
@@ -91,12 +86,7 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 
 		By("Setup port-forwarding for overwatch")
 		cmd = exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmsingle-overwatch", "8429:8429")
-		go func() {
-			err := cmd.Run()
-			if err != nil {
-				t.Errorf("Error running command: %v", err)
-			}
-		}()
+		go cmd.Run()
 		// Hack: give it some time to start
 		time.Sleep(1 * time.Second)
 

@@ -32,7 +32,11 @@ func VMAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout tim
 
 	// Port-forward vmsingle-overwatch service
 	portForwardCmd := exec.CommandContext(timeBoundContext, "kubectl", "-n", namespace, "port-forward", "svc/vmsingle-overwatch", "8429:8429")
-	go portForwardCmd.Run()
+	go func() {
+		stdoutStderr, err := portForwardCmd.CombinedOutput()
+		logger.Default.Logf(t, "vmselect port-forward output: %s", stdoutStderr)
+		logger.Default.Logf(t, "vmselect port-forward err: %v", err)
+	}()
 	// Hack: give it some time to start
 	time.Sleep(1 * time.Second)
 
@@ -114,7 +118,8 @@ func VMAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout tim
 	err = json.NewDecoder(res.Body).Decode(&startExportResponse)
 	require.NoError(t, err, "failed to decode response from /api/export/start")
 	require.NotEmpty(t, startExportResponse.JobID, "job_id should not be empty in /api/export/start response")
-	res.Body.Close()
+	err = res.Body.Close()
+	require.NoError(t, err, "failed to close response body")
 
 	logger.Default.Logf(t, "vmexporter job started with ID: %s", startExportResponse.JobID)
 
@@ -154,7 +159,8 @@ OuterLoop:
 			}
 			err = json.NewDecoder(statusRes.Body).Decode(&statusResponse)
 			require.NoError(t, err, "failed to decode response from /api/export/status")
-			statusRes.Body.Close()
+			err = statusRes.Body.Close()
+			require.NoError(t, err, "failed to close response body")
 
 			logger.Default.Logf(t, "vmexporter job %s status: %s", startExportResponse.JobID, statusResponse.State)
 
@@ -209,12 +215,12 @@ OuterLoop:
 
 	// Shutdown vmexporter command
 	if vmexporterCmd.Process != nil {
-		vmexporterCmd.Process.Kill()
+		_ = vmexporterCmd.Process.Kill()
 	}
 
 	// Shutdown port-forward command
 	if portForwardCmd.Process != nil {
-		portForwardCmd.Process.Kill()
+		_ = portForwardCmd.Process.Kill()
 	}
 
 	// Restart overwatch instaner

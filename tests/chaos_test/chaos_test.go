@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/stretchr/testify/require"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -67,7 +68,11 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 
 		By("Setup port-forwarding for overwatch")
 		cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmsingle-overwatch", "8429:8429")
-		go cmd.Run()
+		go func() {
+			stdoutStderr, err := cmd.CombinedOutput()
+			logger.Default.Logf(t, "overwatch port-forward output: %s", stdoutStderr)
+			logger.Default.Logf(t, "overwatch port-forward err: %v", err)
+		}()
 		// Hack: give it some time to start
 		time.Sleep(1 * time.Second)
 

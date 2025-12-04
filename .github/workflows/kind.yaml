@@ -1,4 +1,4 @@
-name: "Kind tests"
+name: "Kind"
 
 on:
   push:
@@ -17,7 +17,7 @@ env:
 
 jobs:
   kind-smoke-test:
-    name: Run smoke tests on kind
+    name: Smoke test
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.tests.outcome }}
@@ -95,7 +95,7 @@ jobs:
           path: /tmp/allure-results
 
   kind-load-test:
-    name: Run load tests on kind
+    name: Load test
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.tests.outcome }}
@@ -173,7 +173,7 @@ jobs:
           path: /tmp/allure-results
 
   kind-chaos-test:
-    name: Run chaos tests on kind
+    name: Chaos test
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.tests.outcome }}

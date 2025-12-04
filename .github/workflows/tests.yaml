@@ -343,6 +343,7 @@ jobs:
 
       - name: setup kubectl
         run: |
+          sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
           gcloud container clusters get-credentials \
             ${{ steps.tests-infra.outputs.cluster_name }} \
             --region ${{ steps.tests-infra.outputs.region }} \
@@ -455,6 +456,7 @@ jobs:
 
       - name: setup kubectl
         run: |
+          sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
           gcloud container clusters get-credentials \
             ${{ steps.tests-infra.outputs.cluster_name }} \
             --region ${{ steps.tests-infra.outputs.region }} \
@@ -568,6 +570,7 @@ jobs:
 
       - name: setup kubectl
         run: |
+          sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
           gcloud container clusters get-credentials \
             ${{ steps.tests-infra.outputs.cluster_name }} \
             --region ${{ steps.tests-infra.outputs.region }} \

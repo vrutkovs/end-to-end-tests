@@ -38,7 +38,7 @@ func VMAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout tim
 		logger.Default.Logf(t, "vmselect port-forward err: %v", err)
 	}()
 	// Hack: give it some time to start
-	time.Sleep(1 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	// Start vmexporter binary with -no-browser in goroutine
 	vmexporterCmd := exec.CommandContext(timeBoundContext, "vmexporter", "-no-browser")

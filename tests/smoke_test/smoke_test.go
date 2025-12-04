@@ -66,7 +66,7 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 			logger.Default.Logf(t, "vmselect port-forward err: %v", err)
 		}()
 		// Hack: give it some time to start
-		time.Sleep(1 * time.Second)
+		time.Sleep(10 * time.Second)
 
 		By("Send requests for 5 minutes")
 		tickerPeriod := time.Second
@@ -97,7 +97,7 @@ var _ = Describe("Smoke test", Ordered, Label("smoke"), func() {
 			logger.Default.Logf(t, "overwatch port-forward err: %v", err)
 		}()
 		// Hack: give it some time to start
-		time.Sleep(1 * time.Second)
+		time.Sleep(10 * time.Second)
 
 		By("No alerts are firing")
 		value, err := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog)"})`)

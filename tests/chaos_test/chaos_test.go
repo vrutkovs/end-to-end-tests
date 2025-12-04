@@ -74,7 +74,7 @@ var _ = Describe("Chaos tests", Ordered, Label("chaos-test"), func() {
 			logger.Default.Logf(t, "overwatch port-forward err: %v", err)
 		}()
 		// Hack: give it some time to start
-		time.Sleep(1 * time.Second)
+		time.Sleep(10 * time.Second)
 
 		By("No alerts are firing")
 		value, err := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog|TooManyLogs|RecordingRulesError|AlertingRulesError)"})`)

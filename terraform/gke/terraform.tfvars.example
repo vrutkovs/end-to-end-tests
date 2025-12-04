@@ -18,7 +18,7 @@ kubernetes_version = "1.33"
 node_count        = 3
 min_node_count    = 1
 max_node_count    = 10
-machine_type      = "e2-standard-2"
+machine_type      = "e2-medium"
 disk_size_gb      = 50
 preemptible_nodes = true
 
@@ -37,7 +37,7 @@ enable_metrics        = true
 vm_node_count        = 2
 vm_min_node_count    = 1
 vm_max_node_count    = 5
-vm_machine_type      = "e2-standard-2"
+vm_machine_type      = "e2-medium"
 vm_disk_size_gb      = 100
 vm_preemptible_nodes = true
 

@@ -142,6 +142,12 @@ resource "google_container_cluster" "primary" {
       strategy        = "SURGE"
     }
   }
+
+  monitoring_config {
+    managed_prometheus {
+      enabled = false
+    }
+  }
 }
 
 # Ingress firewall rule

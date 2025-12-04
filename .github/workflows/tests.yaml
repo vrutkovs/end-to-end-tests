@@ -563,7 +563,7 @@ jobs:
           path: terraform/gke
           workspace: main
           variables: |
-            cluster_name = "load-test-${{ github.run_number }}"
+            cluster_name = "chaos-test-${{ github.run_number }}"
           auto_approve: true
 
       - name: setup kubectl

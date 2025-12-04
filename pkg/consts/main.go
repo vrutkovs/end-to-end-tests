@@ -10,7 +10,7 @@ const (
 	K6JobPollingInterval = 1 * time.Minute
 	K6JobMaxDuration     = 60 * time.Minute
 
-	ChaosTestMaxDuration = 10 * time.Minute
+	ChaosTestMaxDuration = 30 * time.Minute
 )
 
 var (

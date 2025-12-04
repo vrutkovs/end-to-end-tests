@@ -11,4 +11,4 @@ spec:
       app.kubernetes.io/name: vminsert
   mode: all
   action: pod-failure
-  duration: 5m
+  duration: 10m

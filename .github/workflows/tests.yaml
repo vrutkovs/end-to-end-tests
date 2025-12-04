@@ -1,4 +1,4 @@
-name: "Kind"
+name: "Tests"
 
 on:
   push:
@@ -12,12 +12,11 @@ env:
   SUITE_SMOKE: "smoke_test"
   SUITE_LOAD: "load_test"
   SUITE_CHAOS: "chaos_test"
-  LABEL_FILTER: "kind"
   GH_PAGES_URL: "https://victoriametrics.github.io/end-to-end-tests"
 
 jobs:
   kind-smoke-test:
-    name: Smoke test
+    name: Kind smoke test
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.tests.outcome }}
@@ -25,6 +24,8 @@ jobs:
       checks: write
       contents: write
     if: github.event.pull_request.draft == false
+    env:
+      LABEL_FILTER: kind
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -95,7 +96,7 @@ jobs:
           path: /tmp/allure-results
 
   kind-load-test:
-    name: Load test
+    name: Kind load test
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.tests.outcome }}
@@ -103,6 +104,8 @@ jobs:
       checks: write
       contents: write
     if: github.event.pull_request.draft == false
+    env:
+      LABEL_FILTER: kind
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -173,7 +176,7 @@ jobs:
           path: /tmp/allure-results
 
   kind-chaos-test:
-    name: Chaos test
+    name: Kind chaos test
     runs-on: ubuntu-latest
     outputs:
       tests: ${{ steps.tests.outcome }}
@@ -181,6 +184,8 @@ jobs:
       checks: write
       contents: write
     if: github.event.pull_request.draft == false
+    env:
+      LABEL_FILTER: kind
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -251,7 +256,269 @@ jobs:
           name: ${{ env.SUITE_CHAOS }}
           path: /tmp/allure-results
 
-  kind-deploy-report:
+  gke-smoke-test:
+    name: Smoke test
+    runs-on: ubuntu-latest
+    outputs:
+      tests: ${{ steps.tests.outcome }}
+    permissions:
+      checks: write
+      contents: write
+    if: github.event.pull_request.draft == false
+    env:
+      LABEL_FILTER: gke
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          check-latest: true
+          cache: true
+        id: go
+
+      - name: Install ginkgo
+        run: |
+          go install github.com/onsi/ginkgo/v2/ginkgo
+
+      - name: Download go packages
+        run: |
+          go mod download
+
+      - name: Install helm
+        uses: yokawasa/action-setup-kube-tools@v0.13.1
+        with:
+          setup-tools: |
+            helmv3
+            kubectl
+
+      - name: Google Auth
+        uses: 'google-github-actions/auth@v3'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
+      - name: terraform apply
+        uses: dflook/terraform-apply@v2
+        with:
+          path: my-terraform-config
+
+      - name: Add helm repo
+        run: |
+          helm repo add vm https://victoriametrics.github.io/helm-charts/
+          helm repo update
+
+      - name: Install crust-gather
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: crust-gather/crust-gather
+          platform: linux
+          arch: amd64
+
+      - name: Install VMExporter
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: VictoriaMetrics/support
+          platform: linux
+          arch: amd64
+          token: ${{ secrets.PAT }}
+          extension-matching: disable
+          rename-to: vmexporter
+          chmod: 0755
+
+      - name: Run e2e tests
+        id: tests
+        run: |
+          mkdir -p /tmp/allure-results
+          ginkgo -procs=0 -timeout=30m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_SMOKE }} -- -env-k8s-distro=gke -report=/tmp/allure-results
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SUITE_SMOKE }}
+          path: /tmp/allure-results
+
+  gke-load-test:
+    name: Load test
+    runs-on: ubuntu-latest
+    outputs:
+      tests: ${{ steps.tests.outcome }}
+    permissions:
+      checks: write
+      contents: write
+    if: github.event.pull_request.draft == false
+    env:
+      LABEL_FILTER: kind
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          check-latest: true
+          cache: true
+        id: go
+
+      - name: Install ginkgo
+        run: |
+          go install github.com/onsi/ginkgo/v2/ginkgo
+
+      - name: Download go packages
+        run: |
+          go mod download
+
+      - name: Install helm
+        uses: yokawasa/action-setup-kube-tools@v0.13.1
+        with:
+          setup-tools: |
+            helmv3
+            kubectl
+
+      - name: Google Auth
+        uses: 'google-github-actions/auth@v3'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
+      - name: terraform apply
+        uses: dflook/terraform-apply@v2
+        with:
+          path: my-terraform-config
+
+      - name: Add helm repo
+        run: |
+          helm repo add vm https://victoriametrics.github.io/helm-charts/
+          helm repo update
+
+      - name: Install crust-gather
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: crust-gather/crust-gather
+          platform: linux
+          arch: amd64
+
+      - name: Install VMExporter
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: VictoriaMetrics/support
+          platform: linux
+          arch: amd64
+          token: ${{ secrets.PAT }}
+          extension-matching: disable
+          rename-to: vmexporter
+          chmod: 0755
+
+      - name: Run e2e tests
+        id: tests
+        run: |
+          mkdir -p /tmp/allure-results
+          ginkgo -procs=0 -timeout=30m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_LOAD }} -- -env-k8s-distro=gke -report=/tmp/allure-results
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SUITE_LOAD }}
+          path: /tmp/allure-results
+
+  gke-chaos-test:
+    name: Chaos test
+    runs-on: ubuntu-latest
+    outputs:
+      tests: ${{ steps.tests.outcome }}
+    permissions:
+      checks: write
+      contents: write
+    if: github.event.pull_request.draft == false
+    env:
+      LABEL_FILTER: kind
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          check-latest: true
+          cache: true
+        id: go
+
+      - name: Install ginkgo
+        run: |
+          go install github.com/onsi/ginkgo/v2/ginkgo
+
+      - name: Download go packages
+        run: |
+          go mod download
+
+      - name: Install helm
+        uses: yokawasa/action-setup-kube-tools@v0.13.1
+        with:
+          setup-tools: |
+            helmv3
+            kubectl
+
+      - name: Google Auth
+        uses: 'google-github-actions/auth@v3'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
+      - name: terraform apply
+        uses: dflook/terraform-apply@v2
+        with:
+          path: my-terraform-config
+
+      - name: Add helm repo
+        run: |
+          helm repo add vm https://victoriametrics.github.io/helm-charts/
+          helm repo add chaos-mesh https://charts.chaos-mesh.org
+          helm repo update
+
+      - name: Install crust-gather
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: crust-gather/crust-gather
+          platform: linux
+          arch: amd64
+
+      - name: Install VMExporter
+        uses: jaxxstorm/action-install-gh-release@v1.10.0
+        with:
+          repo: VictoriaMetrics/support
+          platform: linux
+          arch: amd64
+          token: ${{ secrets.PAT }}
+          extension-matching: disable
+          rename-to: vmexporter
+          chmod: 0755
+
+      - name: Run e2e tests
+        id: tests
+        run: |
+          mkdir -p /tmp/allure-results
+          ginkgo -procs=0 -timeout=60m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_CHAOS }} -- -env-k8s-distro=gke -report=/tmp/allure-results
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SUITE_CHAOS }}
+          path: /tmp/allure-results
+
+  deploy-report:
     if: always()
     name: Generate and deploy Allure Report
     needs: [kind-smoke-test, kind-load-test, kind-chaos-test]

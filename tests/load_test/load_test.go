@@ -26,7 +26,7 @@ func TestLoadTestsTests(t *testing.T) {
 	RunSpecs(t, "Load test Suite", suiteConfig, reporterConfig)
 }
 
-var _ = Describe("Load tests", Ordered, Label("load-test"), func() {
+var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), func() {
 	const (
 		vmNamespace         = "vm"
 		k6OperatorNamespace = "k6-operator-system"
@@ -68,32 +68,34 @@ var _ = Describe("Load tests", Ordered, Label("load-test"), func() {
 		gather.VMAfterAll(t, ctx, consts.ResourceWaitTimeout, vmNamespace)
 	})
 
-	It("Default installation should handle 50vus-30mins load test scenario", Label("kind", "gke", "id=d37b1987-a9e7-4d13-87b7-f2ded679c249"), func() {
-		By("Run 50vus-30mins scenario")
-		scenario := "vmselect-50vus-30mins"
-		err := install.RunK6Scenario(ctx, t, k6TestsNamespace, scenario, 3)
-		require.NoError(t, err)
-		install.WaitForK6JobsToComplete(ctx, t, k6TestsNamespace, scenario, 3)
+	Describe("Inner", func() {
+		It("Default installation should handle 50vus-30mins load test scenario", Label("kind", "gke", "id=d37b1987-a9e7-4d13-87b7-f2ded679c249"), func() {
+			By("Run 50vus-30mins scenario")
+			scenario := "vmselect-50vus-30mins"
+			err := install.RunK6Scenario(ctx, t, k6TestsNamespace, scenario, 3)
+			require.NoError(t, err)
+			install.WaitForK6JobsToComplete(ctx, t, k6TestsNamespace, scenario, 3)
 
-		By("Setup port-forwarding for overwatch")
-		cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmsingle-overwatch", "8429:8429")
-		go func() {
-			stdoutStderr, err := cmd.CombinedOutput()
-			logger.Default.Logf(t, "vmselect port-forward output: %s", stdoutStderr)
-			logger.Default.Logf(t, "vmselect port-forward err: %v", err)
-		}()
-		// Hack: give it some time to start
-		time.Sleep(10 * time.Second)
+			By("Setup port-forwarding for overwatch")
+			cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmsingle-overwatch", "8429:8429")
+			go func() {
+				stdoutStderr, err := cmd.CombinedOutput()
+				logger.Default.Logf(t, "vmselect port-forward output: %s", stdoutStderr)
+				logger.Default.Logf(t, "vmselect port-forward err: %v", err)
+			}()
+			// Hack: give it some time to start
+			time.Sleep(10 * time.Second)
 
-		By("No alerts are firing")
-		value, err := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog|TooManyLogs|RecordingRulesError|AlertingRulesError)"})`)
-		require.NoError(t, err)
-		require.Zero(t, value)
+			By("No alerts are firing")
+			value, err := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog|TooManyLogs|RecordingRulesError|AlertingRulesError)"})`)
+			require.NoError(t, err)
+			require.Zero(t, value)
 
-		// Expect to make at least 40k requests
-		By("At least 10k requests were made")
-		value, err = overwatch.VectorValue(ctx, "sum(vm_requests_total)")
-		require.NoError(t, err)
-		require.GreaterOrEqual(t, value, float64(10000))
+			// Expect to make at least 40k requests
+			By("At least 10k requests were made")
+			value, err = overwatch.VectorValue(ctx, "sum(vm_requests_total)")
+			require.NoError(t, err)
+			require.GreaterOrEqual(t, value, float64(10000))
+		})
 	})
 })

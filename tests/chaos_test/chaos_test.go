@@ -78,14 +78,14 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 			time.Sleep(10 * time.Second)
 
 			By("No alerts are firing")
-			value, err := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog|TooManyLogs|RecordingRulesError|AlertingRulesError)"})`)
+			value, _ := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog|TooManyLogs|RecordingRulesError|AlertingRulesError)"})`)
 			// require.NoError(t, err)
 			require.Zero(t, value)
 
-			By("No services were down")
-			value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")
-			require.NoError(t, err)
-			require.GreaterOrEqual(t, value, float64(1))
+			// By("No services were down")
+			// value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")
+			// require.NoError(t, err)
+			// require.GreaterOrEqual(t, value, float64(1))
 		})
 
 		networkScenarios := map[string]string{

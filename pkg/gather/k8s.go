@@ -62,6 +62,6 @@ func K8sAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout ti
 	} else {
 		baseName := filepath.Base(tarGzFileName)
 		logger.Default.Logf(t, "Saved crust-gather.tar.gz to %s", tarGzFileName)
-		ginkgo.AddReportEntry(baseName, string(tarGzFileContent))
+		ginkgo.AddReportEntry(baseName, string(tarGzFileContent), ginkgo.ReportEntryVisibilityNever)
 	}
 }

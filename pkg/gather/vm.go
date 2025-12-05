@@ -211,7 +211,7 @@ OuterLoop:
 	logger.Default.Logf(t, "Downloaded vmexporter archive into buffer, size: %d bytes", zipBuffer.Len())
 
 	// Add the downloaded zip file content to the report
-	ginkgo.AddReportEntry("vmexporter-report.zip", zipBuffer.String())
+	ginkgo.AddReportEntry("vmexporter-report.zip", zipBuffer.String(), ginkgo.ReportEntryVisibilityNever)
 
 	// Shutdown vmexporter command
 	if vmexporterCmd.Process != nil {

@@ -23,7 +23,7 @@ func (p PrometheusClient) CheckNoAlertsFiring(ctx context.Context, t testing.Tes
 		// At least one result is returned
 		require.GreaterOrEqual(t, len(vec), 1)
 		for _, alert := range vec {
-			require.Equal(t, 0.0, alert.Value, "Unexpected alert firing: %s", alert.Metric)
+			require.Equal(t, prommodel.SampleValue(0), alert.Value, "Unexpected alert firing: %s", alert.Metric)
 		}
 	}
 	// require.NoError(t, err)

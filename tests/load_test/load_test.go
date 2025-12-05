@@ -87,13 +87,16 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 			time.Sleep(10 * time.Second)
 
 			By("No alerts are firing")
-			value, err := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog|TooManyLogs|RecordingRulesError|AlertingRulesError)"})`)
-			require.NoError(t, err)
-			require.Zero(t, value)
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{
+				// TODO[vrutkovs]: sort out these exceptions? These are probably kind-specific
+				"TooManyLogs",
+				"RecordingRulesError",
+				"AlertingRulesError",
+			})
 
 			// Expect to make at least 40k requests
 			By("At least 10k requests were made")
-			value, err = overwatch.VectorValue(ctx, "sum(vm_requests_total)")
+			value, err := overwatch.VectorValue(ctx, "sum(vm_requests_total)")
 			require.NoError(t, err)
 			require.GreaterOrEqual(t, value, float64(10000))
 		})

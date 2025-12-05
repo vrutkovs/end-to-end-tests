@@ -78,9 +78,12 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 			time.Sleep(10 * time.Second)
 
 			By("No alerts are firing")
-			value, _ := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog|TooManyLogs|RecordingRulesError|AlertingRulesError)"})`)
-			// require.NoError(t, err)
-			require.Zero(t, value)
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{
+				// TODO[vrutkovs]: sort out these exceptions? These are probably kind-specific
+				"TooManyLogs",
+				"RecordingRulesError",
+				"AlertingRulesError",
+			})
 
 			// By("No services were down")
 			// value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")
@@ -114,12 +117,15 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 				install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "NetworkChaos")
 
 				By("No alerts are firing")
-				value, _ := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog|TooManyLogs|RecordingRulesError|AlertingRulesError)"})`)
-				// require.NoError(t, err)
-				require.Zero(t, value)
+				overwatch.CheckNoAlertsFiring(ctx, t, []string{
+					// TODO[vrutkovs]: sort out these exceptions? These are probably kind-specific
+					"TooManyLogs",
+					"RecordingRulesError",
+					"AlertingRulesError",
+				})
 
 				By("No services were down")
-				value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")
+				value, err := overwatch.VectorValue(ctx, "min_over_time(up) == 0")
 				require.NoError(t, err)
 				require.GreaterOrEqual(t, value, float64(1))
 			})

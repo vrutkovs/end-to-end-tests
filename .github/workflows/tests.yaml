@@ -98,6 +98,7 @@ jobs:
   kind-load-test:
     name: Kind load test
     runs-on: ubuntu-latest
+    needs: kind-smoke-test
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:
@@ -178,6 +179,7 @@ jobs:
   kind-chaos-test:
     name: Kind chaos test
     runs-on: ubuntu-latest
+    needs: kind-smoke-test
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:
@@ -259,6 +261,7 @@ jobs:
   gke-smoke-test:
     name: GKE smoke test
     runs-on: ubuntu-latest
+    needs: kind-smoke-test
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:
@@ -380,6 +383,7 @@ jobs:
   gke-load-test:
     name: GKE load test
     runs-on: ubuntu-latest
+    needs: kind-load-test
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:
@@ -501,6 +505,7 @@ jobs:
   gke-chaos-test:
     name: GKE chaos test
     runs-on: ubuntu-latest
+    needs: kind-chaos-test
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:

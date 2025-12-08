@@ -56,6 +56,7 @@ func RunChaosScenario(ctx context.Context, t terratesting.TestingT, namespace, s
 	manifestPath := fmt.Sprintf("../../manifests/chaos-tests/%s/%s.yaml", scenarioFolder, scenario)
 	k8s.KubectlApply(t, kubeOpts, manifestPath)
 
+	By("Waiting for chaos scenario to complete")
 	WaitForChaosScenarioToComplete(ctx, t, dynamicClient, namespace, scenario, chaosType)
 }
 

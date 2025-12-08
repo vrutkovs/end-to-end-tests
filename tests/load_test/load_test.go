@@ -74,6 +74,8 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 			scenario := "vmselect-50vus-30mins"
 			err := install.RunK6Scenario(ctx, t, k6TestsNamespace, scenario, 3)
 			require.NoError(t, err)
+
+			By("Waiting for K6 jobs to complete")
 			install.WaitForK6JobsToComplete(ctx, t, k6TestsNamespace, scenario, 3)
 
 			By("Setup port-forwarding for overwatch")

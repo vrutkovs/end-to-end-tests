@@ -114,7 +114,7 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 			It(fmt.Sprintf("Run %s scenario", scenarioName), Label("gke", fmt.Sprintf("id=%s", uuid)), func() {
 				By("Run scenario")
 				namespace := "vm"
-				install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "NetworkChaos")
+				install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")
 
 				By("No alerts are firing")
 				overwatch.CheckNoAlertsFiring(ctx, t, []string{

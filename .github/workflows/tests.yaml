@@ -355,22 +355,19 @@ jobs:
           location: ${{ steps.tests-infra.outputs.region }}
           project_id: ${{ steps.tests-infra.outputs.project_id }}
 
-      - name: create admin service account
+      - name: create admin serviceaccount kubeconfig
         id: kubeconfig
         run: |
           kubectl -n kube-system create serviceaccount cluster-admin
           kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --serviceaccount=kube-system:cluster-admin
-          echo "token=$(kubectl -n kube-system create token --duration=24h cluster-admin)" >> "$GITHUB_OUTPUT"
-          echo "ca=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')" >> "$GITHUB_OUTPUT"
-          echo "server=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')" >> "$GITHUB_OUTPUT"
-
-      - name: generate kubeconfig
-        uses: appleboy/kubernetes-action@master
-        with:
-          server: ${{ needs.kubeconfig.outputs.server }}
-          ca_cert: ${{ needs.kubeconfig.outputs.ca }}
-          token: ${{ needs.kubeconfig.outputs.token }}
-          output: /tmp/kubeconfig.yaml
+          kubectl -n kube-system create token --duration=24h cluster-admin > /tmp/token.txt
+          kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' | base64 -d > /tmp/ca.txt
+          kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}' > /tmp/server.txt
+          export KUBECONFIG=/tmp/kubeconfig.yaml
+          kubectl config set-cluster gke --server=$(cat /tmp/server.txt) --certificate-authority=/tmp/ca.txt --embed-certs=true
+          kubectl config set-credentials cluster-admin --token=$(cat /tmp/token.txt)
+          kubectl config set-context production --cluster gke --user cluster-admin
+          kubectl config use-context production
 
       - name: Run e2e tests
         id: tests
@@ -495,22 +492,19 @@ jobs:
           location: ${{ steps.tests-infra.outputs.region }}
           project_id: ${{ steps.tests-infra.outputs.project_id }}
 
-      - name: create admin service account
+      - name: create admin serviceaccount kubeconfig
         id: kubeconfig
         run: |
           kubectl -n kube-system create serviceaccount cluster-admin
           kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --serviceaccount=kube-system:cluster-admin
-          echo "token=$(kubectl -n kube-system create token --duration=24h cluster-admin)" >> "$GITHUB_OUTPUT"
-          echo "ca=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')" >> "$GITHUB_OUTPUT"
-          echo "server=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')" >> "$GITHUB_OUTPUT"
-
-      - name: generate kubeconfig
-        uses: appleboy/kubernetes-action@master
-        with:
-          server: ${{ needs.kubeconfig.outputs.server }}
-          ca_cert: ${{ needs.kubeconfig.outputs.ca }}
-          token: ${{ needs.kubeconfig.outputs.token }}
-          output: /tmp/kubeconfig.yaml
+          kubectl -n kube-system create token --duration=24h cluster-admin > /tmp/token.txt
+          kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' | base64 -d > /tmp/ca.txt
+          kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}' > /tmp/server.txt
+          export KUBECONFIG=/tmp/kubeconfig.yaml
+          kubectl config set-cluster gke --server=$(cat /tmp/server.txt) --certificate-authority=/tmp/ca.txt --embed-certs=true
+          kubectl config set-credentials cluster-admin --token=$(cat /tmp/token.txt)
+          kubectl config set-context production --cluster gke --user cluster-admin
+          kubectl config use-context production
 
       - name: Run e2e tests
         id: tests
@@ -636,22 +630,19 @@ jobs:
           location: ${{ steps.tests-infra.outputs.region }}
           project_id: ${{ steps.tests-infra.outputs.project_id }}
 
-      - name: create admin service account
+      - name: create admin serviceaccount kubeconfig
         id: kubeconfig
         run: |
           kubectl -n kube-system create serviceaccount cluster-admin
           kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --serviceaccount=kube-system:cluster-admin
-          echo "token=$(kubectl -n kube-system create token --duration=24h cluster-admin)" >> "$GITHUB_OUTPUT"
-          echo "ca=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')" >> "$GITHUB_OUTPUT"
-          echo "server=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')" >> "$GITHUB_OUTPUT"
-
-      - name: generate kubeconfig
-        uses: appleboy/kubernetes-action@master
-        with:
-          server: ${{ needs.kubeconfig.outputs.server }}
-          ca_cert: ${{ needs.kubeconfig.outputs.ca }}
-          token: ${{ needs.kubeconfig.outputs.token }}
-          output: /tmp/kubeconfig.yaml
+          kubectl -n kube-system create token --duration=24h cluster-admin > /tmp/token.txt
+          kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' | base64 -d > /tmp/ca.txt
+          kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}' > /tmp/server.txt
+          export KUBECONFIG=/tmp/kubeconfig.yaml
+          kubectl config set-cluster gke --server=$(cat /tmp/server.txt) --certificate-authority=/tmp/ca.txt --embed-certs=true
+          kubectl config set-credentials cluster-admin --token=$(cat /tmp/token.txt)
+          kubectl config set-context production --cluster gke --user cluster-admin
+          kubectl config use-context production
 
       - name: Run e2e tests
         id: tests

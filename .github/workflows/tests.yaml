@@ -355,9 +355,27 @@ jobs:
           location: ${{ steps.tests-infra.outputs.region }}
           project_id: ${{ steps.tests-infra.outputs.project_id }}
 
+      - name: create admin service account
+        id: kubeconfig
+        run: |
+          kubectl -n kube-system create serviceaccount cluster-admin
+          kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --serviceaccount=kube-system:cluster-admin
+          echo "token=$(kubectl -n kube-system create token --duration=24h cluster-admin)" >> "$GITHUB_OUTPUT"
+          echo "ca=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')" >> "$GITHUB_OUTPUT"
+          echo "server=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')" >> "$GITHUB_OUTPUT"
+
+      - name: generate kubeconfig
+        uses: appleboy/kubernetes-action@latest
+        with:
+          server: ${{ needs.kubeconfig.outputs.server }}
+          ca_cert: ${{ needs.kubeconfig.outputs.ca }}
+          token: ${{ needs.kubeconfig.outputs.token }}
+          output: /tmp/kubeconfig.yaml
+
       - name: Run e2e tests
         id: tests
         run: |
+          export KUBECONFIG=/tmp/kubeconfig.yaml
           mkdir -p /tmp/allure-results
           ginkgo -v -procs=0 -timeout=30m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_SMOKE }} -- -env-k8s-distro=gke -report=/tmp/allure-results
 
@@ -477,9 +495,27 @@ jobs:
           location: ${{ steps.tests-infra.outputs.region }}
           project_id: ${{ steps.tests-infra.outputs.project_id }}
 
+      - name: create admin service account
+        id: kubeconfig
+        run: |
+          kubectl -n kube-system create serviceaccount cluster-admin
+          kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --serviceaccount=kube-system:cluster-admin
+          echo "token=$(kubectl -n kube-system create token --duration=24h cluster-admin)" >> "$GITHUB_OUTPUT"
+          echo "ca=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')" >> "$GITHUB_OUTPUT"
+          echo "server=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')" >> "$GITHUB_OUTPUT"
+
+      - name: generate kubeconfig
+        uses: appleboy/kubernetes-action@latest
+        with:
+          server: ${{ needs.kubeconfig.outputs.server }}
+          ca_cert: ${{ needs.kubeconfig.outputs.ca }}
+          token: ${{ needs.kubeconfig.outputs.token }}
+          output: /tmp/kubeconfig.yaml
+
       - name: Run e2e tests
         id: tests
         run: |
+          export KUBECONFIG=/tmp/kubeconfig.yaml
           mkdir -p /tmp/allure-results
           ginkgo -v -procs=0 -timeout=30m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_LOAD }} -- -env-k8s-distro=gke -report=/tmp/allure-results
 
@@ -600,9 +636,27 @@ jobs:
           location: ${{ steps.tests-infra.outputs.region }}
           project_id: ${{ steps.tests-infra.outputs.project_id }}
 
+      - name: create admin service account
+        id: kubeconfig
+        run: |
+          kubectl -n kube-system create serviceaccount cluster-admin
+          kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --serviceaccount=kube-system:cluster-admin
+          echo "token=$(kubectl -n kube-system create token --duration=24h cluster-admin)" >> "$GITHUB_OUTPUT"
+          echo "ca=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')" >> "$GITHUB_OUTPUT"
+          echo "server=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')" >> "$GITHUB_OUTPUT"
+
+      - name: generate kubeconfig
+        uses: appleboy/kubernetes-action@latest
+        with:
+          server: ${{ needs.kubeconfig.outputs.server }}
+          ca_cert: ${{ needs.kubeconfig.outputs.ca }}
+          token: ${{ needs.kubeconfig.outputs.token }}
+          output: /tmp/kubeconfig.yaml
+
       - name: Run e2e tests
         id: tests
         run: |
+          export KUBECONFIG=/tmp/kubeconfig.yaml
           mkdir -p /tmp/allure-results
           ginkgo -v -procs=0 -timeout=180m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_CHAOS }} -- -env-k8s-distro=gke -report=/tmp/allure-results
 

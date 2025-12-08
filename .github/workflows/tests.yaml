@@ -398,7 +398,7 @@ jobs:
   gke-load-test:
     name: GKE load test
     runs-on: ubuntu-latest
-    needs: kind-load-test
+    needs: [gke-smoke-test, kind-load-test]
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:
@@ -535,7 +535,7 @@ jobs:
   gke-chaos-test:
     name: GKE chaos test
     runs-on: ubuntu-latest
-    needs: kind-chaos-test
+    needs: [gke-smoke-test, kind-chaos-test]
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:

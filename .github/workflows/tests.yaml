@@ -365,7 +365,7 @@ jobs:
           echo "server=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')" >> "$GITHUB_OUTPUT"
 
       - name: generate kubeconfig
-        uses: appleboy/kubernetes-action@latest
+        uses: appleboy/kubernetes-action@master
         with:
           server: ${{ needs.kubeconfig.outputs.server }}
           ca_cert: ${{ needs.kubeconfig.outputs.ca }}
@@ -505,7 +505,7 @@ jobs:
           echo "server=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')" >> "$GITHUB_OUTPUT"
 
       - name: generate kubeconfig
-        uses: appleboy/kubernetes-action@latest
+        uses: appleboy/kubernetes-action@master
         with:
           server: ${{ needs.kubeconfig.outputs.server }}
           ca_cert: ${{ needs.kubeconfig.outputs.ca }}
@@ -646,7 +646,7 @@ jobs:
           echo "server=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')" >> "$GITHUB_OUTPUT"
 
       - name: generate kubeconfig
-        uses: appleboy/kubernetes-action@latest
+        uses: appleboy/kubernetes-action@master
         with:
           server: ${{ needs.kubeconfig.outputs.server }}
           ca_cert: ${{ needs.kubeconfig.outputs.ca }}

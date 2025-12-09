@@ -19,6 +19,7 @@ import (
 )
 
 func TestChaosTestsTests(t *testing.T) {
+	tests.Init()
 	RegisterFailHandler(Fail)
 	suiteConfig, reporterConfig := GinkgoConfiguration()
 	RunSpecs(t, "Chaos test Suite", suiteConfig, reporterConfig)

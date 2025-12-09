@@ -1,13 +1,12 @@
 package tests
 
 import (
-	"flag"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/VictoriaMetrics/end-to-end-tests/pkg/install"
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	terratesting "github.com/gruntwork-io/terratest/modules/testing"
 
 	"github.com/Moon1706/ginkgo2allure/pkg/convert"
@@ -16,16 +15,6 @@ import (
 	. "github.com/onsi/ginkgo/v2" //nolint
 	"github.com/onsi/ginkgo/v2/types"
 )
-
-var (
-	reportLocation string
-	envK8SDistro   string
-)
-
-func init() {
-	flag.StringVar(&reportLocation, "report", "/tmp/allure-results", "Report location")
-	flag.StringVar(&envK8SDistro, "env-k8s-distro", "", "Kube distro name")
-}
 
 // GetT returns a testing.T compatible object that can be used in terratesting.RunE2ETests
 func GetT() terratesting.TestingT {
@@ -48,7 +37,7 @@ var _ = ReportAfterSuite("allure report", func(report types.Report) {
 		panic(err)
 	}
 
-	reportPath, err := filepath.Abs(reportLocation)
+	reportPath, err := filepath.Abs(consts.ReportLocation)
 	if err != nil {
 		panic(err)
 	}
@@ -72,10 +61,10 @@ func writeEnvironmentProperties(reportPath string) error {
 	}
 
 	props := map[string]string{
-		"kube-distro":      envK8SDistro,
-		"helm-chart":       install.HelmChartVersion,
-		"operator-version": install.OperatorVersion,
-		"vm-version":       install.VMVersion,
+		"kube-distro":      consts.EnvK8SDistro,
+		"helm-chart":       consts.HelmChartVersion,
+		"operator-version": consts.OperatorVersion,
+		"vm-version":       consts.VMVersion,
 	}
 
 	return os.WriteFile(envFilePath, environmentPropertiesContent(props), 0644)

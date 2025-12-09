@@ -3,11 +3,9 @@ package chaos_test
 import (
 	"context"
 	"fmt"
-	"os/exec"
 	"testing"
 	"time"
 
-	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/stretchr/testify/require"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -40,13 +38,9 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 	)
 
 	ctx := context.Background()
-	ctxCancel, cancel := context.WithCancel(ctx)
-	AfterAll(func() {
-		cancel()
-	})
 	t := tests.GetT()
 
-	overwatch, err := promquery.NewPrometheusClient("http://localhost:8429/prometheus")
+	overwatch, err := promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl))
 	require.NoError(t, err)
 
 	BeforeAll(func() {
@@ -66,16 +60,6 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 			By("Run scenario")
 			namespace := "vm"
 			install.RunChaosScenario(ctx, t, namespace, "pods", "vminsert-pod-failure", "podchaos")
-
-			By("Setup port-forwarding for overwatch")
-			cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmsingle-overwatch", "8429:8429")
-			go func() {
-				stdoutStderr, err := cmd.CombinedOutput()
-				logger.Default.Logf(t, "overwatch port-forward output: %s", stdoutStderr)
-				logger.Default.Logf(t, "overwatch port-forward err: %v", err)
-			}()
-			// Hack: give it some time to start
-			time.Sleep(10 * time.Second)
 
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, []string{

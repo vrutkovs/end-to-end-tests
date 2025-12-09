@@ -19,6 +19,7 @@ import (
 	ginkgo "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/exporter"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/install"
 )
@@ -27,18 +28,9 @@ import (
 // It starts vmexporter, calls its /api/export/start, polls /api/export/status,
 // calls /api/export/download endpoints, and adds the downloaded archive to the report.
 func VMAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout time.Duration, namespace string) {
+	// TODO: Deploy vmgather as deployment + service + ingress instead
 	timeBoundContext, cancel := context.WithTimeout(ctx, resourceWaitTimeout)
 	defer cancel()
-
-	// Port-forward vmsingle-overwatch service
-	portForwardCmd := exec.CommandContext(timeBoundContext, "kubectl", "-n", namespace, "port-forward", "svc/vmsingle-overwatch", "8429:8429")
-	go func() {
-		stdoutStderr, err := portForwardCmd.CombinedOutput()
-		logger.Default.Logf(t, "vmselect port-forward output: %s", stdoutStderr)
-		logger.Default.Logf(t, "vmselect port-forward err: %v", err)
-	}()
-	// Hack: give it some time to start
-	time.Sleep(10 * time.Second)
 
 	// Start vmexporter binary with -no-browser in goroutine
 	vmexporterCmd := exec.CommandContext(timeBoundContext, "vmexporter", "-no-browser")
@@ -64,11 +56,11 @@ func VMAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout tim
 
 	reqBody := exporter.RequestBody{
 		Connection: exporter.Connection{
-			URL:           "http://localhost:8429",
+			URL:           consts.VMSingleUrl,
 			APIBasePath:   "/prometheus",
 			TenantID:      tenantID,
 			IsMultitenant: false,
-			FullAPIURL:    "http://localhost:8429/prometheus",
+			FullAPIURL:    fmt.Sprintf("%s/prometheus", consts.VMSingleUrl),
 			Auth:          exporter.Auth{Type: "none"},
 			SkipTLSVerify: false,
 		},
@@ -216,11 +208,6 @@ OuterLoop:
 	// Shutdown vmexporter command
 	if vmexporterCmd.Process != nil {
 		_ = vmexporterCmd.Process.Kill()
-	}
-
-	// Shutdown port-forward command
-	if portForwardCmd.Process != nil {
-		_ = portForwardCmd.Process.Kill()
 	}
 
 	// Restart overwatch instaner

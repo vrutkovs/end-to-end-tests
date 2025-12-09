@@ -3,6 +3,8 @@ package install
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/gruntwork-io/terratest/modules/helm"
 	"github.com/gruntwork-io/terratest/modules/k8s"
@@ -23,17 +25,14 @@ import (
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 )
 
-var (
-	HelmChartVersion string
-	VMVersion        string
-	OperatorVersion  string
-)
-
 func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terratesting.TestingT, namespace string, releaseName string) {
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 	helmOpts := &helm.Options{
 		KubectlOptions: kubeOpts,
 		ValuesFiles:    []string{valuesFile},
+		SetValues: map[string]string{
+			"vmcluster.ingress.select.hosts[0]": consts.VMSelectHost,
+		},
 		ExtraArgs: map[string][]string{
 			"upgrade": {"--create-namespace", "--wait"},
 		},
@@ -48,15 +47,35 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 
 	// Extract version information from deployment labels
 	vmAgent := k8s.GetDeployment(t, kubeOpts, "vmagent-vmks")
-	HelmChartVersion = vmAgent.Labels["helm.sh/chart"]
-	VMVersion = vmAgent.Labels["app.kubernetes.io/version"]
+	consts.HelmChartVersion = vmAgent.Labels["helm.sh/chart"]
+	consts.VMVersion = vmAgent.Labels["app.kubernetes.io/version"]
 
 	vmOperator := k8s.GetDeployment(t, kubeOpts, "vmks-victoria-metrics-operator")
-	OperatorVersion = vmOperator.Labels["app.kubernetes.io/version"]
+	consts.OperatorVersion = vmOperator.Labels["app.kubernetes.io/version"]
 
 	By("Install VMSingle overwatch instance")
 	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmsingle.yaml")
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmsingle-overwatch", consts.Retries, consts.PollingInterval)
+
+	By("Install VMSingle ingress")
+	// Copy vmsingle-ingress.yaml to temp file, update ingress host and apply it
+	vmsingleYaml, err := os.ReadFile("../../manifests/overwatch/vmsingle-ingress.yaml")
+	require.NoError(t, err)
+
+	tempFile, err := os.CreateTemp("", "vmsingle-ingress.yaml")
+	require.NoError(t, err)
+	defer func() {
+		err := os.Remove(tempFile.Name())
+		require.NoError(t, err)
+	}()
+
+	// Extract host from consts.VMSingleUrl
+	vmsingleYaml = []byte(strings.ReplaceAll(string(vmsingleYaml), "vmsingle.example.com", consts.VMSingleHost))
+
+	_, err = tempFile.Write(vmsingleYaml)
+	require.NoError(t, err)
+
+	k8s.KubectlApply(t, kubeOpts, tempFile.Name())
 
 	By("Reconfigure VMAgent to send data to VMSingle")
 	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmagent.yaml")

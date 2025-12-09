@@ -58,6 +58,8 @@ jobs:
 
       - name: Create Kind cluster
         uses: helm/kind-action@v1.13.0
+        with:
+          cloud_provider: true
 
       - name: Add helm repo
         run: |
@@ -86,7 +88,17 @@ jobs:
         id: tests
         run: |
           mkdir -p /tmp/allure-results
-          ginkgo -v -procs=0 -timeout=30m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_SMOKE }} -- -env-k8s-distro=kind -report=/tmp/allure-results
+          ginkgo -v \
+            -procs=0 \
+            -github-output=true \
+            -timeout=30m \
+            --label-filter=${{ env.LABEL_FILTER }} \
+            ./tests/${{ env.SUITE_SMOKE }} \
+            -- \
+            -env-k8s-distro=kind \
+            -report=/tmp/allure-results \
+            -vmsingle-url=http://vmsingle.127.0.0.1.nip.io \
+            -vmselect-url=http://vmselect.127.0.0.1.nip.io
 
       - name: Upload results
         if: always()
@@ -139,6 +151,8 @@ jobs:
 
       - name: Create Kind cluster
         uses: helm/kind-action@v1.13.0
+        with:
+          cloud_provider: true
 
       - name: Add helm repo
         run: |
@@ -167,7 +181,16 @@ jobs:
         id: tests
         run: |
           mkdir -p /tmp/allure-results
-          ginkgo -v -procs=0 -timeout=30m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_LOAD }} -- -env-k8s-distro=kind -report=/tmp/allure-results
+          ginkgo -v \
+            -procs=0 \
+            -github-output \
+            -timeout=30m \
+            --label-filter=${{ env.LABEL_FILTER }} \
+            -env-k8s-distro=kind \
+            -report=/tmp/allure-results \
+            -vmsingle-url=http://vmsingle.127.0.0.1.nip.io \
+            -vmselect-url=http://vmselect.127.0.0.1.nip.io \
+            ./tests/${{ env.SUITE_LOAD }}
 
       - name: Upload results
         if: always()
@@ -220,6 +243,8 @@ jobs:
 
       - name: Create Kind cluster
         uses: helm/kind-action@v1.13.0
+        with:
+          cloud_provider: true
 
       - name: Add helm repo
         run: |
@@ -249,7 +274,17 @@ jobs:
         id: tests
         run: |
           mkdir -p /tmp/allure-results
-          ginkgo -v -procs=0 -timeout=60m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_CHAOS }} -- -env-k8s-distro=kind -report=/tmp/allure-results
+          ginkgo -v \
+            -procs=0 \
+            -github-output=true \
+            -timeout=60m \
+            --label-filter=${{ env.LABEL_FILTER }} \
+            ./tests/${{ env.SUITE_CHAOS }} \
+            -- \
+            -env-k8s-distro=kind \
+            -report=/tmp/allure-results \
+            -vmsingle-url=http://vmsingle.127.0.0.1.nip.io \
+            -vmselect-url=http://vmselect.127.0.0.1.nip.io
 
       - name: Upload results
         if: always()
@@ -374,7 +409,16 @@ jobs:
         run: |
           export KUBECONFIG=/tmp/kubeconfig.yaml
           mkdir -p /tmp/allure-results
-          ginkgo -v -procs=0 -timeout=30m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_SMOKE }} -- -env-k8s-distro=gke -report=/tmp/allure-results
+          ginkgo -v \
+            -procs=0 \
+            -github-output=true \
+            -timeout=30m \
+            --label-filter=${{ env.LABEL_FILTER }} \
+            ./tests/${{ env.SUITE_SMOKE }} --\
+            -env-k8s-distro=gke \
+            -report=/tmp/allure-results \
+            -vmselect-url=http://localhost:8080 \
+            -vmsingle-url=http://localhost:8081
 
       - name: terraform destroy
         uses: dflook/terraform-destroy-workspace@v2
@@ -511,7 +555,16 @@ jobs:
         run: |
           export KUBECONFIG=/tmp/kubeconfig.yaml
           mkdir -p /tmp/allure-results
-          ginkgo -v -procs=0 -timeout=30m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_LOAD }} -- -env-k8s-distro=gke -report=/tmp/allure-results
+          ginkgo -v \
+            -procs=0 \
+            -github-output=true \
+            -timeout=30m \
+            --label-filter=${{ env.LABEL_FILTER }} \
+            ./tests/${{ env.SUITE_LOAD }} --\
+            -env-k8s-distro=gke \
+            -report=/tmp/allure-results \
+            -vmsingle-url=http://localhost:8080 \
+            -vmselect-url=http://localhost:8081
 
       - name: terraform destroy
         uses: dflook/terraform-destroy-workspace@v2
@@ -649,7 +702,16 @@ jobs:
         run: |
           export KUBECONFIG=/tmp/kubeconfig.yaml
           mkdir -p /tmp/allure-results
-          ginkgo -v -procs=0 -timeout=180m --label-filter=${{ env.LABEL_FILTER }} ./tests/${{ env.SUITE_CHAOS }} -- -env-k8s-distro=gke -report=/tmp/allure-results
+          ginkgo -v \
+            -github-output=true \
+            -procs=0 \
+            -timeout=180m \
+            --label-filter=${{ env.LABEL_FILTER }} \
+            ./tests/${{ env.SUITE_CHAOS }} --\
+            -env-k8s-distro=gke \
+            -report=/tmp/allure-results \
+            -vmsingle-url=http://localhost:8080 \
+            -vmselect-url=http://localhost:8081
 
       - name: terraform destroy
         uses: dflook/terraform-destroy-workspace@v2

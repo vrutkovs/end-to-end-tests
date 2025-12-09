@@ -2,12 +2,11 @@ package load_test
 
 import (
 	"context"
-	"os/exec"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
-	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/stretchr/testify/require"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -38,14 +37,9 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 
 	ctx := context.Background()
 
-	ctxCancel, cancel := context.WithCancel(ctx)
-	AfterAll(func() {
-		cancel()
-	})
-
 	t := tests.GetT()
 
-	overwatch, err := promquery.NewPrometheusClient("http://localhost:8429/prometheus")
+	overwatch, err := promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl))
 	require.NoError(t, err)
 
 	BeforeAll(func() {
@@ -77,16 +71,6 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 
 			By("Waiting for K6 jobs to complete")
 			install.WaitForK6JobsToComplete(ctx, t, k6TestsNamespace, scenario, 3)
-
-			By("Setup port-forwarding for overwatch")
-			cmd := exec.CommandContext(ctxCancel, "kubectl", "-n", "vm", "port-forward", "svc/vmsingle-overwatch", "8429:8429")
-			go func() {
-				stdoutStderr, err := cmd.CombinedOutput()
-				logger.Default.Logf(t, "vmselect port-forward output: %s", stdoutStderr)
-				logger.Default.Logf(t, "vmselect port-forward err: %v", err)
-			}()
-			// Hack: give it some time to start
-			time.Sleep(10 * time.Second)
 
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, []string{

@@ -336,7 +336,7 @@ vmsingle:
 
     # -- Array of host objects
     hosts: [
-      127.0.0.1.nip.io
+      vmsingle.127.0.0.1.nip.io
     ]
     #  - vmsingle.domain.com
     # -- Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
@@ -464,7 +464,7 @@ vmcluster:
       #      - vmstorage.domain.com
     select:
       # -- Enable deployment of ingress for server component
-      enabled: false
+      enabled: true
 
       # -- Ingress annotations
       annotations: {}
@@ -484,7 +484,9 @@ vmcluster:
       path: '{{ dig "extraArgs" "http.pathPrefix" "/" .Values.vmcluster.spec.vmselect }}'
 
       # -- Array of host objects
-      hosts: []
+      hosts: [
+        vmselect.127.0.0.1.nip.io
+      ]
       #  - vmselect.domain.com
       # -- Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
       extraPaths: []

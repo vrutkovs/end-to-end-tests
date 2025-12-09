@@ -17,3 +17,18 @@ var (
 	Retries   = int(ResourceWaitTimeout.Seconds() / PollingInterval.Seconds())
 	K6Retries = int(K6JobMaxDuration.Seconds() / K6JobPollingInterval.Seconds())
 )
+
+var (
+	ReportLocation string
+	EnvK8SDistro   string
+
+	VMSingleUrl string
+	VMSelectUrl string
+
+	VMSingleHost string
+	VMSelectHost string
+
+	HelmChartVersion string
+	VMVersion        string
+	OperatorVersion  string
+)

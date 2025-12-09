@@ -40,11 +40,14 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 
 	t := tests.GetT()
 
-	overwatch, err := promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
-	require.NoError(t, err)
+	var overwatch promquery.PrometheusClient
 
 	BeforeAll(func() {
 		install.DiscoverIngressHost(ctx, t)
+
+		var err error
+		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
+		require.NoError(t, err)
 
 		overwatch.Start = time.Now()
 		install.InstallWithHelm(ctx, helmChart, valuesFile, t, vmNamespace, releaseName)

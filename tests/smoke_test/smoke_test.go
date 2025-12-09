@@ -35,13 +35,14 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 
 	ctx := context.Background()
 	t := tests.GetT()
-
-	overwatch, err := promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
-	require.NoError(t, err)
+	var overwatch promquery.PrometheusClient
 
 	BeforeAll(func() {
 		install.DiscoverIngressHost(ctx, t)
 
+		var err error
+		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
+		require.NoError(t, err)
 		overwatch.Start = time.Now()
 
 		install.InstallWithHelm(ctx, helmChart, valuesFile, t, namespace, releaseName)

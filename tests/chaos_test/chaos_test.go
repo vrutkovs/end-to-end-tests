@@ -41,12 +41,14 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 	ctx := context.Background()
 	t := tests.GetT()
 
-	overwatch, err := promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
-	require.NoError(t, err)
+	var overwatch promquery.PrometheusClient
 
 	BeforeAll(func() {
 		install.DiscoverIngressHost(ctx, t)
 
+		var err error
+		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
+		require.NoError(t, err)
 		overwatch.Start = time.Now()
 		install.InstallWithHelm(ctx, vmHelmChart, vmValuesFile, t, vmNamespace, vmReleaseName)
 

@@ -1,6 +1,9 @@
 package consts
 
-import "time"
+import (
+	"sync"
+	"time"
+)
 
 const (
 	PollingInterval     = 30 * time.Second
@@ -19,16 +22,128 @@ var (
 )
 
 var (
-	ReportLocation string
-	EnvK8SDistro   string
+	mu sync.Mutex
 
-	VMSingleUrl string
-	VMSelectUrl string
+	reportLocation string
+	envK8SDistro   string
 
-	VMSingleHost string
-	VMSelectHost string
+	vmSingleUrl string
+	vmSelectUrl string
 
-	HelmChartVersion string
-	VMVersion        string
-	OperatorVersion  string
+	vmSingleHost string
+	vmSelectHost string
+
+	helmChartVersion string
+	vmVersion        string
+	operatorVersion  string
 )
+
+// Setters
+func SetReportLocation(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	reportLocation = val
+}
+
+func SetEnvK8SDistro(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	envK8SDistro = val
+}
+
+func SetVMSingleUrl(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmSingleUrl = val
+}
+
+func SetVMSelectUrl(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmSelectUrl = val
+}
+
+func SetVMSingleHost(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmSingleHost = val
+}
+
+func SetVMSelectHost(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmSelectHost = val
+}
+
+func SetHelmChartVersion(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	helmChartVersion = val
+}
+
+func SetVMVersion(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmVersion = val
+}
+
+func SetOperatorVersion(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	operatorVersion = val
+}
+
+// Getters
+func ReportLocation() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return reportLocation
+}
+
+func EnvK8SDistro() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return envK8SDistro
+}
+
+func VMSingleUrl() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmSingleUrl
+}
+
+func VMSelectUrl() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmSelectUrl
+}
+
+func VMSingleHost() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmSingleHost
+}
+
+func VMSelectHost() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmSelectHost
+}
+
+func HelmChartVersion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return helmChartVersion
+}
+
+func VMVersion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmVersion
+}
+
+func OperatorVersion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return operatorVersion
+}

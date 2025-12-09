@@ -31,7 +31,7 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 		KubectlOptions: kubeOpts,
 		ValuesFiles:    []string{valuesFile},
 		SetValues: map[string]string{
-			"vmcluster.ingress.select.hosts[0]": consts.VMSelectHost,
+			"vmcluster.ingress.select.hosts[0]": consts.VMSelectHost(),
 		},
 		ExtraArgs: map[string][]string{
 			"upgrade": {"--create-namespace", "--wait"},
@@ -47,11 +47,11 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 
 	// Extract version information from deployment labels
 	vmAgent := k8s.GetDeployment(t, kubeOpts, "vmagent-vmks")
-	consts.HelmChartVersion = vmAgent.Labels["helm.sh/chart"]
-	consts.VMVersion = vmAgent.Labels["app.kubernetes.io/version"]
+	consts.SetHelmChartVersion(vmAgent.Labels["helm.sh/chart"])
+	consts.SetVMVersion(vmAgent.Labels["app.kubernetes.io/version"])
 
 	vmOperator := k8s.GetDeployment(t, kubeOpts, "vmks-victoria-metrics-operator")
-	consts.OperatorVersion = vmOperator.Labels["app.kubernetes.io/version"]
+	consts.SetOperatorVersion(vmOperator.Labels["app.kubernetes.io/version"])
 
 	By("Install VMSingle overwatch instance")
 	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmsingle.yaml")
@@ -70,7 +70,7 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	}()
 
 	// Extract host from consts.VMSingleUrl
-	vmsingleYaml = []byte(strings.ReplaceAll(string(vmsingleYaml), "vmsingle.example.com", consts.VMSingleHost))
+	vmsingleYaml = []byte(strings.ReplaceAll(string(vmsingleYaml), "vmsingle.example.com", consts.VMSingleHost()))
 
 	_, err = tempFile.Write(vmsingleYaml)
 	require.NoError(t, err)

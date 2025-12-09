@@ -7,7 +7,7 @@ require (
 	github.com/VictoriaMetrics/operator/api v0.65.0
 	github.com/grafana/k6-operator v1.1.0
 	github.com/gruntwork-io/terratest v0.53.0
-	github.com/onsi/ginkgo/v2 v2.27.2
+	github.com/onsi/ginkgo/v2 v2.27.3
 	github.com/onsi/gomega v1.38.2
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.1

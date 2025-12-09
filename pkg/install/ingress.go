@@ -25,7 +25,7 @@ func DiscoverIngressHost(ctx context.Context, t terratesting.TestingT) {
 
 	var nginxHost string
 	if len(svc.Status.LoadBalancer.Ingress) == 0 {
-		if consts.EnvK8SDistro != "kind" {
+		if consts.EnvK8SDistro() != "kind" {
 			t.Fatalf("failed to get ingress-nginx-controller service IP")
 			return
 		}
@@ -35,8 +35,8 @@ func DiscoverIngressHost(ctx context.Context, t terratesting.TestingT) {
 	}
 	logger.Default.Logf(t, "nginxHost host: %s", nginxHost)
 
-	consts.VMSelectHost = fmt.Sprintf("%s.%s.nip.io", "vmselect", nginxHost)
-	consts.VMSingleHost = fmt.Sprintf("%s.%s.nip.io", "vmsingle", nginxHost)
-	consts.VMSelectUrl = fmt.Sprintf("http://%s", consts.VMSelectHost)
-	consts.VMSingleUrl = fmt.Sprintf("http://%s", consts.VMSingleHost)
+	consts.SetVMSelectHost(fmt.Sprintf("%s.%s.nip.io", "vmselect", nginxHost))
+	consts.SetVMSingleHost(fmt.Sprintf("%s.%s.nip.io", "vmsingle", nginxHost))
+	consts.SetVMSelectUrl(fmt.Sprintf("http://%s", consts.VMSelectHost()))
+	consts.SetVMSingleUrl(fmt.Sprintf("http://%s", consts.VMSingleHost()))
 }

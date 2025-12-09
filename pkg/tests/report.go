@@ -37,7 +37,7 @@ var _ = ReportAfterSuite("allure report", func(report types.Report) {
 		panic(err)
 	}
 
-	reportPath, err := filepath.Abs(consts.ReportLocation)
+	reportPath, err := filepath.Abs(consts.ReportLocation())
 	if err != nil {
 		panic(err)
 	}
@@ -61,10 +61,10 @@ func writeEnvironmentProperties(reportPath string) error {
 	}
 
 	props := map[string]string{
-		"kube-distro":      consts.EnvK8SDistro,
-		"helm-chart":       consts.HelmChartVersion,
-		"operator-version": consts.OperatorVersion,
-		"vm-version":       consts.VMVersion,
+		"kube-distro":      consts.EnvK8SDistro(),
+		"helm-chart":       consts.HelmChartVersion(),
+		"operator-version": consts.OperatorVersion(),
+		"vm-version":       consts.VMVersion(),
 	}
 
 	return os.WriteFile(envFilePath, environmentPropertiesContent(props), 0644)

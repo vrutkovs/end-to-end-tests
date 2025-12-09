@@ -1,6 +1,7 @@
 package consts
 
 import (
+	"log"
 	"sync"
 	"time"
 )
@@ -42,54 +43,63 @@ var (
 func SetReportLocation(val string) {
 	mu.Lock()
 	defer mu.Unlock()
+	log.Printf("Setting ReportLocation to: %s", val)
 	reportLocation = val
 }
 
 func SetEnvK8SDistro(val string) {
 	mu.Lock()
 	defer mu.Unlock()
+	log.Printf("Setting EnvK8SDistro to: %s", val)
 	envK8SDistro = val
 }
 
 func SetVMSingleUrl(val string) {
 	mu.Lock()
 	defer mu.Unlock()
+	log.Printf("Setting VMSingleUrl to: %s", val)
 	vmSingleUrl = val
 }
 
 func SetVMSelectUrl(val string) {
 	mu.Lock()
 	defer mu.Unlock()
+	log.Printf("Setting VMSelectUrl to: %s", val)
 	vmSelectUrl = val
 }
 
 func SetVMSingleHost(val string) {
 	mu.Lock()
 	defer mu.Unlock()
+	log.Printf("Setting VMSingleHost to: %s", val)
 	vmSingleHost = val
 }
 
 func SetVMSelectHost(val string) {
 	mu.Lock()
 	defer mu.Unlock()
+	log.Printf("Setting VMSelectHost to: %s", val)
 	vmSelectHost = val
 }
 
 func SetHelmChartVersion(val string) {
 	mu.Lock()
 	defer mu.Unlock()
+	log.Printf("Setting HelmChartVersion to: %s", val)
 	helmChartVersion = val
 }
 
 func SetVMVersion(val string) {
 	mu.Lock()
 	defer mu.Unlock()
+	log.Printf("Setting VMVersion to: %s", val)
 	vmVersion = val
 }
 
 func SetOperatorVersion(val string) {
 	mu.Lock()
 	defer mu.Unlock()
+	log.Printf("Setting OperatorVersion to: %s", val)
 	operatorVersion = val
 }
 

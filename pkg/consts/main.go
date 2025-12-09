@@ -107,53 +107,69 @@ func SetOperatorVersion(val string) {
 func ReportLocation() string {
 	mu.Lock()
 	defer mu.Unlock()
+
+	log.Printf("Getting ReportLocation: %s", reportLocation)
 	return reportLocation
 }
 
 func EnvK8SDistro() string {
 	mu.Lock()
 	defer mu.Unlock()
+
+	log.Printf("Getting EnvK8SDistro: %s", envK8SDistro)
 	return envK8SDistro
 }
 
 func VMSingleUrl() string {
 	mu.Lock()
 	defer mu.Unlock()
+
+	log.Printf("Getting VMSingleUrl: %s", vmSingleUrl)
 	return vmSingleUrl
 }
 
 func VMSelectUrl() string {
 	mu.Lock()
 	defer mu.Unlock()
+
+	log.Printf("Getting VMSelectUrl: %s", vmSelectUrl)
 	return vmSelectUrl
 }
 
 func VMSingleHost() string {
 	mu.Lock()
 	defer mu.Unlock()
+
+	log.Printf("Getting VMSingleHost: %s", vmSingleHost)
 	return vmSingleHost
 }
 
 func VMSelectHost() string {
 	mu.Lock()
 	defer mu.Unlock()
+
+	log.Printf("Getting VMSelectHost: %s", vmSelectHost)
 	return vmSelectHost
 }
 
 func HelmChartVersion() string {
 	mu.Lock()
 	defer mu.Unlock()
+
+	log.Printf("Getting HelmChartVersion: %s", helmChartVersion)
 	return helmChartVersion
 }
 
 func VMVersion() string {
 	mu.Lock()
 	defer mu.Unlock()
+	log.Printf("Getting VMVersion: %s", vmVersion)
 	return vmVersion
 }
 
 func OperatorVersion() string {
 	mu.Lock()
 	defer mu.Unlock()
+	log.Printf("Getting OperatorVersion: %s", operatorVersion)
 	return operatorVersion
 }

@@ -86,26 +86,13 @@ func waitForLoadBalancerIngress(ctx context.Context, t terratesting.TestingT, ku
 		case watch.Modified, watch.Added:
 			svc, ok := event.Object.(*corev1.Service)
 			if !ok {
-				logger.Default.Logf(t, "Unexpected object type in watch event")
 				return false, nil
 			}
-
-			logger.Default.Logf(t, "Service watch event: %s", event.Type)
-			logger.Default.Logf(t, "Service status: %v", svc.Status)
-
 			// Check if LoadBalancer ingress IP is available
 			if host := extractIngressHost(svc); host != "" {
-				logger.Default.Logf(t, "Found LoadBalancer IP: %s", host)
 				return true, nil
 			}
-
 			return false, nil
-		case watch.Deleted:
-			logger.Default.Logf(t, "Service was deleted, continuing to wait...")
-			return false, nil
-		case watch.Error:
-			logger.Default.Logf(t, "Watch error event: %v", event.Object)
-			return false, fmt.Errorf("watch error: %v", event.Object)
 		default:
 			return false, nil
 		}

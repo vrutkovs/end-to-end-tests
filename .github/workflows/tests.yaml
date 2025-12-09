@@ -96,9 +96,7 @@ jobs:
             ./tests/${{ env.SUITE_SMOKE }} \
             -- \
             -env-k8s-distro=kind \
-            -report=/tmp/allure-results \
-            -vmsingle-url=http://vmsingle.127.0.0.1.nip.io \
-            -vmselect-url=http://vmselect.127.0.0.1.nip.io
+            -report=/tmp/allure-results
 
       - name: Upload results
         if: always()
@@ -187,9 +185,7 @@ jobs:
             -timeout=30m \
             --label-filter=${{ env.LABEL_FILTER }} \
             -env-k8s-distro=kind \
-            -report=/tmp/allure-results \
-            -vmsingle-url=http://vmsingle.127.0.0.1.nip.io \
-            -vmselect-url=http://vmselect.127.0.0.1.nip.io \
+            -report=/tmp/allure-results
             ./tests/${{ env.SUITE_LOAD }}
 
       - name: Upload results
@@ -282,9 +278,7 @@ jobs:
             ./tests/${{ env.SUITE_CHAOS }} \
             -- \
             -env-k8s-distro=kind \
-            -report=/tmp/allure-results \
-            -vmsingle-url=http://vmsingle.127.0.0.1.nip.io \
-            -vmselect-url=http://vmselect.127.0.0.1.nip.io
+            -report=/tmp/allure-results
 
       - name: Upload results
         if: always()
@@ -409,6 +403,7 @@ jobs:
         run: |
           export KUBECONFIG=/tmp/kubeconfig.yaml
           mkdir -p /tmp/allure-results
+          kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
           ginkgo -v \
             -procs=0 \
             -github-output=true \
@@ -416,9 +411,7 @@ jobs:
             --label-filter=${{ env.LABEL_FILTER }} \
             ./tests/${{ env.SUITE_SMOKE }} --\
             -env-k8s-distro=gke \
-            -report=/tmp/allure-results \
-            -vmselect-url=http://localhost:8080 \
-            -vmsingle-url=http://localhost:8081
+            -report=/tmp/allure-results
 
       - name: terraform destroy
         uses: dflook/terraform-destroy-workspace@v2
@@ -554,6 +547,7 @@ jobs:
         id: tests
         run: |
           export KUBECONFIG=/tmp/kubeconfig.yaml
+          kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
           mkdir -p /tmp/allure-results
           ginkgo -v \
             -procs=0 \
@@ -562,9 +556,7 @@ jobs:
             --label-filter=${{ env.LABEL_FILTER }} \
             ./tests/${{ env.SUITE_LOAD }} --\
             -env-k8s-distro=gke \
-            -report=/tmp/allure-results \
-            -vmsingle-url=http://localhost:8080 \
-            -vmselect-url=http://localhost:8081
+            -report=/tmp/allure-results
 
       - name: terraform destroy
         uses: dflook/terraform-destroy-workspace@v2
@@ -701,6 +693,7 @@ jobs:
         id: tests
         run: |
           export KUBECONFIG=/tmp/kubeconfig.yaml
+          kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
           mkdir -p /tmp/allure-results
           ginkgo -v \
             -github-output=true \
@@ -709,9 +702,7 @@ jobs:
             --label-filter=${{ env.LABEL_FILTER }} \
             ./tests/${{ env.SUITE_CHAOS }} --\
             -env-k8s-distro=gke \
-            -report=/tmp/allure-results \
-            -vmsingle-url=http://localhost:8080 \
-            -vmselect-url=http://localhost:8081
+            -report=/tmp/allure-results
 
       - name: terraform destroy
         uses: dflook/terraform-destroy-workspace@v2

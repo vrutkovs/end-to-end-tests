@@ -44,6 +44,8 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 	require.NoError(t, err)
 
 	BeforeAll(func() {
+		install.DiscoverIngressHost(ctx, t)
+
 		overwatch.Start = time.Now()
 		install.InstallWithHelm(ctx, vmHelmChart, vmValuesFile, t, vmNamespace, vmReleaseName)
 

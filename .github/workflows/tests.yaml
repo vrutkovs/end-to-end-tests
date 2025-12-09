@@ -15,9 +15,37 @@ env:
   GH_PAGES_URL: "https://victoriametrics.github.io/end-to-end-tests"
 
 jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          check-latest: true
+          cache: true
+        id: go
+
+      - name: Download go packages
+        run: |
+          go mod download
+
+      - name: Run unit tests
+        run: |
+          go test ./pkg/... -v -count=1
+
   kind-smoke-test:
     name: Kind smoke test
     runs-on: ubuntu-latest
+    needs: unit-tests
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:

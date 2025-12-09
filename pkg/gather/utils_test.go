@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -189,29 +190,7 @@ func TestErrorHandling(t *testing.T) {
 
 	// Test error string contains expected content
 	expectedSubstring := "error"
-	if !contains(testError, expectedSubstring) {
+	if !strings.Contains(testError, expectedSubstring) {
 		t.Errorf("Expected error to contain '%s', got '%s'", expectedSubstring, testError)
 	}
-}
-
-// Helper function for string contains check
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
-		(len(s) > 0 && len(substr) > 0 && findSubstring(s, substr)))
-}
-
-func findSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		match := true
-		for j := 0; j < len(substr); j++ {
-			if s[i+j] != substr[j] {
-				match = false
-				break
-			}
-		}
-		if match {
-			return true
-		}
-	}
-	return false
 }

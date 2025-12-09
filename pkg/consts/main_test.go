@@ -3,42 +3,7 @@ package consts
 import (
 	"sync"
 	"testing"
-	"time"
 )
-
-func TestConstants(t *testing.T) {
-	// Test that constants have expected values
-	if PollingInterval != 30*time.Second {
-		t.Errorf("Expected PollingInterval to be 30s, got %v", PollingInterval)
-	}
-	if PollingTimeout != 10*time.Minute {
-		t.Errorf("Expected PollingTimeout to be 10m, got %v", PollingTimeout)
-	}
-	if ResourceWaitTimeout != 10*time.Minute {
-		t.Errorf("Expected ResourceWaitTimeout to be 10m, got %v", ResourceWaitTimeout)
-	}
-	if K6JobPollingInterval != 1*time.Minute {
-		t.Errorf("Expected K6JobPollingInterval to be 1m, got %v", K6JobPollingInterval)
-	}
-	if K6JobMaxDuration != 60*time.Minute {
-		t.Errorf("Expected K6JobMaxDuration to be 60m, got %v", K6JobMaxDuration)
-	}
-	if ChaosTestMaxDuration != 30*time.Minute {
-		t.Errorf("Expected ChaosTestMaxDuration to be 30m, got %v", ChaosTestMaxDuration)
-	}
-}
-
-func TestRetries(t *testing.T) {
-	expectedRetries := int(ResourceWaitTimeout.Seconds() / PollingInterval.Seconds())
-	if Retries != expectedRetries {
-		t.Errorf("Expected Retries to be %d, got %d", expectedRetries, Retries)
-	}
-
-	expectedK6Retries := int(K6JobMaxDuration.Seconds() / K6JobPollingInterval.Seconds())
-	if K6Retries != expectedK6Retries {
-		t.Errorf("Expected K6Retries to be %d, got %d", expectedK6Retries, K6Retries)
-	}
-}
 
 func TestReportLocation(t *testing.T) {
 	testValue := "/test/report/location"

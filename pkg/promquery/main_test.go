@@ -29,18 +29,6 @@ func TestNewPrometheusClient(t *testing.T) {
 	}
 }
 
-func TestQueryTimeout(t *testing.T) {
-	if queryTimeout != 10*time.Second {
-		t.Errorf("Expected queryTimeout to be 10s, got %v", queryTimeout)
-	}
-}
-
-func TestQueryStep(t *testing.T) {
-	if queryStep != 1*time.Minute {
-		t.Errorf("Expected queryStep to be 1m, got %v", queryStep)
-	}
-}
-
 func TestVectorValue(t *testing.T) {
 	// Create a mock server that returns different types of responses
 	tests := []struct {

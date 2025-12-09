@@ -212,12 +212,13 @@ jobs:
           mkdir -p /tmp/allure-results
           ginkgo -v \
             -procs=0 \
-            -github-output \
+            -github-output=true \
             -timeout=30m \
             --label-filter=${{ env.LABEL_FILTER }} \
+            ./tests/${{ env.SUITE_LOAD }} \
+            -- \
             -env-k8s-distro=kind \
             -report=/tmp/allure-results
-            ./tests/${{ env.SUITE_LOAD }}
 
       - name: Upload results
         if: always()

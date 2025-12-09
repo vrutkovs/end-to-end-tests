@@ -88,6 +88,7 @@ jobs:
         id: tests
         run: |
           kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+          kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
           mkdir -p /tmp/allure-results
           ginkgo -v \
             -procs=0 \
@@ -180,6 +181,7 @@ jobs:
         id: tests
         run: |
           kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+          kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
           mkdir -p /tmp/allure-results
           ginkgo -v \
             -procs=0 \
@@ -272,6 +274,7 @@ jobs:
         id: tests
         run: |
           kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+          kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
           mkdir -p /tmp/allure-results
           ginkgo -v \
             -procs=0 \

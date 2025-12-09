@@ -44,14 +44,37 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmagent-vmks", consts.Retries, consts.PollingInterval)
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmalert-vmks", consts.Retries, consts.PollingInterval)
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vminsert-vmks", consts.Retries, consts.PollingInterval)
+	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmselect-vmks", consts.Retries, consts.PollingInterval)
 
 	// Extract version information from deployment labels
-	vmAgent := k8s.GetDeployment(t, kubeOpts, "vmagent-vmks")
-	consts.SetHelmChartVersion(vmAgent.Labels["helm.sh/chart"])
-	consts.SetVMVersion(vmAgent.Labels["app.kubernetes.io/version"])
+	vmSelect := k8s.GetDeployment(t, kubeOpts, "vmselect-vmks")
+	vmVersion := vmSelect.Labels["app.kubernetes.io/version"]
+	if vmVersion == "" {
+		fmt.Printf("WARNING: app.kubernetes.io/version label is empty/missing on vmselect-vmks deployment.\n")
+		fmt.Printf("Available labels on vmselect-vmks: %+v\n", vmSelect.Labels)
+	} else {
+		fmt.Printf("Found VM version label: %s\n", vmVersion)
+	}
+	consts.SetVMVersion(vmVersion)
 
 	vmOperator := k8s.GetDeployment(t, kubeOpts, "vmks-victoria-metrics-operator")
-	consts.SetOperatorVersion(vmOperator.Labels["app.kubernetes.io/version"])
+	helmChartVersion := vmOperator.Labels["helm.sh/chart"]
+	if helmChartVersion == "" {
+		fmt.Printf("WARNING: helm.sh/chart label is empty/missing on vmks-victoria-metrics-operator deployment.\n")
+		fmt.Printf("Available labels on vmks-victoria-metrics-operator: %+v\n", vmOperator.Labels)
+	} else {
+		fmt.Printf("Found helm.sh/chart label: %s\n", helmChartVersion)
+	}
+	consts.SetHelmChartVersion(helmChartVersion)
+
+	operatorVersion := vmOperator.Labels["app.kubernetes.io/version"]
+	if operatorVersion == "" {
+		fmt.Printf("WARNING: app.kubernetes.io/version label is empty/missing on vmks-victoria-metrics-operator deployment.\n")
+		fmt.Printf("Available labels on vmks-victoria-metrics-operator: %+v\n", vmOperator.Labels)
+	} else {
+		fmt.Printf("Found operator version label: %s\n", operatorVersion)
+	}
+	consts.SetOperatorVersion(operatorVersion)
 
 	By("Install VMSingle overwatch instance")
 	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmsingle.yaml")

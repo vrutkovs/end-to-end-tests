@@ -43,6 +43,8 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 	require.NoError(t, err)
 
 	BeforeAll(func() {
+		install.DiscoverIngressHost(ctx, t)
+
 		overwatch.Start = time.Now()
 		install.InstallWithHelm(ctx, helmChart, valuesFile, t, vmNamespace, releaseName)
 

@@ -39,8 +39,6 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 	require.NoError(t, err)
 
 	BeforeAll(func() {
-		install.DiscoverIngressHost(ctx, t)
-
 		overwatch.Start = time.Now()
 
 		install.InstallWithHelm(ctx, helmChart, valuesFile, t, namespace, releaseName)

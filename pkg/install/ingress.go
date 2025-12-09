@@ -6,6 +6,7 @@ import (
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	"github.com/gruntwork-io/terratest/modules/k8s"
+	"github.com/gruntwork-io/terratest/modules/logger"
 	terratesting "github.com/gruntwork-io/terratest/modules/testing"
 )
 
@@ -20,6 +21,7 @@ func DiscoverIngressHost(ctx context.Context, t terratesting.TestingT) {
 		t.Fatalf("failed to get ingress-nginx-controller service")
 		return
 	}
+	logger.Default.Logf(t, "nginx controller service status: %v", svc.Status)
 
 	var nginxHost string
 	if len(svc.Status.LoadBalancer.Ingress) == 0 {
@@ -31,6 +33,7 @@ func DiscoverIngressHost(ctx context.Context, t terratesting.TestingT) {
 	} else {
 		nginxHost = svc.Status.LoadBalancer.Ingress[0].IP
 	}
+	logger.Default.Logf(t, "nginxHost host: %s", nginxHost)
 
 	consts.VMSelectHost = fmt.Sprintf("%s.%s.nip.io", "vmselect", nginxHost)
 	consts.VMSingleHost = fmt.Sprintf("%s.%s.nip.io", "vmsingle", nginxHost)

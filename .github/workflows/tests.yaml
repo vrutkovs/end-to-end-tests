@@ -59,7 +59,7 @@ jobs:
       - name: Create Kind cluster
         uses: helm/kind-action@v1.13.0
         with:
-          cloud_provider: true
+          config: manifests/kind.yaml
 
       - name: Add helm repo
         run: |
@@ -87,6 +87,7 @@ jobs:
       - name: Run e2e tests
         id: tests
         run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
           mkdir -p /tmp/allure-results
           ginkgo -v \
             -procs=0 \
@@ -150,7 +151,7 @@ jobs:
       - name: Create Kind cluster
         uses: helm/kind-action@v1.13.0
         with:
-          cloud_provider: true
+          config: manifests/kind.yaml
 
       - name: Add helm repo
         run: |
@@ -178,6 +179,7 @@ jobs:
       - name: Run e2e tests
         id: tests
         run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
           mkdir -p /tmp/allure-results
           ginkgo -v \
             -procs=0 \
@@ -240,7 +242,7 @@ jobs:
       - name: Create Kind cluster
         uses: helm/kind-action@v1.13.0
         with:
-          cloud_provider: true
+          config: manifests/kind.yaml
 
       - name: Add helm repo
         run: |
@@ -269,6 +271,7 @@ jobs:
       - name: Run e2e tests
         id: tests
         run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
           mkdir -p /tmp/allure-results
           ginkgo -v \
             -procs=0 \
@@ -403,7 +406,7 @@ jobs:
         run: |
           export KUBECONFIG=/tmp/kubeconfig.yaml
           mkdir -p /tmp/allure-results
-          kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
           ginkgo -v \
             -procs=0 \
             -github-output=true \
@@ -547,7 +550,7 @@ jobs:
         id: tests
         run: |
           export KUBECONFIG=/tmp/kubeconfig.yaml
-          kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
           mkdir -p /tmp/allure-results
           ginkgo -v \
             -procs=0 \
@@ -693,7 +696,7 @@ jobs:
         id: tests
         run: |
           export KUBECONFIG=/tmp/kubeconfig.yaml
-          kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
           mkdir -p /tmp/allure-results
           ginkgo -v \
             -github-output=true \

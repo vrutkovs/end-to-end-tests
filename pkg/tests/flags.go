@@ -10,7 +10,7 @@ import (
 
 func init() {
 	flag.StringVar(&consts.ReportLocation, "report", "/tmp/allure-results", "Report location")
-	flag.StringVar(&consts.EnvK8SDistro, "env-k8s-distro", "", "Kube distro name")
+	flag.StringVar(&consts.EnvK8SDistro, "env-k8s-distro", "kind", "Kube distro name")
 
 	vmSingleURL, err := url.Parse(consts.VMSingleUrl)
 	if err != nil {

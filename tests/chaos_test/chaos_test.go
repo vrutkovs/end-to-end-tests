@@ -120,18 +120,18 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		// 	})
 		// }
 
-		It("Run vminsert-request-abort scenario", Label("gke", "id=2195bf4c-7dca-4bb1-a363-89dbc898a507"), func() {
+		It("Emulate row rerouting when vmstorage-0 becomes unreachable", Label("gke", "id=3a9e309f-eec7-4d37-a7ee-918abd3a3d44"), func() {
 			By("Run scenario")
 			namespace := "vm"
-			scenarioName := "vminsert-request-abort"
-			install.RunChaosScenario(ctx, t, namespace, "http", scenarioName, "NetworkChaos")
+			scenarioName := "vminsert-to-vmstorage0-3s-delay"
+			install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "NetworkChaos")
 
 			By("No alerts are firing")
 			value, err := overwatch.VectorValue(ctx, `sum by (alertname) (vmalert_alerts_firing{alertname!~"(InfoInhibitor|Watchdog|TooManyLogs|RecordingRulesError|AlertingRulesError)"})`)
 			require.NoError(t, err)
 			require.Zero(t, value)
 
-			By("No alerts are firing")
+			By("All services are up")
 			value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")
 			require.NoError(t, err)
 			require.GreaterOrEqual(t, value, float64(1))

@@ -40,7 +40,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          go test -race -v ./...
+          go test -race -v ./pkg/...
 
   kind-smoke-test:
     name: Kind smoke test

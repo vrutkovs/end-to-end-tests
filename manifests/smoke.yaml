@@ -412,7 +412,8 @@ vmcluster:
       enabled: true
       port: "8480"
       replicaCount: 2
-      extraArgs: {}
+      extraArgs:
+        maxLabelsPerTimeseries: "50"
       resources:
         limits:
           cpu: 250m

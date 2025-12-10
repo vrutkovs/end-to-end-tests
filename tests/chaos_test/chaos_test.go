@@ -68,41 +68,57 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
-
-			// By("No services were down")
-			// value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")
-			// require.NoError(t, err)
-			// require.GreaterOrEqual(t, value, float64(1))
 		})
 
-		It("Run vmstorage-pod-failure scenario", Label("id=17f2e31b-9249-4283-845b-aae0bc81e5f2"), func() {
+		It("Run vmstorage-pod-failure scenario", Label("id=e340d25f-b14f-4f21-acb4-68c4fdf39a85"), func() {
 			By("Run scenario")
 			namespace := "vm"
 			install.RunChaosScenario(ctx, t, namespace, "pods", "vmstorage-pod-failure", "podchaos")
 
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
-
-			// By("No services were down")
-			// value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")
-			// require.NoError(t, err)
-			// require.GreaterOrEqual(t, value, float64(1))
 		})
 
-		It("Run vmselect-pod-failure scenario", Label("id=17f2e31b-9249-4283-845b-aae0bc81e5f2"), func() {
+		It("Run vmselect-pod-failure scenario", Label("id=38df1d4b-d38c-4064-8538-c0e03920255f"), func() {
 			By("Run scenario")
 			namespace := "vm"
 			install.RunChaosScenario(ctx, t, namespace, "pods", "vmselect-pod-failure", "podchaos")
 
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+		})
+	})
 
-			// By("No services were down")
-			// value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")
-			// require.NoError(t, err)
-			// require.GreaterOrEqual(t, value, float64(1))
+	Describe("cpu stress", Label("kind", "gke", "chaos-cpu-stress"), func() {
+		It("Run vminsert-cpu-usage scenario", Label("id=4c571bca-2442-4a1b-8e54-4f9878f8dd6d"), func() {
+			By("Run scenario")
+			namespace := "vm"
+			install.RunChaosScenario(ctx, t, namespace, "cpu", "vminsert-cpu-usage", "podchaos")
+
+			By("No alerts are firing")
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
 		})
 
+		It("Run vmstorage-cpu-usage scenario", Label("id=d1ebdfd3-a0cf-4525-89b9-e998ec7b0c1e"), func() {
+			By("Run scenario")
+			namespace := "vm"
+			install.RunChaosScenario(ctx, t, namespace, "cpu", "vmstorage-cpu-usage", "podchaos")
+
+			By("No alerts are firing")
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+		})
+
+		It("Run vmselect-cpu-usage scenario", Label("id=f6637d83-be2a-44ab-b446-9c755bad4292"), func() {
+			By("Run scenario")
+			namespace := "vm"
+			install.RunChaosScenario(ctx, t, namespace, "cpu", "vmselect-cpu-usage", "podchaos")
+
+			By("No alerts are firing")
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+		})
+	})
+
+	// Describe("cpu stress", Label("kind", "gke", "chaos-network-failure"), func() {
 		// networkScenarios := map[string]string{
 		// 	"148c9b15-7779-414e-9f99-9a92e54b6816": "vmagent-to-vminsert-packet-delay",
 		// 	"f767bbe7-b84c-4c37-8bf3-eaf3f6e34909": "vmagent-to-vminsert-packet-loss",

@@ -93,7 +93,7 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		It("Run vminsert-cpu-usage scenario", Label("id=4c571bca-2442-4a1b-8e54-4f9878f8dd6d"), func() {
 			By("Run scenario")
 			namespace := "vm"
-			install.RunChaosScenario(ctx, t, namespace, "cpu", "vminsert-cpu-usage", "podchaos")
+			install.RunChaosScenario(ctx, t, namespace, "cpu", "vminsert-cpu-usage", "stresschaos")
 
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
@@ -102,7 +102,7 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		It("Run vmstorage-cpu-usage scenario", Label("id=d1ebdfd3-a0cf-4525-89b9-e998ec7b0c1e"), func() {
 			By("Run scenario")
 			namespace := "vm"
-			install.RunChaosScenario(ctx, t, namespace, "cpu", "vmstorage-cpu-usage", "podchaos")
+			install.RunChaosScenario(ctx, t, namespace, "cpu", "vmstorage-cpu-usage", "stresschaos")
 
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
@@ -111,7 +111,7 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		It("Run vmselect-cpu-usage scenario", Label("id=f6637d83-be2a-44ab-b446-9c755bad4292"), func() {
 			By("Run scenario")
 			namespace := "vm"
-			install.RunChaosScenario(ctx, t, namespace, "cpu", "vmselect-cpu-usage", "podchaos")
+			install.RunChaosScenario(ctx, t, namespace, "cpu", "vmselect-cpu-usage", "stresschaos")
 
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
@@ -122,7 +122,7 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		It("Run vminsert-memory-usage scenario", Label("id=47690837-45e5-4cae-9e60-abadf59e4e66"), func() {
 			By("Run scenario")
 			namespace := "vm"
-			install.RunChaosScenario(ctx, t, namespace, "memory", "vminsert-memory-usage", "podchaos")
+			install.RunChaosScenario(ctx, t, namespace, "memory", "vminsert-memory-usage", "stresschaos")
 
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
@@ -131,7 +131,7 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		It("Run vmstorage-memory-usage scenario", Label("id=357cef7e-c2ce-4a76-8768-7b142a4e7997"), func() {
 			By("Run scenario")
 			namespace := "vm"
-			install.RunChaosScenario(ctx, t, namespace, "memory", "vmstorage-memory-usage", "podchaos")
+			install.RunChaosScenario(ctx, t, namespace, "memory", "vmstorage-memory-usage", "stresschaos")
 
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
@@ -140,7 +140,36 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		It("Run vmselect-memory-usage scenario", Label("id=f9c922b8-104a-4baf-bad3-b00188ccddb1"), func() {
 			By("Run scenario")
 			namespace := "vm"
-			install.RunChaosScenario(ctx, t, namespace, "memory", "vmselect-memory-usage", "podchaos")
+			install.RunChaosScenario(ctx, t, namespace, "memory", "vmselect-memory-usage", "stresschaos")
+
+			By("No alerts are firing")
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+		})
+	})
+
+	Describe("io stress", Label("kind", "gke", "chaos-io-stress"), func() {
+		It("Run vminsert-io-usage scenario", Label("id=c70ce6cc-84fe-447d-8b5f-48871a2ebf99"), func() {
+			By("Run scenario")
+			namespace := "vm"
+			install.RunChaosScenario(ctx, t, namespace, "io", "vminsert-io-usage", "stresschaos")
+
+			By("No alerts are firing")
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+		})
+
+		It("Run vmstorage-io-usage scenario", Label("id=357cef7e-c2ce-4a76-8768-7b142a4e7997"), func() {
+			By("Run scenario")
+			namespace := "vm"
+			install.RunChaosScenario(ctx, t, namespace, "io", "vmstorage-io-usage", "stresschaos")
+
+			By("No alerts are firing")
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+		})
+
+		It("Run vmselect-io-usage scenario", Label("id=f9c922b8-104a-4baf-bad3-b00188ccddb1"), func() {
+			By("Run scenario")
+			namespace := "vm"
+			install.RunChaosScenario(ctx, t, namespace, "io", "vmselect-io-usage", "stresschaos")
 
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, []string{})

@@ -93,6 +93,12 @@ func SetOperatorVersion(val string) {
 	operatorVersion = val
 }
 
+func SetVMTag(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmVersion = val
+}
+
 // Getters
 func ReportLocation() string {
 	mu.Lock()

@@ -27,12 +27,20 @@ import (
 
 func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terratesting.TestingT, namespace string, releaseName string) {
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+	setValues := map[string]string{
+		"vmcluster.ingress.select.hosts[0]": consts.VMSelectHost(),
+	}
+
+	// Add VM tag if provided
+	vmTag := consts.VMVersion()
+	if vmTag != "" {
+		setValues["victoria-metrics-operator.image.tag"] = vmTag
+	}
+
 	helmOpts := &helm.Options{
 		KubectlOptions: kubeOpts,
 		ValuesFiles:    []string{valuesFile},
-		SetValues: map[string]string{
-			"vmcluster.ingress.select.hosts[0]": consts.VMSelectHost(),
-		},
+		SetValues:      setValues,
 		ExtraArgs: map[string][]string{
 			"upgrade": {"--create-namespace", "--wait"},
 		},

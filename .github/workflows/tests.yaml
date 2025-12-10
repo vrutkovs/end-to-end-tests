@@ -42,9 +42,16 @@ jobs:
           go test ./pkg/... -v -count=1
 
   kind-smoke-test:
-    name: Kind smoke test
+    name: Kind smoke test (${{ matrix.vm_version }})
     runs-on: ubuntu-latest
     needs: unit-tests
+    strategy:
+      matrix:
+        vm_version: 
+          - "v1.131.0"
+          - "v1.130.0"
+          - "v1.129.1"
+      fail-fast: false
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:
@@ -53,6 +60,7 @@ jobs:
     if: github.event.pull_request.draft == false
     env:
       LABEL_FILTER: kind
+      VM_VERSION: ${{ matrix.vm_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -125,19 +133,27 @@ jobs:
             ./tests/${{ env.SUITE_SMOKE }} \
             -- \
             -env-k8s-distro=kind \
+            -vmtag=${{ matrix.vm_version }} \
             -report=/tmp/allure-results
 
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: kind-${{ env.SUITE_SMOKE }}
+          name: kind-${{ env.SUITE_SMOKE }}-${{ matrix.vm_version }}
           path: /tmp/allure-results
 
   kind-load-test:
-    name: Kind load test
+    name: Kind load test (${{ matrix.vm_version }})
     runs-on: ubuntu-latest
     needs: kind-smoke-test
+    strategy:
+      matrix:
+        vm_version: 
+          - "v1.131.0"
+          - "v1.130.0"
+          - "v1.129.1"
+      fail-fast: false
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:
@@ -146,6 +162,7 @@ jobs:
     if: github.event.pull_request.draft == false
     env:
       LABEL_FILTER: kind
+      VM_VERSION: ${{ matrix.vm_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -204,6 +221,8 @@ jobs:
           rename-to: vmexporter
           chmod: 0755
 
+
+
       - name: Run e2e tests
         id: tests
         run: |
@@ -218,19 +237,27 @@ jobs:
             ./tests/${{ env.SUITE_LOAD }} \
             -- \
             -env-k8s-distro=kind \
+            -vmtag=${{ matrix.vm_version }} \
             -report=/tmp/allure-results
 
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: kind-${{ env.SUITE_LOAD }}
+          name: kind-${{ env.SUITE_LOAD }}-${{ matrix.vm_version }}
           path: /tmp/allure-results
 
   kind-chaos-test:
-    name: Kind chaos test
+    name: Kind chaos test (${{ matrix.vm_version }})
     runs-on: ubuntu-latest
     needs: kind-smoke-test
+    strategy:
+      matrix:
+        vm_version: 
+          - "v1.131.0"
+          - "v1.130.0"
+          - "v1.129.1"
+      fail-fast: false
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:
@@ -239,6 +266,7 @@ jobs:
     if: github.event.pull_request.draft == false
     env:
       LABEL_FILTER: kind
+      VM_VERSION: ${{ matrix.vm_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -298,6 +326,8 @@ jobs:
           rename-to: vmexporter
           chmod: 0755
 
+
+
       - name: Run e2e tests
         id: tests
         run: |
@@ -312,19 +342,27 @@ jobs:
             ./tests/${{ env.SUITE_CHAOS }} \
             -- \
             -env-k8s-distro=kind \
+            -vmtag=${{ matrix.vm_version }} \
             -report=/tmp/allure-results
 
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: kind-${{ env.SUITE_CHAOS }}
+          name: kind-${{ env.SUITE_CHAOS }}-${{ matrix.vm_version }}
           path: /tmp/allure-results
 
   gke-smoke-test:
-    name: GKE smoke test
+    name: GKE smoke test (${{ matrix.vm_version }})
     runs-on: ubuntu-latest
     needs: kind-smoke-test
+    strategy:
+      matrix:
+        vm_version: 
+          - "v1.131.0"
+          - "v1.130.0"
+          - "v1.129.1"
+      fail-fast: false
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:
@@ -333,6 +371,7 @@ jobs:
     if: github.event.pull_request.draft == false
     env:
       LABEL_FILTER: gke
+      VM_VERSION: ${{ matrix.vm_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -445,6 +484,7 @@ jobs:
             --label-filter=${{ env.LABEL_FILTER }} \
             ./tests/${{ env.SUITE_SMOKE }} --\
             -env-k8s-distro=gke \
+            -vmtag=${{ matrix.vm_version }} \
             -report=/tmp/allure-results
 
       - name: terraform destroy
@@ -463,13 +503,20 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: gke-${{ env.SUITE_SMOKE }}
+          name: gke-${{ env.SUITE_SMOKE }}-${{ matrix.vm_version }}
           path: /tmp/allure-results
 
   gke-load-test:
-    name: GKE load test
+    name: GKE load test (${{ matrix.vm_version }})
     runs-on: ubuntu-latest
     needs: [gke-smoke-test, kind-load-test]
+    strategy:
+      matrix:
+        vm_version: 
+          - "v1.131.0"
+          - "v1.130.0"
+          - "v1.129.1"
+      fail-fast: false
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:
@@ -478,6 +525,7 @@ jobs:
     if: github.event.pull_request.draft == false
     env:
       LABEL_FILTER: gke
+      VM_VERSION: ${{ matrix.vm_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -590,6 +638,7 @@ jobs:
             --label-filter=${{ env.LABEL_FILTER }} \
             ./tests/${{ env.SUITE_LOAD }} --\
             -env-k8s-distro=gke \
+            -vmtag=${{ matrix.vm_version }} \
             -report=/tmp/allure-results
 
       - name: terraform destroy
@@ -608,13 +657,20 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: gke-${{ env.SUITE_LOAD }}
+          name: gke-${{ env.SUITE_LOAD }}-${{ matrix.vm_version }}
           path: /tmp/allure-results
 
   gke-chaos-test:
-    name: GKE chaos test
+    name: GKE chaos test (${{ matrix.vm_version }})
     runs-on: ubuntu-latest
     needs: [gke-smoke-test, kind-chaos-test]
+    strategy:
+      matrix:
+        vm_version: 
+          - "v1.131.0"
+          - "v1.130.0"
+          - "v1.129.1"
+      fail-fast: false
     outputs:
       tests: ${{ steps.tests.outcome }}
     permissions:
@@ -623,6 +679,7 @@ jobs:
     if: github.event.pull_request.draft == false
     env:
       LABEL_FILTER: gke
+      VM_VERSION: ${{ matrix.vm_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -736,6 +793,7 @@ jobs:
             --label-filter=${{ env.LABEL_FILTER }} \
             ./tests/${{ env.SUITE_CHAOS }} --\
             -env-k8s-distro=gke \
+            -vmtag=${{ matrix.vm_version }} \
             -report=/tmp/allure-results
 
       - name: terraform destroy
@@ -754,7 +812,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: gke-${{ env.SUITE_CHAOS }}
+          name: gke-${{ env.SUITE_CHAOS }}-${{ matrix.vm_version }}
           path: /tmp/allure-results
 
   deploy-report:
@@ -772,47 +830,13 @@ jobs:
           token: ${{ secrets.PAT }}
         continue-on-error: true
 
-      - name: Download artifacts - Kind smoke
+      - name: Download artifacts - All test results
         if: always()
         uses: actions/download-artifact@v4
         with:
-          name: kind-${{ env.SUITE_SMOKE }}
+          pattern: "*-v*"
           path: allure-results
-
-      - name: Download artifacts - Kind load
-        if: always()
-        uses: actions/download-artifact@v4
-        with:
-          name: kind-${{ env.SUITE_LOAD }}
-          path: allure-results
-
-      - name: Download artifacts - Kind chaos
-        if: always()
-        uses: actions/download-artifact@v4
-        with:
-          name: kind-${{ env.SUITE_CHAOS }}
-          path: allure-results
-
-      - name: Download artifacts - GKE smoke
-        if: always()
-        uses: actions/download-artifact@v4
-        with:
-          name: gke-${{ env.SUITE_SMOKE }}
-          path: allure-results
-
-      - name: Download artifacts - GKE load
-        if: always()
-        uses: actions/download-artifact@v4
-        with:
-          name: gke-${{ env.SUITE_LOAD }}
-          path: allure-results
-
-      - name: Download artifacts - GKE chaos
-        if: always()
-        uses: actions/download-artifact@v4
-        with:
-          name: gke-${{ env.SUITE_CHAOS }}
-          path: allure-results
+          merge-multiple: true
 
       - name: Generate Allure Report
         uses: simple-elf/allure-report-action@master

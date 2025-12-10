@@ -2,7 +2,7 @@ kind: StressChaos
 apiVersion: chaos-mesh.org/v1alpha1
 metadata:
   namespace: vm
-  name: vmstorage-cpu-usage
+  name: vmstorage-memory-usage
 spec:
   selector:
     namespaces:
@@ -11,7 +11,7 @@ spec:
       app.kubernetes.io/name: vmstorage
   mode: all
   stressors:
-    cpu:
-      load: 100
+    memory:
+      size: 100%
       workers: 16
   duration: 10m

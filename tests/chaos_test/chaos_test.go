@@ -118,6 +118,35 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		})
 	})
 
+	Describe("memory stress", Label("kind", "gke", "chaos-memory-stress"), func() {
+		It("Run vminsert-memory-usage scenario", Label("id=47690837-45e5-4cae-9e60-abadf59e4e66"), func() {
+			By("Run scenario")
+			namespace := "vm"
+			install.RunChaosScenario(ctx, t, namespace, "memory", "vminsert-memory-usage", "podchaos")
+
+			By("No alerts are firing")
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+		})
+
+		It("Run vmstorage-memory-usage scenario", Label("id=357cef7e-c2ce-4a76-8768-7b142a4e7997"), func() {
+			By("Run scenario")
+			namespace := "vm"
+			install.RunChaosScenario(ctx, t, namespace, "memory", "vmstorage-memory-usage", "podchaos")
+
+			By("No alerts are firing")
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+		})
+
+		It("Run vmselect-memory-usage scenario", Label("id=f9c922b8-104a-4baf-bad3-b00188ccddb1"), func() {
+			By("Run scenario")
+			namespace := "vm"
+			install.RunChaosScenario(ctx, t, namespace, "memory", "vmselect-memory-usage", "podchaos")
+
+			By("No alerts are firing")
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+		})
+	})
+
 	// Describe("cpu stress", Label("kind", "gke", "chaos-network-failure"), func() {
 		// networkScenarios := map[string]string{
 		// 	"148c9b15-7779-414e-9f99-9a92e54b6816": "vmagent-to-vminsert-packet-delay",

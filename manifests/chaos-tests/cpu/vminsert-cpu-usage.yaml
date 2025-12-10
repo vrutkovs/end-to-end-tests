@@ -12,9 +12,6 @@ spec:
   mode: all
   stressors:
     cpu:
-      load: 1
-      options:
-        - '--io=16'
-        - '--agressive'
+      load: 100
       workers: 16
   duration: 10m

@@ -47,6 +47,7 @@ spec:
           ebtables -L
 
           echo "Host setup complete. Exiting."
+          sleep infinity
           EOF
         securityContext:
           privileged: true

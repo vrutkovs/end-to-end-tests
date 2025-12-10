@@ -22,8 +22,6 @@ spec:
   notifiers:
   - url: http://vmalertmanager-vmks-0.vmalertmanager-vmks.vm.svc.cluster.local.:9093
   port: "8080"
-  remoteRead:
-    url: http://vmsingle-vmks.vm.svc.cluster.local.:8429/prometheus
   remoteWrite:
-    url: http://vmsingle-vmks.vm.svc.cluster.local.:8429/prometheus/api/v1/write
+    url: http://vmsingle-overwatch.vm.svc.cluster.local.:8429/prometheus/api/v1/write
   selectAllByDefault: true

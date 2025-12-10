@@ -25,8 +25,10 @@ import (
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 )
 
-func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terratesting.TestingT, namespace string, releaseName string) {
-	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+// buildVMTagSetValues creates Helm set values for VM component image tags based on the configured VM version.
+// It handles the logic for setting appropriate image tags for all VictoriaMetrics components,
+// including the special case of adding "-cluster" suffix for cluster components when not using "latest" tag.
+func buildVMTagSetValues() map[string]string {
 	setValues := map[string]string{
 		"vmcluster.ingress.select.hosts[0]": consts.VMSelectHost(),
 	}
@@ -35,13 +37,27 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	vmTag := consts.VMVersion()
 	if vmTag != "" {
 		setValues["vmsingle.spec.image.tag"] = vmTag
-		setValues["vmcluster.spec.vmstorage.image.tag"] = vmTag
-		setValues["vmcluster.spec.vmselect.image.tag"] = vmTag
-		setValues["vmcluster.spec.vminsert.image.tag"] = vmTag
+
+		// For cluster components, add "-cluster" suffix unless using "latest" tag
+		clusterTag := vmTag
+		if vmTag != "latest" {
+			clusterTag = fmt.Sprintf("%s-cluster", vmTag)
+		}
+
+		setValues["vmcluster.spec.vmstorage.image.tag"] = clusterTag
+		setValues["vmcluster.spec.vmselect.image.tag"] = clusterTag
+		setValues["vmcluster.spec.vminsert.image.tag"] = clusterTag
 		setValues["vmalert.spec.image.tag"] = vmTag
 		setValues["vmagent.spec.image.tag"] = vmTag
 		setValues["vmauth.spec.image.tag"] = vmTag
 	}
+
+	return setValues
+}
+
+func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terratesting.TestingT, namespace string, releaseName string) {
+	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+	setValues := buildVMTagSetValues()
 
 	helmOpts := &helm.Options{
 		KubectlOptions: kubeOpts,

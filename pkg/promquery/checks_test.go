@@ -418,6 +418,253 @@ func TestCheckNoAlertsFiring_DefaultExceptions(t *testing.T) {
 	}
 }
 
+func TestCheckAlertIsFiring_AlertFiring(t *testing.T) {
+	t.Parallel()
+	// Create a mock server that returns a firing alert
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify the request method and path
+		if r.Method != "POST" {
+			t.Errorf("Expected POST request, got %s", r.Method)
+		}
+		if r.URL.Path != "/api/v1/query" {
+			t.Errorf("Expected path '/api/v1/query', got '%s'", r.URL.Path)
+		}
+
+		// Parse form data
+		err := r.ParseForm()
+		if err != nil {
+			t.Errorf("Failed to parse form: %v", err)
+			return
+		}
+
+		// Verify the query is for the specific alert
+		query := r.Form.Get("query")
+		expectedQuery := `vmalert_alerts_firing{alertname="CriticalAlert"}`
+		if query != expectedQuery {
+			t.Errorf("Expected query to be '%s', got '%s'", expectedQuery, query)
+		}
+
+		// Return vector with firing alert (value > 0)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{
+			"status": "success",
+			"data": {
+				"resultType": "vector",
+				"result": [
+					{
+						"metric": {"alertname": "CriticalAlert"},
+						"value": [1234567890, "1"]
+					}
+				]
+			}
+		}`)
+	}))
+	defer server.Close()
+
+	client, err := NewPrometheusClient(server.URL)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	mockTest := &mockTestingT{}
+	ctx := context.Background()
+
+	client.CheckAlertIsFiring(ctx, mockTest, "CriticalAlert")
+
+	// Should not fail when alert is firing
+	if mockTest.failed {
+		t.Errorf("Test should not have failed when alert is firing, but got errors: %v, fatals: %v", mockTest.errors, mockTest.fatals)
+	}
+}
+
+func TestCheckAlertIsFiring_AlertNotFiring(t *testing.T) {
+	t.Parallel()
+	// Create a mock server that returns a non-firing alert
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Return vector with non-firing alert (value = 0)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{
+			"status": "success",
+			"data": {
+				"resultType": "vector",
+				"result": [
+					{
+						"metric": {"alertname": "ResolvedAlert"},
+						"value": [1234567890, "0"]
+					}
+				]
+			}
+		}`)
+	}))
+	defer server.Close()
+
+	client, err := NewPrometheusClient(server.URL)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	mockTest := &mockTestingT{}
+	ctx := context.Background()
+
+	client.CheckAlertIsFiring(ctx, mockTest, "ResolvedAlert")
+
+	// Should fail when alert is not firing
+	if !mockTest.failed {
+		t.Error("Test should have failed when alert is not firing")
+	}
+
+	// Should have error message about alert not firing
+	if len(mockTest.errors) == 0 {
+		t.Error("Expected error message about alert not firing")
+	}
+}
+
+func TestCheckAlertIsFiring_AlertNotFound(t *testing.T) {
+	t.Parallel()
+	// Create a mock server that returns empty results
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Return empty vector
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{
+			"status": "success",
+			"data": {
+				"resultType": "vector",
+				"result": []
+			}
+		}`)
+	}))
+	defer server.Close()
+
+	client, err := NewPrometheusClient(server.URL)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	mockTest := &mockTestingT{}
+	ctx := context.Background()
+
+	client.CheckAlertIsFiring(ctx, mockTest, "NonExistentAlert")
+
+	// Should fail when alert is not found
+	if !mockTest.failed {
+		t.Error("Test should have failed when alert is not found")
+	}
+
+	// Should have error message about alert not being present
+	if len(mockTest.errors) == 0 {
+		t.Error("Expected error message about alert not being present")
+	}
+}
+
+func TestCheckAlertIsFiring_MultipleAlerts(t *testing.T) {
+	t.Parallel()
+	// Create a mock server that returns multiple alerts, including the target one
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Return vector with multiple alerts
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{
+			"status": "success",
+			"data": {
+				"resultType": "vector",
+				"result": [
+					{
+						"metric": {"alertname": "WarningAlert"},
+						"value": [1234567890, "1"]
+					},
+					{
+						"metric": {"alertname": "CriticalAlert"},
+						"value": [1234567890, "2"]
+					},
+					{
+						"metric": {"alertname": "InfoAlert"},
+						"value": [1234567890, "0"]
+					}
+				]
+			}
+		}`)
+	}))
+	defer server.Close()
+
+	client, err := NewPrometheusClient(server.URL)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	mockTest := &mockTestingT{}
+	ctx := context.Background()
+
+	client.CheckAlertIsFiring(ctx, mockTest, "CriticalAlert")
+
+	// Should not fail when target alert is firing among multiple alerts
+	if mockTest.failed {
+		t.Errorf("Test should not have failed when target alert is firing, but got errors: %v, fatals: %v", mockTest.errors, mockTest.fatals)
+	}
+}
+
+func TestCheckAlertIsFiring_QueryError(t *testing.T) {
+	t.Parallel()
+	// Create a mock server that returns an error
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, "Internal Server Error")
+	}))
+	defer server.Close()
+
+	client, err := NewPrometheusClient(server.URL)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	mockTest := &mockTestingT{}
+	ctx := context.Background()
+
+	client.CheckAlertIsFiring(ctx, mockTest, "TestAlert")
+
+	// Should fail when query returns an error
+	if !mockTest.failed {
+		t.Error("Test should have failed when query returns an error")
+	}
+}
+
+func TestCheckAlertIsFiring_WrongResultType(t *testing.T) {
+	t.Parallel()
+	// Create a mock server that returns wrong result type
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Return matrix instead of vector
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{
+			"status": "success",
+			"data": {
+				"resultType": "matrix",
+				"result": []
+			}
+		}`)
+	}))
+	defer server.Close()
+
+	client, err := NewPrometheusClient(server.URL)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	mockTest := &mockTestingT{}
+	ctx := context.Background()
+
+	// This should cause a panic in the current implementation
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Expected panic when result type is not vector")
+		}
+	}()
+
+	client.CheckAlertIsFiring(ctx, mockTest, "TestAlert")
+}
+
 func TestCheckNoAlertsFiring_EmptyVectorShouldFail(t *testing.T) {
 	t.Parallel()
 	// Create a mock server that returns empty vector - this should fail

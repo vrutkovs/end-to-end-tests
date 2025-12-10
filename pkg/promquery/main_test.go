@@ -13,6 +13,7 @@ import (
 )
 
 func TestNewPrometheusClient(t *testing.T) {
+	t.Parallel()
 	// Test valid URL
 	client, err := NewPrometheusClient("http://localhost:9090")
 	if err != nil {
@@ -30,6 +31,7 @@ func TestNewPrometheusClient(t *testing.T) {
 }
 
 func TestVectorValue(t *testing.T) {
+	t.Parallel()
 	// Create a mock server that returns different types of responses
 	tests := []struct {
 		name          string
@@ -85,6 +87,7 @@ func TestVectorValue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
@@ -124,6 +127,7 @@ func TestVectorValue(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
+	t.Parallel()
 	// Create a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify the request parameters
@@ -191,6 +195,7 @@ func TestQuery(t *testing.T) {
 }
 
 func TestQueryRange(t *testing.T) {
+	t.Parallel()
 	// Create a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify the request parameters
@@ -275,9 +280,10 @@ func TestQueryRange(t *testing.T) {
 }
 
 func TestQueryWithTimeout(t *testing.T) {
-	// Create a slow server that takes longer than the timeout
+	t.Parallel()
+	// Create a slow server that takes longer than a custom short timeout
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(15 * time.Second) // Longer than queryTimeout (10s)
+		time.Sleep(50 * time.Millisecond) // Short delay for testing
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
@@ -287,7 +293,10 @@ func TestQueryWithTimeout(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 
-	ctx := context.Background()
+	// Use a custom timeout that's shorter than the server delay
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancel()
+
 	_, _, err = client.Query(ctx, "slow_query")
 
 	if err == nil {
@@ -301,9 +310,10 @@ func TestQueryWithTimeout(t *testing.T) {
 }
 
 func TestQueryRangeWithTimeout(t *testing.T) {
-	// Create a slow server that takes longer than the timeout
+	t.Parallel()
+	// Create a slow server that takes longer than a custom short timeout
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(15 * time.Second) // Longer than queryTimeout (10s)
+		time.Sleep(50 * time.Millisecond) // Short delay for testing
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
@@ -316,7 +326,10 @@ func TestQueryRangeWithTimeout(t *testing.T) {
 	// Set start time for the client
 	client.Start = time.Now().Add(-1 * time.Hour)
 
-	ctx := context.Background()
+	// Use a custom timeout that's shorter than the server delay
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancel()
+
 	_, _, err = client.QueryRange(ctx, "slow_range_query")
 
 	if err == nil {
@@ -325,6 +338,7 @@ func TestQueryRangeWithTimeout(t *testing.T) {
 }
 
 func TestClientStartTime(t *testing.T) {
+	t.Parallel()
 	client, err := NewPrometheusClient("http://localhost:9090")
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)

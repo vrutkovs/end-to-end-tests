@@ -82,6 +82,7 @@ func (m *mockTestingT) Skipped() bool {
 var _ terratesting.TestingT = (*mockTestingT)(nil)
 
 func TestCheckNoAlertsFiring_NoAlerts(t *testing.T) {
+	t.Parallel()
 	// Create a mock server that returns at least one alert with value 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify the request method and path
@@ -141,6 +142,7 @@ func TestCheckNoAlertsFiring_NoAlerts(t *testing.T) {
 }
 
 func TestCheckNoAlertsFiring_WithCustomExceptions(t *testing.T) {
+	t.Parallel()
 	// Create a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify the request method and path
@@ -197,6 +199,7 @@ func TestCheckNoAlertsFiring_WithCustomExceptions(t *testing.T) {
 }
 
 func TestCheckNoAlertsFiring_WithFiringAlerts(t *testing.T) {
+	t.Parallel()
 	// Create a mock server that returns firing alerts
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Return vector with firing alerts
@@ -243,6 +246,7 @@ func TestCheckNoAlertsFiring_WithFiringAlerts(t *testing.T) {
 }
 
 func TestCheckNoAlertsFiring_WithZeroValueAlerts(t *testing.T) {
+	t.Parallel()
 	// Create a mock server that returns alerts with value 0 (not firing)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Return vector with non-firing alerts (value = 0)
@@ -280,6 +284,7 @@ func TestCheckNoAlertsFiring_WithZeroValueAlerts(t *testing.T) {
 }
 
 func TestCheckNoAlertsFiring_QueryError(t *testing.T) {
+	t.Parallel()
 	// Create a mock server that returns an error
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -304,6 +309,7 @@ func TestCheckNoAlertsFiring_QueryError(t *testing.T) {
 }
 
 func TestCheckNoAlertsFiring_WrongResultType(t *testing.T) {
+	t.Parallel()
 	// Create a mock server that returns wrong result type
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Return matrix instead of vector
@@ -362,6 +368,7 @@ func TestCheckNoAlertsFiring_DefaultExceptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// Parse form data
 				err := r.ParseForm()
@@ -412,6 +419,7 @@ func TestCheckNoAlertsFiring_DefaultExceptions(t *testing.T) {
 }
 
 func TestCheckNoAlertsFiring_EmptyVectorShouldFail(t *testing.T) {
+	t.Parallel()
 	// Create a mock server that returns empty vector - this should fail
 	// because the function expects at least one result
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -60,19 +60,42 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		gather.VMAfterAll(t, ctx, consts.ResourceWaitTimeout, vmNamespace)
 	})
 
-	Describe("Inner", func() {
-		It("Run vminsert-pod-failure scenario", Label("kind", "gke", "id=17f2e31b-9249-4283-845b-aae0bc81e5f2"), func() {
+	Describe("pod restarts", Label("kind", "gke", "chaos-pod-failure"), func() {
+		It("Run vminsert-pod-failure scenario", Label("id=17f2e31b-9249-4283-845b-aae0bc81e5f2"), func() {
 			By("Run scenario")
 			namespace := "vm"
 			install.RunChaosScenario(ctx, t, namespace, "pods", "vminsert-pod-failure", "podchaos")
 
 			By("No alerts are firing")
-			overwatch.CheckNoAlertsFiring(ctx, t, []string{
-				// TODO[vrutkovs]: sort out these exceptions? These are probably kind-specific
-				"TooManyLogs",
-				"RecordingRulesError",
-				"AlertingRulesError",
-			})
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+
+			// By("No services were down")
+			// value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")
+			// require.NoError(t, err)
+			// require.GreaterOrEqual(t, value, float64(1))
+		})
+
+		It("Run vmstorage-pod-failure scenario", Label("id=17f2e31b-9249-4283-845b-aae0bc81e5f2"), func() {
+			By("Run scenario")
+			namespace := "vm"
+			install.RunChaosScenario(ctx, t, namespace, "pods", "vmstorage-pod-failure", "podchaos")
+
+			By("No alerts are firing")
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+
+			// By("No services were down")
+			// value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")
+			// require.NoError(t, err)
+			// require.GreaterOrEqual(t, value, float64(1))
+		})
+
+		It("Run vmselect-pod-failure scenario", Label("id=17f2e31b-9249-4283-845b-aae0bc81e5f2"), func() {
+			By("Run scenario")
+			namespace := "vm"
+			install.RunChaosScenario(ctx, t, namespace, "pods", "vmselect-pod-failure", "podchaos")
+
+			By("No alerts are firing")
+			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
 
 			// By("No services were down")
 			// value, err = overwatch.VectorValue(ctx, "min_over_time(up) == 0")

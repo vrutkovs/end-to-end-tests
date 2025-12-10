@@ -147,7 +147,7 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		})
 	})
 
-	// Describe("cpu stress", Label("kind", "gke", "chaos-network-failure"), func() {
+	Describe("cpu stress", Label("kind", "gke", "chaos-network-failure"), func() {
 		// networkScenarios := map[string]string{
 		// 	"148c9b15-7779-414e-9f99-9a92e54b6816": "vmagent-to-vminsert-packet-delay",
 		// 	"f767bbe7-b84c-4c37-8bf3-eaf3f6e34909": "vmagent-to-vminsert-packet-loss",

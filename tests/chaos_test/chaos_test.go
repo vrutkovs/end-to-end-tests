@@ -154,6 +154,26 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 				})
 			})
 		}
+
+		httpScenarios := map[string]string{
+			"98f0368b-b200-4558-a09f-37e7ceaa3b1d": "vminsert-request-delay",
+			"d738fdd5-0076-4ddf-9358-2812a9cc3e2b": "vminsert-response-abort",
+			"3e1eff4c-dcda-442b-a477-85359ffc57b7": "vmselect-request-delay",
+			"b2807243-8528-4500-b630-822ed9fce73d": "vmselect-response-abort",
+		}
+
+		for uuid, scenarioName := range httpScenarios {
+			It(fmt.Sprintf("Run %s scenario", scenarioName), Label("gke", fmt.Sprintf("id=%s", uuid)), func() {
+				By("Run scenario")
+				install.RunChaosScenario(ctx, t, namespace, "http", scenarioName, "httpchaos")
+
+				By("No alerts are firing")
+				overwatch.CheckNoAlertsFiring(ctx, t, []string{
+					// TODO[vrutkovs]: this is a bug?
+					"AlertingRulesError",
+				})
+			})
+		}
 	})
 
 	Describe("rerouting", Label("kind", "gke", "chaos-rerouting"), func() {

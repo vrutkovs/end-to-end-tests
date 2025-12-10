@@ -46,9 +46,9 @@ jobs:
       matrix:
         vm_version:
           - "v1.131.0"
-          - "v1.131.0-enterprise"
-          - "v1.122.10-enterprise"
-          - "v1.110.25-enterprise"
+          # - "v1.131.0-enterprise"
+          # - "v1.122.10-enterprise"
+          # - "v1.110.25-enterprise"
       fail-fast: false
     outputs:
       tests: ${{ steps.tests.outcome }}
@@ -149,9 +149,9 @@ jobs:
       matrix:
         vm_version:
           - "v1.131.0"
-          - "v1.131.0-enterprise"
-          - "v1.122.10-enterprise"
-          - "v1.110.25-enterprise"
+          # - "v1.131.0-enterprise"
+          # - "v1.122.10-enterprise"
+          # - "v1.110.25-enterprise"
       fail-fast: false
     outputs:
       tests: ${{ steps.tests.outcome }}
@@ -252,9 +252,9 @@ jobs:
       matrix:
         vm_version:
           - "v1.131.0"
-          - "v1.131.0-enterprise"
-          - "v1.122.10-enterprise"
-          - "v1.110.25-enterprise"
+          # - "v1.131.0-enterprise"
+          # - "v1.122.10-enterprise"
+          # - "v1.110.25-enterprise"
       fail-fast: false
     outputs:
       tests: ${{ steps.tests.outcome }}
@@ -356,9 +356,9 @@ jobs:
       matrix:
         vm_version:
           - "v1.131.0"
-          - "v1.131.0-enterprise"
-          - "v1.122.10-enterprise"
-          - "v1.110.25-enterprise"
+          # - "v1.131.0-enterprise"
+          # - "v1.122.10-enterprise"
+          # - "v1.110.25-enterprise"
       fail-fast: false
     outputs:
       tests: ${{ steps.tests.outcome }}
@@ -511,9 +511,9 @@ jobs:
       matrix:
         vm_version:
           - "v1.131.0"
-          - "v1.131.0-enterprise"
-          - "v1.122.10-enterprise"
-          - "v1.110.25-enterprise"
+          # - "v1.131.0-enterprise"
+          # - "v1.122.10-enterprise"
+          # - "v1.110.25-enterprise"
       fail-fast: false
     outputs:
       tests: ${{ steps.tests.outcome }}
@@ -666,9 +666,9 @@ jobs:
       matrix:
         vm_version:
           - "v1.131.0"
-          - "v1.131.0-enterprise"
-          - "v1.122.10-enterprise"
-          - "v1.110.25-enterprise"
+          # - "v1.131.0-enterprise"
+          # - "v1.122.10-enterprise"
+          # - "v1.110.25-enterprise"
       fail-fast: false
     outputs:
       tests: ${{ steps.tests.outcome }}

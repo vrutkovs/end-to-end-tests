@@ -1,0 +1,17 @@
+kind: HTTPChaos
+apiVersion: chaos-mesh.org/v1alpha1
+metadata:
+  namespace: vm
+  name: vminsert-response-delay-5s
+spec:
+  selector:
+    namespaces:
+      - vm
+    labelSelectors:
+      app.kubernetes.io/name: vminsert
+  mode: all
+  target: Response
+  delay: 5s
+  port: 8480
+  path: '/insert*'
+  duration: 5m

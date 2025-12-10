@@ -34,7 +34,13 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	// Add VM tag if provided
 	vmTag := consts.VMVersion()
 	if vmTag != "" {
-		setValues["victoria-metrics-operator.image.tag"] = vmTag
+		setValues["vmsingle.spec.image.tag"] = vmTag
+		setValues["vmcluster.spec.vmstorage.image.tag"] = vmTag
+		setValues["vmcluster.spec.vmselect.image.tag"] = vmTag
+		setValues["vmcluster.spec.vminsert.image.tag"] = vmTag
+		setValues["vmalert.spec.image.tag"] = vmTag
+		setValues["vmagent.spec.image.tag"] = vmTag
+		setValues["vmauth.spec.image.tag"] = vmTag
 	}
 
 	helmOpts := &helm.Options{

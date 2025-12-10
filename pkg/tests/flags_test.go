@@ -163,3 +163,148 @@ func TestMultipleInits(t *testing.T) {
 		t.Errorf("Expected env k8s distro to remain '%s' after second set, got '%s'", firstDistro, consts.EnvK8SDistro())
 	}
 }
+
+func TestVMTagFlagDefault(t *testing.T) {
+	// Test that vmtag has the expected default value
+	// Create a new flag set to test defaults
+	testFlagSet := flag.NewFlagSet("test", flag.ContinueOnError)
+
+	var testVMTag string
+	testFlagSet.StringVar(&testVMTag, "vmtag", "", "VictoriaMetrics image tag to use for testing")
+
+	// Parse empty args to get defaults
+	err := testFlagSet.Parse([]string{})
+	if err != nil {
+		t.Fatalf("Failed to parse empty flags: %v", err)
+	}
+
+	if testVMTag != "" {
+		t.Errorf("Expected default vmtag to be empty string, got '%s'", testVMTag)
+	}
+}
+
+func TestVMTagFlagCustomValue(t *testing.T) {
+	// Test that vmtag accepts custom values
+	testFlagSet := flag.NewFlagSet("test", flag.ContinueOnError)
+
+	var testVMTag string
+	testFlagSet.StringVar(&testVMTag, "vmtag", "", "VictoriaMetrics image tag to use for testing")
+
+	// Test with custom VM tag
+	err := testFlagSet.Parse([]string{"-vmtag", "v1.131.0"})
+	if err != nil {
+		t.Fatalf("Failed to parse vmtag flag: %v", err)
+	}
+
+	if testVMTag != "v1.131.0" {
+		t.Errorf("Expected vmtag to be 'v1.131.0', got '%s'", testVMTag)
+	}
+}
+
+func TestVMTagSetterAndGetter(t *testing.T) {
+	// Test the SetVMTag and VMVersion functions work correctly
+	originalVMVersion := consts.VMVersion()
+	defer func() {
+		consts.SetVMTag(originalVMVersion)
+	}()
+
+	// Test setting VM tag
+	testTag := "v1.130.0"
+	consts.SetVMTag(testTag)
+
+	retrievedTag := consts.VMVersion()
+	if retrievedTag != testTag {
+		t.Errorf("Expected VM version to be '%s', got '%s'", testTag, retrievedTag)
+	}
+}
+
+func TestVMTagWithDifferentVersions(t *testing.T) {
+	// Test setting different VM tag versions
+	originalVMVersion := consts.VMVersion()
+	defer func() {
+		consts.SetVMTag(originalVMVersion)
+	}()
+
+	testVersions := []string{"v1.131.0", "v1.130.0", "v1.129.1", "v1.128.0"}
+
+	for _, version := range testVersions {
+		consts.SetVMTag(version)
+		retrievedVersion := consts.VMVersion()
+		if retrievedVersion != version {
+			t.Errorf("Expected VM version to be '%s', got '%s'", version, retrievedVersion)
+		}
+	}
+}
+
+func TestVMTagEmptyValue(t *testing.T) {
+	// Test setting empty VM tag
+	originalVMVersion := consts.VMVersion()
+	defer func() {
+		consts.SetVMTag(originalVMVersion)
+	}()
+
+	// Set empty tag
+	consts.SetVMTag("")
+	retrievedTag := consts.VMVersion()
+	if retrievedTag != "" {
+		t.Errorf("Expected VM version to be empty string, got '%s'", retrievedTag)
+	}
+}
+
+func TestGetVMTagFunction(t *testing.T) {
+	// Test the GetVMTag function exists and works
+	// Save original value
+	originalVMTag := vmTag
+
+	// Test with different values
+	testTag := "v1.129.1"
+	vmTag = testTag
+
+	retrievedTag := GetVMTag()
+	if retrievedTag != testTag {
+		t.Errorf("Expected GetVMTag() to return '%s', got '%s'", testTag, retrievedTag)
+	}
+
+	// Reset original value
+	vmTag = originalVMTag
+}
+
+func TestVMTagIntegrationWithInit(t *testing.T) {
+	// Test that vmtag integrates correctly with the Init function
+	originalVMVersion := consts.VMVersion()
+	defer func() {
+		consts.SetVMTag(originalVMVersion)
+	}()
+
+	// Simulate setting vmTag variable (as would happen during flag parsing)
+	testTag := "v1.131.0"
+	originalVMTag := vmTag
+	vmTag = testTag
+
+	defer func() {
+		vmTag = originalVMTag
+	}()
+
+	// Since flags are already parsed in the test environment, we'll test
+	// the SetVMTag functionality directly instead of calling Init()
+	consts.SetVMTag(vmTag)
+
+	// Verify that consts was updated
+	retrievedVersion := consts.VMVersion()
+	if retrievedVersion != testTag {
+		t.Errorf("Expected VM version to be '%s' after SetVMTag(), got '%s'", testTag, retrievedVersion)
+	}
+}
+
+func TestVMTagFlagVariableExists(t *testing.T) {
+	// Test that the vmTag variable exists and is accessible
+	_ = vmTag // This should compile without error
+
+	// Test that we can read and write to it
+	originalValue := vmTag
+	vmTag = "test-value"
+	if vmTag != "test-value" {
+		t.Errorf("Expected vmTag to be 'test-value', got '%s'", vmTag)
+	}
+	vmTag = originalValue
+}

@@ -40,6 +40,7 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 
 	ctx := context.Background()
 	t := tests.GetT()
+	namespace := "vm"
 
 	var overwatch promquery.PrometheusClient
 
@@ -68,9 +69,8 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		}
 
 		for uuid, scenario := range scenarios {
-			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("uuid=%s", uuid)), func() {
+			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func() {
 				By("Run scenario")
-				namespace := "vm"
 				install.RunChaosScenario(ctx, t, namespace, "pods", scenario, "podchaos")
 
 				By("No alerts are firing")
@@ -89,7 +89,6 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		for uuid, scenario := range scenarios {
 			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func() {
 				By("Run scenario")
-				namespace := "vm"
 				install.RunChaosScenario(ctx, t, namespace, "cpu", scenario, "stresschaos")
 
 				By("Only CPUThrottlingHigh is firing")
@@ -109,7 +108,6 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		for uuid, scenario := range scenarios {
 			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func() {
 				By("Run scenario")
-				namespace := "vm"
 				install.RunChaosScenario(ctx, t, namespace, "memory", scenario, "stresschaos")
 
 				By("No alerts are firing")
@@ -128,8 +126,7 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		for uuid, scenario := range scenarios {
 			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func() {
 				By("Run scenario")
-				namespace := "vm"
-				install.RunChaosScenario(ctx, t, namespace, "memory", scenario, "stresschaos")
+				install.RunChaosScenario(ctx, t, namespace, "io", scenario, "stresschaos")
 
 				By("No alerts are firing")
 				overwatch.CheckNoAlertsFiring(ctx, t, []string{})
@@ -148,7 +145,6 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		for uuid, scenarioName := range networkScenarios {
 			It(fmt.Sprintf("Run %s scenario", scenarioName), Label("gke", fmt.Sprintf("id=%s", uuid)), func() {
 				By("Run scenario")
-				namespace := "vm"
 				install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")
 
 				By("No alerts are firing")

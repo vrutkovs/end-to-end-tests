@@ -44,68 +44,55 @@ func TestDiscoverIngressHostWithLoadBalancer(t *testing.T) {
 
 	// Reset consts values
 	consts.SetEnvK8SDistro("test")
-	consts.SetVMSelectHost("")
-	consts.SetVMSingleHost("")
-	consts.SetVMSelectUrl("")
-	consts.SetVMSingleUrl("")
+	consts.SetNginxHost("")
 
-	// We can't easily test DiscoverIngressHost directly because it uses k8s.GetService
-	// which creates its own client. However, we can test the logic by verifying
-	// the expected behavior with the values set by the function.
+	// Test the new nginx host API behavior
+	consts.SetNginxHost("192.168.1.100")
 
-	// Test that after calling the function, the consts should be set
-	// This is more of an integration test, but we can verify the format
-	expectedVMSelectHost := "vmselect.192.168.1.100.nip.io"
-	expectedVMSingleHost := "vmsingle.192.168.1.100.nip.io"
+	// Test hosts with different namespaces
+	testNamespace := "test-ns"
+	expectedVMSelectHost := "vmselect-test-ns.192.168.1.100.nip.io"
+	expectedVMSingleHost := "vmsingle-test-ns.192.168.1.100.nip.io"
+	expectedVMSelectUrl := "http://vmselect-test-ns.192.168.1.100.nip.io"
+	expectedVMSingleUrl := "http://vmsingle-test-ns.192.168.1.100.nip.io"
 
-	// Since we can't mock k8s.GetService easily, let's test the host generation logic
-	nginxHost := "192.168.1.100"
-	selectHost := "vmselect." + nginxHost + ".nip.io"
-	singleHost := "vmsingle." + nginxHost + ".nip.io"
-	selectUrl := "http://" + selectHost
-	singleUrl := "http://" + singleHost
-
-	if selectHost != expectedVMSelectHost {
-		t.Errorf("Expected VMSelect host to be '%s', got '%s'", expectedVMSelectHost, selectHost)
+	if consts.VMSelectHost(testNamespace) != expectedVMSelectHost {
+		t.Errorf("Expected VMSelect host to be '%s', got '%s'", expectedVMSelectHost, consts.VMSelectHost(testNamespace))
 	}
-	if singleHost != expectedVMSingleHost {
-		t.Errorf("Expected VMSingle host to be '%s', got '%s'", expectedVMSingleHost, singleHost)
+	if consts.VMSingleHost(testNamespace) != expectedVMSingleHost {
+		t.Errorf("Expected VMSingle host to be '%s', got '%s'", expectedVMSingleHost, consts.VMSingleHost(testNamespace))
 	}
-	if selectUrl != "http://vmselect.192.168.1.100.nip.io" {
-		t.Errorf("Expected VMSelect URL to be 'http://vmselect.192.168.1.100.nip.io', got '%s'", selectUrl)
+	if consts.VMSelectUrl(testNamespace) != expectedVMSelectUrl {
+		t.Errorf("Expected VMSelect URL to be '%s', got '%s'", expectedVMSelectUrl, consts.VMSelectUrl(testNamespace))
 	}
-	if singleUrl != "http://vmsingle.192.168.1.100.nip.io" {
-		t.Errorf("Expected VMSingle URL to be 'http://vmsingle.192.168.1.100.nip.io', got '%s'", singleUrl)
+	if consts.VMSingleUrl(testNamespace) != expectedVMSingleUrl {
+		t.Errorf("Expected VMSingle URL to be '%s', got '%s'", expectedVMSingleUrl, consts.VMSingleUrl(testNamespace))
 	}
 }
 
 func TestDiscoverIngressHostKindLogic(t *testing.T) {
 	// Test the kind-specific logic
 	consts.SetEnvK8SDistro("kind")
+	consts.SetNginxHost("127.0.0.1")
 
-	// For kind, when there's no LoadBalancer ingress, it should use 127.0.0.1
-	nginxHost := "127.0.0.1"
-	selectHost := "vmselect." + nginxHost + ".nip.io"
-	singleHost := "vmsingle." + nginxHost + ".nip.io"
-	selectUrl := "http://" + selectHost
-	singleUrl := "http://" + singleHost
+	// Test with "vm" namespace (most common case)
+	namespace := "vm"
+	expectedVMSelectHost := "vmselect-vm.127.0.0.1.nip.io"
+	expectedVMSingleHost := "vmsingle-vm.127.0.0.1.nip.io"
+	expectedVMSelectUrl := "http://vmselect-vm.127.0.0.1.nip.io"
+	expectedVMSingleUrl := "http://vmsingle-vm.127.0.0.1.nip.io"
 
-	expectedVMSelectHost := "vmselect.127.0.0.1.nip.io"
-	expectedVMSingleHost := "vmsingle.127.0.0.1.nip.io"
-	expectedVMSelectUrl := "http://vmselect.127.0.0.1.nip.io"
-	expectedVMSingleUrl := "http://vmsingle.127.0.0.1.nip.io"
-
-	if selectHost != expectedVMSelectHost {
-		t.Errorf("Expected VMSelect host for kind to be '%s', got '%s'", expectedVMSelectHost, selectHost)
+	if consts.VMSelectHost(namespace) != expectedVMSelectHost {
+		t.Errorf("Expected VMSelect host for kind to be '%s', got '%s'", expectedVMSelectHost, consts.VMSelectHost(namespace))
 	}
-	if singleHost != expectedVMSingleHost {
-		t.Errorf("Expected VMSingle host for kind to be '%s', got '%s'", expectedVMSingleHost, singleHost)
+	if consts.VMSingleHost(namespace) != expectedVMSingleHost {
+		t.Errorf("Expected VMSingle host for kind to be '%s', got '%s'", expectedVMSingleHost, consts.VMSingleHost(namespace))
 	}
-	if selectUrl != expectedVMSelectUrl {
-		t.Errorf("Expected VMSelect URL for kind to be '%s', got '%s'", expectedVMSelectUrl, selectUrl)
+	if consts.VMSelectUrl(namespace) != expectedVMSelectUrl {
+		t.Errorf("Expected VMSelect URL for kind to be '%s', got '%s'", expectedVMSelectUrl, consts.VMSelectUrl(namespace))
 	}
-	if singleUrl != expectedVMSingleUrl {
-		t.Errorf("Expected VMSingle URL for kind to be '%s', got '%s'", expectedVMSingleUrl, singleUrl)
+	if consts.VMSingleUrl(namespace) != expectedVMSingleUrl {
+		t.Errorf("Expected VMSingle URL for kind to be '%s', got '%s'", expectedVMSingleUrl, consts.VMSingleUrl(namespace))
 	}
 }
 
@@ -146,22 +133,22 @@ func TestHostnameFormatting(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			selectHost := "vmselect." + tt.nginxHost + ".nip.io"
-			singleHost := "vmsingle." + tt.nginxHost + ".nip.io"
-			selectUrl := "http://" + selectHost
-			singleUrl := "http://" + singleHost
+			consts.SetNginxHost(tt.nginxHost)
 
-			if selectHost != tt.expectedSelect {
-				t.Errorf("Expected VMSelect host to be '%s', got '%s'", tt.expectedSelect, selectHost)
+			// Test with empty namespace (no namespace prefix)
+			namespace := ""
+
+			if consts.VMSelectHost(namespace) != tt.expectedSelect {
+				t.Errorf("Expected VMSelect host to be '%s', got '%s'", tt.expectedSelect, consts.VMSelectHost(namespace))
 			}
-			if singleHost != tt.expectedSingle {
-				t.Errorf("Expected VMSingle host to be '%s', got '%s'", tt.expectedSingle, singleHost)
+			if consts.VMSingleHost(namespace) != tt.expectedSingle {
+				t.Errorf("Expected VMSingle host to be '%s', got '%s'", tt.expectedSingle, consts.VMSingleHost(namespace))
 			}
-			if selectUrl != tt.expectedSelectUrl {
-				t.Errorf("Expected VMSelect URL to be '%s', got '%s'", tt.expectedSelectUrl, selectUrl)
+			if consts.VMSelectUrl(namespace) != tt.expectedSelectUrl {
+				t.Errorf("Expected VMSelect URL to be '%s', got '%s'", tt.expectedSelectUrl, consts.VMSelectUrl(namespace))
 			}
-			if singleUrl != tt.expectedSingleUrl {
-				t.Errorf("Expected VMSingle URL to be '%s', got '%s'", tt.expectedSingleUrl, singleUrl)
+			if consts.VMSingleUrl(namespace) != tt.expectedSingleUrl {
+				t.Errorf("Expected VMSingle URL to be '%s', got '%s'", tt.expectedSingleUrl, consts.VMSingleUrl(namespace))
 			}
 		})
 	}
@@ -211,28 +198,27 @@ func TestHTTPServerSetup(t *testing.T) {
 }
 
 func TestConstsIntegration(t *testing.T) {
-	// Test integration with consts package
-	testSelectHost := "test-vmselect.example.com"
-	testSingleHost := "test-vmsingle.example.com"
-	testSelectUrl := "http://" + testSelectHost
-	testSingleUrl := "http://" + testSingleHost
+	// Test integration with consts package using nginx host
+	testNginxHost := "192.168.100.50"
+	testNamespace := "integration"
+	expectedSelectHost := "vmselect-integration.192.168.100.50.nip.io"
+	expectedSingleHost := "vmsingle-integration.192.168.100.50.nip.io"
+	expectedSelectUrl := "http://vmselect-integration.192.168.100.50.nip.io"
+	expectedSingleUrl := "http://vmsingle-integration.192.168.100.50.nip.io"
 
-	consts.SetVMSelectHost(testSelectHost)
-	consts.SetVMSingleHost(testSingleHost)
-	consts.SetVMSelectUrl(testSelectUrl)
-	consts.SetVMSingleUrl(testSingleUrl)
+	consts.SetNginxHost(testNginxHost)
 
-	if consts.VMSelectHost() != testSelectHost {
-		t.Errorf("Expected VMSelectHost to be '%s', got '%s'", testSelectHost, consts.VMSelectHost())
+	if consts.VMSelectHost(testNamespace) != expectedSelectHost {
+		t.Errorf("Expected VMSelectHost to be '%s', got '%s'", expectedSelectHost, consts.VMSelectHost(testNamespace))
 	}
-	if consts.VMSingleHost() != testSingleHost {
-		t.Errorf("Expected VMSingleHost to be '%s', got '%s'", testSingleHost, consts.VMSingleHost())
+	if consts.VMSingleHost(testNamespace) != expectedSingleHost {
+		t.Errorf("Expected VMSingleHost to be '%s', got '%s'", expectedSingleHost, consts.VMSingleHost(testNamespace))
 	}
-	if consts.VMSelectUrl() != testSelectUrl {
-		t.Errorf("Expected VMSelectUrl to be '%s', got '%s'", testSelectUrl, consts.VMSelectUrl())
+	if consts.VMSelectUrl(testNamespace) != expectedSelectUrl {
+		t.Errorf("Expected VMSelectUrl to be '%s', got '%s'", expectedSelectUrl, consts.VMSelectUrl(testNamespace))
 	}
-	if consts.VMSingleUrl() != testSingleUrl {
-		t.Errorf("Expected VMSingleUrl to be '%s', got '%s'", testSingleUrl, consts.VMSingleUrl())
+	if consts.VMSingleUrl(testNamespace) != expectedSingleUrl {
+		t.Errorf("Expected VMSingleUrl to be '%s', got '%s'", expectedSingleUrl, consts.VMSingleUrl(testNamespace))
 	}
 }
 

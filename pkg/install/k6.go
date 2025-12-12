@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	terratesting "github.com/gruntwork-io/terratest/modules/testing"
@@ -23,14 +24,27 @@ func InstallK6(ctx context.Context, t terratesting.TestingT, namespace string) {
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "k6-operator-controller-manager", consts.Retries, consts.PollingInterval)
 }
 
-func RunK6Scenario(ctx context.Context, t terratesting.TestingT, namespace, scenario string, parallelism int) error {
-	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+func RunK6Scenario(ctx context.Context, t terratesting.TestingT, k6namespace, targetNamespace, scenario string, parallelism int) error {
+	kubeOpts := k8s.NewKubectlOptions("", "", k6namespace)
 
 	scenarioPath := fmt.Sprintf("../../manifests/load-tests/%s.js", scenario)
 	scenarioContent, err := os.ReadFile(scenarioPath)
 	if err != nil {
 		return fmt.Errorf("failed to read scenario file: %w", err)
 	}
+
+	// Update URL with GetVMSelectSvc - replace the full URL pattern identified by "let url ="
+	vmSelectSvcAddr := consts.GetVMSelectSvc(targetNamespace)
+	// Build the new URL with the dynamic service address
+	newURL := fmt.Sprintf("http://%s/select/0/prometheus/api/v1/query_range", vmSelectSvcAddr)
+
+	// Replace the URL line pattern: let url = "old_url";
+	urlPattern := `let url =
+    "http://vmselect-vmks.vm.svc.cluster.local.:8481/select/0/prometheus/api/v1/query_range"`
+	newURLPattern := fmt.Sprintf(`let url =
+    "%s"`, newURL)
+
+	updatedScenarioContent := strings.ReplaceAll(string(scenarioContent), urlPattern, newURLPattern)
 
 	// Create a configmap with a script
 	configMap := corev1.ConfigMap{
@@ -40,10 +54,10 @@ func RunK6Scenario(ctx context.Context, t terratesting.TestingT, namespace, scen
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      scenario,
-			Namespace: namespace,
+			Namespace: k6namespace,
 		},
 		Data: map[string]string{
-			"script.js": string(scenarioContent),
+			"script.js": updatedScenarioContent,
 		},
 	}
 	yamlConfigMap, err := yaml.Marshal(configMap)
@@ -60,7 +74,7 @@ func RunK6Scenario(ctx context.Context, t terratesting.TestingT, namespace, scen
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      scenario,
-			Namespace: namespace,
+			Namespace: k6namespace,
 		},
 		Spec: k6v1alpha1.TestRunSpec{
 			Script: k6v1alpha1.K6Script{

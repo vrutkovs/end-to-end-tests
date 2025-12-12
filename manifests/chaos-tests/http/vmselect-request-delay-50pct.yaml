@@ -1,7 +1,6 @@
 kind: HTTPChaos
 apiVersion: chaos-mesh.org/v1alpha1
 metadata:
-  namespace: vm
   name: vmselect-request-delay-50pct
 spec:
   selector:

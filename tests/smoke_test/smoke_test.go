@@ -41,7 +41,7 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 		install.DiscoverIngressHost(ctx, t)
 
 		var err error
-		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
+		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl(namespace)))
 		require.NoError(t, err)
 		overwatch.Start = time.Now()
 
@@ -58,7 +58,7 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 			By("Send requests for 5 minutes")
 			tickerPeriod := time.Second
 
-			promAPI, err := promquery.NewPrometheusClient(fmt.Sprintf("%s/select/0/prometheus", consts.VMSelectUrl()))
+			promAPI, err := promquery.NewPrometheusClient(fmt.Sprintf("%s/select/0/prometheus", consts.VMSelectUrl(namespace)))
 			promAPI.Start = overwatch.Start
 			require.NoError(t, err)
 

@@ -1,7 +1,6 @@
 kind: PodChaos
 apiVersion: chaos-mesh.org/v1alpha1
 metadata:
-  namespace: vm
   name: vmselect-pod-failure
 spec:
   selector:

@@ -2,7 +2,6 @@ package install
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	"github.com/gruntwork-io/terratest/modules/k8s"
@@ -34,10 +33,7 @@ func DiscoverIngressHost(ctx context.Context, t terratesting.TestingT) {
 	logger.Default.Logf(t, "nginxHost: %s", nginxHost)
 
 	// Set the discovered host in consts
-	consts.SetVMSelectHost(fmt.Sprintf("%s.%s.nip.io", "vmselect", nginxHost))
-	consts.SetVMSingleHost(fmt.Sprintf("%s.%s.nip.io", "vmsingle", nginxHost))
-	consts.SetVMSelectUrl(fmt.Sprintf("http://%s", consts.VMSelectHost()))
-	consts.SetVMSingleUrl(fmt.Sprintf("http://%s", consts.VMSingleHost()))
+	consts.SetNginxHost(nginxHost)
 }
 
 func waitForLoadBalancerIngress(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions) string {

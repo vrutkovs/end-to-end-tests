@@ -46,7 +46,7 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 		install.DiscoverIngressHost(ctx, t)
 
 		var err error
-		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
+		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl(vmNamespace)))
 		require.NoError(t, err)
 
 		overwatch.Start = time.Now()
@@ -72,7 +72,7 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 		It("Default installation should handle 50vus-30mins load test scenario", Label("kind", "gke", "id=d37b1987-a9e7-4d13-87b7-f2ded679c249"), func() {
 			By("Run 50vus-30mins scenario")
 			scenario := "vmselect-50vus-30mins"
-			err := install.RunK6Scenario(ctx, t, k6TestsNamespace, scenario, 3)
+			err := install.RunK6Scenario(ctx, t, k6TestsNamespace, vmNamespace, scenario, 3)
 			require.NoError(t, err)
 
 			By("Waiting for K6 jobs to complete")

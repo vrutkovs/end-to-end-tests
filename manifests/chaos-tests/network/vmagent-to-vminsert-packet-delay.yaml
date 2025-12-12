@@ -1,7 +1,6 @@
 kind: NetworkChaos
 apiVersion: chaos-mesh.org/v1alpha1
 metadata:
-  namespace: vm
   name: vmagent-to-vminsert-packet-delay
 spec:
   selector:

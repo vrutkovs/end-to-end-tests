@@ -25,43 +25,49 @@ func TestChaosTestsTests(t *testing.T) {
 	RunSpecs(t, "Chaos test Suite", suiteConfig, reporterConfig)
 }
 
-var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"), func() {
+var _ = BeforeSuite(
+	func() {
+		const (
+			chaosValuesFile  = "../../manifests/chaos-mesh-operator/values.yaml"
+			chaosReleaseName = "chaos-mesh"
+			chaosNamespace   = "chaos-mesh"
+			chaosHelmChart   = "chaos-mesh/chaos-mesh"
+		)
+
+		ctx := context.Background()
+		t := tests.GetT()
+		install.DiscoverIngressHost(ctx, t)
+		install.InstallChaosMesh(ctx, chaosHelmChart, chaosValuesFile, t, chaosNamespace, chaosReleaseName)
+	},
+)
+
+var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 	const (
-		vmNamespace   = "vm"
 		vmReleaseName = "vmks"
 		vmHelmChart   = "vm/victoria-metrics-k8s-stack"
 		vmValuesFile  = "../../manifests/smoke.yaml"
-
-		chaosValuesFile  = "../../manifests/chaos-mesh-operator/values.yaml"
-		chaosReleaseName = "chaos-mesh"
-		chaosNamespace   = "chaos-mesh"
-		chaosHelmChart   = "chaos-mesh/chaos-mesh"
 	)
 
 	ctx := context.Background()
 	t := tests.GetT()
-	namespace := "vm"
+	namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
 
-	var overwatch promquery.PrometheusClient
-
-	BeforeAll(func() {
-		install.DiscoverIngressHost(ctx, t)
-
+	beforeAll := func(namespace string, overwatch promquery.PrometheusClient) {
 		var err error
-		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
+		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl(namespace)))
 		require.NoError(t, err)
 		overwatch.Start = time.Now()
-		install.InstallWithHelm(ctx, vmHelmChart, vmValuesFile, t, vmNamespace, vmReleaseName)
+		install.InstallWithHelm(ctx, vmHelmChart, vmValuesFile, t, namespace, vmReleaseName)
+	}
 
-		// Install chaos-mesh operator
-		install.InstallChaosMesh(ctx, chaosHelmChart, chaosValuesFile, t, chaosNamespace, chaosReleaseName)
-	})
 	AfterEach(func() {
 		gather.K8sAfterAll(t, ctx, consts.ResourceWaitTimeout)
-		gather.VMAfterAll(t, ctx, consts.ResourceWaitTimeout, vmNamespace)
+		gather.VMAfterAll(t, ctx, consts.ResourceWaitTimeout, namespace)
 	})
 
-	Describe("pod restarts", Label("kind", "gke", "chaos-pod-failure"), func() {
+	Describe("pod restarts", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-pod-failure"), func() {
+		var overwatch promquery.PrometheusClient
+		beforeAll(namespace, overwatch)
 		scenarios := map[string]string{
 			"17f2e31b-9249-4283-845b-aae0bc81e5f2": "vminsert-pod-failure",
 			"e340d25f-b14f-4f21-acb4-68c4fdf39a85": "vmstorage-pod-failure",
@@ -79,7 +85,10 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		}
 	})
 
-	Describe("cpu stress", Label("kind", "gke", "chaos-cpu-stress"), func() {
+	Describe("cpu stress", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-cpu-stress"), func() {
+		var overwatch promquery.PrometheusClient
+		beforeAll(namespace, overwatch)
+
 		scenarios := map[string]string{
 			"4c571bca-2442-4a1b-8e54-4f9878f8dd6d": "vminsert-cpu-usage",
 			"d1ebdfd3-a0cf-4525-89b9-e998ec7b0c1e": "vmstorage-cpu-usage",
@@ -98,7 +107,10 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		}
 	})
 
-	Describe("memory stress", Label("kind", "gke", "chaos-memory-stress"), func() {
+	Describe("memory stress", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-memory-stress"), func() {
+		var overwatch promquery.PrometheusClient
+		beforeAll(namespace, overwatch)
+
 		scenarios := map[string]string{
 			"47690837-45e5-4cae-9e60-abadf59e4e66": "vminsert-memory-usage",
 			"357cef7e-c2ce-4a76-8768-7b142a4e7997": "vmstorage-memory-usage",
@@ -116,7 +128,10 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		}
 	})
 
-	Describe("io stress", Label("kind", "gke", "chaos-io-stress"), func() {
+	Describe("io stress", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-io-stress"), func() {
+		var overwatch promquery.PrometheusClient
+		beforeAll(namespace, overwatch)
+
 		scenarios := map[string]string{
 			"c70ce6cc-84fe-447d-8b5f-48871a2ebf99": "vminsert-io-usage",
 			"357cef7e-c2ce-4a76-8768-7b142a4e7997": "vmstorage-io-usage",
@@ -134,7 +149,10 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		}
 	})
 
-	Describe("network failure", Label("kind", "gke", "chaos-network-failure"), func() {
+	Describe("network failure", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-network-failure"), func() {
+		var overwatch promquery.PrometheusClient
+		beforeAll(namespace, overwatch)
+
 		networkScenarios := map[string]string{
 			"ef3455cd-7687-49a4-b423-7c4541aa051c": "vminsert-to-vmstorage-packet-corrupt",
 			"e13108bd-00df-40f5-acc9-b134bc619dc8": "vmselect-to-vmstorage-packet-delay",
@@ -176,7 +194,10 @@ var _ = Describe("Chaos tests", Ordered, ContinueOnFailure, Label("chaos-test"),
 		}
 	})
 
-	Describe("rerouting", Label("kind", "gke", "chaos-rerouting"), func() {
+	Describe("rerouting", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-rerouting"), func() {
+		var overwatch promquery.PrometheusClient
+		beforeAll(namespace, overwatch)
+
 		It("Emulate row rerouting when vmstorage-0 becomes unreachable", Label("gke", "id=3a9e309f-eec7-4d37-a7ee-918abd3a3d44"), func() {
 			By("Run scenario")
 			namespace := "vm"

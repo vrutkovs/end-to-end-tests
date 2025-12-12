@@ -1,7 +1,6 @@
 kind: StressChaos
 apiVersion: chaos-mesh.org/v1alpha1
 metadata:
-  namespace: vm
   name: vmstorage-io-usage
 spec:
   selector:

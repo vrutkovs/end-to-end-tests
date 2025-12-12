@@ -1,6 +1,7 @@
 package consts
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -27,11 +28,7 @@ var (
 	reportLocation string
 	envK8SDistro   string
 
-	vmSingleUrl string
-	vmSelectUrl string
-
-	vmSingleHost string
-	vmSelectHost string
+	nginxHost string
 
 	helmChartVersion string
 	vmVersion        string
@@ -51,28 +48,10 @@ func SetEnvK8SDistro(val string) {
 	envK8SDistro = val
 }
 
-func SetVMSingleUrl(val string) {
+func SetNginxHost(val string) {
 	mu.Lock()
 	defer mu.Unlock()
-	vmSingleUrl = val
-}
-
-func SetVMSelectUrl(val string) {
-	mu.Lock()
-	defer mu.Unlock()
-	vmSelectUrl = val
-}
-
-func SetVMSingleHost(val string) {
-	mu.Lock()
-	defer mu.Unlock()
-	vmSingleHost = val
-}
-
-func SetVMSelectHost(val string) {
-	mu.Lock()
-	defer mu.Unlock()
-	vmSelectHost = val
+	nginxHost = val
 }
 
 func SetHelmChartVersion(val string) {
@@ -112,28 +91,74 @@ func EnvK8SDistro() string {
 	return envK8SDistro
 }
 
-func VMSingleUrl() string {
+func NginxHost() string {
 	mu.Lock()
 	defer mu.Unlock()
-	return vmSingleUrl
+	return nginxHost
 }
 
-func VMSelectUrl() string {
-	mu.Lock()
-	defer mu.Unlock()
-	return vmSelectUrl
+func VMSingleUrl(namespace string) string {
+	return fmt.Sprintf("http://%s", VMSingleHost(namespace))
 }
 
-func VMSingleHost() string {
-	mu.Lock()
-	defer mu.Unlock()
-	return vmSingleHost
+func VMSelectUrl(namespace string) string {
+	return fmt.Sprintf("http://%s", VMSelectHost(namespace))
 }
 
-func VMSelectHost() string {
+func VMSingleHost(namespace string) string {
 	mu.Lock()
-	defer mu.Unlock()
-	return vmSelectHost
+	host := nginxHost
+	mu.Unlock()
+	if host == "" {
+		return ""
+	}
+	if namespace == "" {
+		return fmt.Sprintf("vmsingle.%s.nip.io", host)
+	}
+	return fmt.Sprintf("vmsingle-%s.%s.nip.io", namespace, host)
+}
+
+func VMSelectHost(namespace string) string {
+	mu.Lock()
+	host := nginxHost
+	mu.Unlock()
+	if host == "" {
+		return ""
+	}
+	if namespace == "" {
+		return fmt.Sprintf("vmselect.%s.nip.io", host)
+	}
+	return fmt.Sprintf("vmselect-%s.%s.nip.io", namespace, host)
+}
+
+// Kubernetes service address functions
+func GetVMSelectSvc(namespace string) string {
+	return fmt.Sprintf("vmselect-vmks.%s.svc.cluster.local.:8481", namespace)
+}
+
+func GetVMSingleSvc(namespace string) string {
+	return fmt.Sprintf("vmsingle-overwatch.%s.svc.cluster.local.:8428", namespace)
+}
+
+func GetVMInsertSvc(namespace string) string {
+	return fmt.Sprintf("vminsert-vmks.%s.svc.cluster.local.:8480", namespace)
+}
+
+// Backward compatibility functions that use "vm" as default namespace
+func VMSingleUrlCompat() string {
+	return VMSingleUrl("vm")
+}
+
+func VMSelectUrlCompat() string {
+	return VMSelectUrl("vm")
+}
+
+func VMSingleHostCompat() string {
+	return VMSingleHost("vm")
+}
+
+func VMSelectHostCompat() string {
+	return VMSelectHost("vm")
 }
 
 func HelmChartVersion() string {

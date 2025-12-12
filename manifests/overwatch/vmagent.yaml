@@ -4,7 +4,6 @@ metadata:
   finalizers:
   - apps.victoriametrics.com/finalizer
   name: vmks
-  namespace: vm
 spec:
   remoteWrite:
   - url: http://vminsert-vmks.vm.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write

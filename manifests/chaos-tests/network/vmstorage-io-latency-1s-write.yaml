@@ -1,7 +1,6 @@
 kind: IOChaos
 apiVersion: chaos-mesh.org/v1alpha1
 metadata:
-  namespace: vm
   name: vmstorage-io-latency-1s
 spec:
   selector:

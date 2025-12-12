@@ -3,6 +3,8 @@ package install
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2" // nolint
@@ -53,8 +55,17 @@ func RunChaosScenario(ctx context.Context, t terratesting.TestingT, namespace, s
 	dynamicClient := dynamic.NewForConfigOrDie(restConfig)
 	require.NoError(t, err)
 
+	// Read chaos scenario manifest content
 	manifestPath := fmt.Sprintf("../../manifests/chaos-tests/%s/%s.yaml", scenarioFolder, scenario)
-	k8s.KubectlApply(t, kubeOpts, manifestPath)
+	manifestContent, err := os.ReadFile(manifestPath)
+	require.NoError(t, err)
+
+	// Replace hardcoded namespace with dynamic namespace parameter
+	// Replace "- vm" with "- <namespace>" in namespaces arrays
+	updatedManifestContent := strings.ReplaceAll(string(manifestContent), "- vm", fmt.Sprintf("- %s", namespace))
+
+	// Apply the updated chaos scenario manifest
+	k8s.KubectlApplyFromString(t, kubeOpts, updatedManifestContent)
 
 	By("Waiting for chaos scenario to complete")
 	WaitForChaosScenarioToComplete(ctx, t, dynamicClient, namespace, scenario, chaosType)

@@ -17,7 +17,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	watchtools "k8s.io/client-go/tools/watch"
 
-	. "github.com/onsi/ginkgo/v2" // nolint
+	// . "github.com/onsi/ginkgo/v2"
 
 	vmclient "github.com/VictoriaMetrics/operator/api/client/versioned"
 	vmv1beta1 "github.com/VictoriaMetrics/operator/api/operator/v1beta1"
@@ -28,9 +28,9 @@ import (
 // buildVMTagSetValues creates Helm set values for VM component image tags based on the configured VM version.
 // It handles the logic for setting appropriate image tags for all VictoriaMetrics components,
 // including the special case of adding "-cluster" suffix for cluster components when not using "latest" tag.
-func buildVMTagSetValues() map[string]string {
+func buildVMTagSetValues(namespace string) map[string]string {
 	setValues := map[string]string{
-		"vmcluster.ingress.select.hosts[0]": consts.VMSelectHost(),
+		"vmcluster.ingress.select.hosts[0]": consts.VMSelectHost(namespace),
 	}
 
 	// Add VM tag if provided
@@ -57,7 +57,7 @@ func buildVMTagSetValues() map[string]string {
 
 func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terratesting.TestingT, namespace string, releaseName string) {
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
-	setValues := buildVMTagSetValues()
+	setValues := buildVMTagSetValues(namespace)
 
 	helmOpts := &helm.Options{
 		KubectlOptions: kubeOpts,
@@ -69,7 +69,7 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	}
 	vmclient := GetVMClient(t, kubeOpts)
 
-	By(fmt.Sprintf("Install %s chart", helmChart))
+	// By(fmt.Sprintf("Install %s chart", helmChart))
 	helm.Upgrade(t, helmOpts, helmChart, releaseName)
 
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmks-victoria-metrics-operator", consts.Retries, consts.PollingInterval)
@@ -107,11 +107,11 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	}
 	consts.SetHelmChartVersion(helmChartVersion)
 
-	By("Install VMSingle overwatch instance")
+	// By("Install VMSingle overwatch instance")
 	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmsingle.yaml")
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmsingle-overwatch", consts.Retries, consts.PollingInterval)
 
-	By("Install VMSingle ingress")
+	// By("Install VMSingle ingress")
 	// Copy vmsingle-ingress.yaml to temp file, update ingress host and apply it
 	vmsingleYaml, err := os.ReadFile("../../manifests/overwatch/vmsingle-ingress.yaml")
 	require.NoError(t, err)
@@ -124,20 +124,43 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	}()
 
 	// Extract host from consts.VMSingleUrl
-	vmsingleYaml = []byte(strings.ReplaceAll(string(vmsingleYaml), "vmsingle.example.com", consts.VMSingleHost()))
+	vmsingleYaml = []byte(strings.ReplaceAll(string(vmsingleYaml), "vmsingle.example.com", consts.VMSingleHost(namespace)))
 
 	_, err = tempFile.Write(vmsingleYaml)
 	require.NoError(t, err)
 
 	k8s.KubectlApply(t, kubeOpts, tempFile.Name())
 
-	By("Reconfigure VMAgent to send data to VMSingle")
-	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmagent.yaml")
+	// By("Reconfigure VMAgent to send data to VMSingle")
 
-	By("Wait for VMCluster object to become operational")
+	// Read vmagent.yaml content
+	vmagentYamlPath := "../../manifests/overwatch/vmagent.yaml"
+	vmagentYaml, err := os.ReadFile(vmagentYamlPath)
+	require.NoError(t, err)
+
+	// Replace URLs with dynamic service addresses
+	vmInsertSvc := consts.GetVMInsertSvc(namespace)
+	vmSingleSvc := consts.GetVMSingleSvc(namespace)
+
+	// Replace VMInsert URL
+	oldVMInsertURL := "http://vminsert-vmks.vm.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write"
+	newVMInsertURL := fmt.Sprintf("http://%s/insert/0/prometheus/api/v1/write", vmInsertSvc)
+
+	// Replace VMSingle URL
+	oldVMSingleURL := "http://vmsingle-overwatch.vm.svc.cluster.local.:8428/prometheus/api/v1/write"
+	newVMSingleURL := fmt.Sprintf("http://%s/prometheus/api/v1/write", vmSingleSvc)
+
+	// Perform replacements
+	updatedVmagentYaml := strings.ReplaceAll(string(vmagentYaml), oldVMInsertURL, newVMInsertURL)
+	updatedVmagentYaml = strings.ReplaceAll(updatedVmagentYaml, oldVMSingleURL, newVMSingleURL)
+
+	// Apply the updated vmagent configuration
+	k8s.KubectlApplyFromString(t, kubeOpts, updatedVmagentYaml)
+
+	// By("Wait for VMCluster object to become operational")
 	WaitForVMClusterToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
 
-	By("Wait for overwatch VMSingle to become operational")
+	// By("Wait for overwatch VMSingle to become operational")
 	WaitForVMSingleToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
 }
 

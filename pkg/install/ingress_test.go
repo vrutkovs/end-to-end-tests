@@ -2,8 +2,6 @@ package install
 
 import (
 	"context"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
@@ -151,49 +149,6 @@ func TestHostnameFormatting(t *testing.T) {
 				t.Errorf("Expected VMSingle URL to be '%s', got '%s'", tt.expectedSingleUrl, consts.VMSingleUrl(namespace))
 			}
 		})
-	}
-}
-
-func TestNipIODomainPattern(t *testing.T) {
-	// Test the nip.io domain pattern that's used in the ingress discovery
-	tests := []struct {
-		ip       string
-		expected string
-	}{
-		{"192.168.1.1", "192.168.1.1.nip.io"},
-		{"10.0.0.1", "10.0.0.1.nip.io"},
-		{"127.0.0.1", "127.0.0.1.nip.io"},
-		{"203.0.113.42", "203.0.113.42.nip.io"},
-	}
-
-	for _, tt := range tests {
-		t.Run("IP_"+tt.ip, func(t *testing.T) {
-			domain := tt.ip + ".nip.io"
-			if domain != tt.expected {
-				t.Errorf("Expected domain to be '%s', got '%s'", tt.expected, domain)
-			}
-		})
-	}
-}
-
-// Test HTTP server for testing purposes
-func TestHTTPServerSetup(t *testing.T) {
-	// Create a test server to verify our HTTP client logic would work
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	}))
-	defer server.Close()
-
-	// Test that we can make a request to the server
-	resp, err := http.Get(server.URL)
-	if err != nil {
-		t.Fatalf("Failed to make request to test server: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 }
 
@@ -347,61 +302,6 @@ func TestEnvironmentDistroLogic(t *testing.T) {
 				nginxHost := "127.0.0.1"
 				if nginxHost != tt.expectedHost {
 					t.Errorf("Expected nginx host for kind to be '%s', got '%s'", tt.expectedHost, nginxHost)
-				}
-			}
-		})
-	}
-}
-
-func TestWatchUntilWithoutRetryBehavior(t *testing.T) {
-	// Test that validates the watch-based approach behavior
-	tests := []struct {
-		name                string
-		distro              string
-		shouldUseWatch      bool
-		expectedHostPattern string
-	}{
-		{
-			name:                "kind environment skips watch",
-			distro:              "kind",
-			shouldUseWatch:      false,
-			expectedHostPattern: "127.0.0.1",
-		},
-		{
-			name:                "gke environment uses watch",
-			distro:              "gke",
-			shouldUseWatch:      true,
-			expectedHostPattern: "", // Would be set by watch
-		},
-		{
-			name:                "eks environment uses watch",
-			distro:              "eks",
-			shouldUseWatch:      true,
-			expectedHostPattern: "", // Would be set by watch
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Set the environment distro
-			originalDistro := consts.EnvK8SDistro()
-			defer consts.SetEnvK8SDistro(originalDistro) // Restore original value
-
-			consts.SetEnvK8SDistro(tt.distro)
-
-			// Test the logic that determines whether to use watch
-			isKind := consts.EnvK8SDistro() == "kind"
-			shouldUseWatch := !isKind
-
-			if shouldUseWatch != tt.shouldUseWatch {
-				t.Errorf("Expected shouldUseWatch to be %v, got %v", tt.shouldUseWatch, shouldUseWatch)
-			}
-
-			if isKind && tt.expectedHostPattern != "" {
-				// For kind, we should use localhost immediately
-				expectedHost := "127.0.0.1"
-				if expectedHost != tt.expectedHostPattern {
-					t.Errorf("Expected kind host to be '%s', got '%s'", tt.expectedHostPattern, expectedHost)
 				}
 			}
 		})

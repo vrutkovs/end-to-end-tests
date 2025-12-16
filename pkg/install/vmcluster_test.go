@@ -2,6 +2,7 @@ package install
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
@@ -269,7 +270,7 @@ func TestEnsureVMClusterComponents(t *testing.T) {
 					// Check if any error contains the expected message
 					found := false
 					for _, err := range testRecorder.errors {
-						if len(tt.errorContains) > 0 && contains(err, tt.errorContains) {
+						if len(tt.errorContains) > 0 && strings.Contains(err, tt.errorContains) {
 							found = true
 							break
 						}
@@ -432,20 +433,4 @@ func TestVMClusterNameGeneration(t *testing.T) {
 			assert.Equal(t, tt.expectedClusterName, expectedName, "Cluster name should match expected pattern")
 		})
 	}
-}
-
-// Helper function to check if a string contains a substring
-func contains(s, substr string) bool {
-	if len(substr) == 0 {
-		return true
-	}
-	if len(s) < len(substr) {
-		return false
-	}
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }

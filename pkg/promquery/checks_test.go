@@ -7,7 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	terratesting "github.com/gruntwork-io/terratest/modules/testing"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockTestingT struct {
@@ -79,33 +80,40 @@ func (m *mockTestingT) Skipped() bool {
 	return len(m.skipLogs) > 0
 }
 
-var _ terratesting.TestingT = (*mockTestingT)(nil)
+// Ensure mockTestingT implements a testing interface
+var _ interface {
+	Name() string
+	Error(args ...interface{})
+	Errorf(format string, args ...interface{})
+	Fail()
+	FailNow()
+	Failed() bool
+	Fatal(args ...interface{})
+	Fatalf(format string, args ...interface{})
+	Log(args ...interface{})
+	Logf(format string, args ...interface{})
+	Skip(args ...interface{})
+	SkipNow()
+	Skipf(format string, args ...interface{})
+	Skipped() bool
+} = (*mockTestingT)(nil)
 
 func TestCheckNoAlertsFiring_NoAlerts(t *testing.T) {
 	t.Parallel()
 	// Create a mock server that returns at least one alert with value 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify the request method and path
-		if r.Method != "POST" {
-			t.Errorf("Expected POST request, got %s", r.Method)
-		}
-		if r.URL.Path != "/api/v1/query" {
-			t.Errorf("Expected path '/api/v1/query', got '%s'", r.URL.Path)
-		}
+		assert.Equal(t, "POST", r.Method, "Expected POST request")
+		assert.Equal(t, "/api/v1/query", r.URL.Path, "Expected correct API path")
 
 		// Parse form data
 		err := r.ParseForm()
-		if err != nil {
-			t.Errorf("Failed to parse form: %v", err)
-			return
-		}
+		require.NoError(t, err, "Failed to parse form data")
 
 		// Verify the query contains the expected exclusions
 		query := r.Form.Get("query")
 		expectedSubstring := `sum by (alertname) (vmalert_alerts_firing{alertname!~"InfoInhibitor|Watchdog"})`
-		if query != expectedSubstring {
-			t.Errorf("Expected query to be '%s', got '%s'", expectedSubstring, query)
-		}
+		assert.Equal(t, expectedSubstring, query, "Query should match expected format")
 
 		// Return vector with non-firing alert (value = 0)
 		w.Header().Set("Content-Type", "application/json")
@@ -126,9 +134,7 @@ func TestCheckNoAlertsFiring_NoAlerts(t *testing.T) {
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client")
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
@@ -136,9 +142,9 @@ func TestCheckNoAlertsFiring_NoAlerts(t *testing.T) {
 	client.CheckNoAlertsFiring(ctx, mockTest, []string{})
 
 	// Should not fail when alert value is 0
-	if mockTest.failed {
-		t.Errorf("Test should not have failed, but got errors: %v, fatals: %v", mockTest.errors, mockTest.fatals)
-	}
+	assert.False(t, mockTest.failed, "Test should not have failed when alert value is 0")
+	assert.Empty(t, mockTest.errors, "Should not have any errors")
+	assert.Empty(t, mockTest.fatals, "Should not have any fatal errors")
 }
 
 func TestCheckNoAlertsFiring_WithCustomExceptions(t *testing.T) {
@@ -159,10 +165,8 @@ func TestCheckNoAlertsFiring_WithCustomExceptions(t *testing.T) {
 
 		// Verify the query includes custom exceptions
 		query := r.Form.Get("query")
-		expectedSubstring := `sum by (alertname) (vmalert_alerts_firing{alertname!~"InfoInhibitor|Watchdog|CustomAlert|TestAlert"})`
-		if query != expectedSubstring {
-			t.Errorf("Expected query to be '%s', got '%s'", expectedSubstring, query)
-		}
+		expectedSubstring := `sum by (alertname) (vmalert_alerts_firing{alertname!~"InfoInhibitor|Watchdog|TestAlert1|TestAlert2"})`
+		assert.Equal(t, expectedSubstring, query, "Query should include custom exceptions")
 
 		// Return vector with non-firing alert (value = 0)
 		w.Header().Set("Content-Type", "application/json")
@@ -183,19 +187,17 @@ func TestCheckNoAlertsFiring_WithCustomExceptions(t *testing.T) {
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client")
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
-	exceptions := []string{"CustomAlert", "TestAlert"}
 
-	client.CheckNoAlertsFiring(ctx, mockTest, exceptions)
+	client.CheckNoAlertsFiring(ctx, mockTest, []string{"TestAlert1", "TestAlert2"})
 
-	if mockTest.failed {
-		t.Errorf("Test should not have failed, but got errors: %v, fatals: %v", mockTest.errors, mockTest.fatals)
-	}
+	// Should not fail when alert value is 0 with custom exceptions
+	assert.False(t, mockTest.failed, "Test should not have failed with custom exceptions")
+	assert.Empty(t, mockTest.errors, "Should not have any errors")
+	assert.Empty(t, mockTest.fatals, "Should not have any fatal errors")
 }
 
 func TestCheckNoAlertsFiring_WithFiringAlerts(t *testing.T) {
@@ -225,19 +227,16 @@ func TestCheckNoAlertsFiring_WithFiringAlerts(t *testing.T) {
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client")
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
 	client.CheckNoAlertsFiring(ctx, mockTest, []string{})
 
-	// Should fail because alerts are firing
-	if !mockTest.failed {
-		t.Error("Test should have failed when alerts are firing")
-	}
+	// Should fail when alert value is > 0
+	assert.True(t, mockTest.failed, "Test should have failed when alerts are firing")
+	assert.NotEmpty(t, mockTest.errors, "Should have error messages when alerts are firing")
 
 	// Should have error messages about the firing alerts
 	if len(mockTest.errors) == 0 {
@@ -268,19 +267,17 @@ func TestCheckNoAlertsFiring_WithZeroValueAlerts(t *testing.T) {
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client")
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckNoAlertsFiring(ctx, mockTest, []string{})
+	client.CheckNoAlertsFiring(ctx, mockTest, []string{"TestAlert1", "TestAlert2"})
 
-	// Should not fail when alert value is 0
-	if mockTest.failed {
-		t.Errorf("Test should not have failed for zero-value alerts, but got errors: %v, fatals: %v", mockTest.errors, mockTest.fatals)
-	}
+	// Should not fail when alert value is 0 with custom exceptions
+	assert.False(t, mockTest.failed, "Test should not have failed with custom exceptions")
+	assert.Empty(t, mockTest.errors, "Should not have any errors")
+	assert.Empty(t, mockTest.fatals, "Should not have any fatal errors")
 }
 
 func TestCheckNoAlertsFiring_QueryError(t *testing.T) {
@@ -293,19 +290,17 @@ func TestCheckNoAlertsFiring_QueryError(t *testing.T) {
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client")
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
 	client.CheckNoAlertsFiring(ctx, mockTest, []string{})
 
-	// Should not fail when query errors (the method handles this case by not checking errors)
-	if mockTest.failed {
-		t.Errorf("Test should not have failed on query error, but got errors: %v, fatals: %v", mockTest.errors, mockTest.fatals)
-	}
+	// Should not fail when alert value is 0
+	assert.False(t, mockTest.failed, "Test should not have failed with zero value alerts")
+	assert.Empty(t, mockTest.errors, "Should not have any errors with zero value alerts")
+	assert.Empty(t, mockTest.fatals, "Should not have any fatal errors with zero value alerts")
 }
 
 func TestCheckNoAlertsFiring_WrongResultType(t *testing.T) {
@@ -423,23 +418,16 @@ func TestCheckAlertIsFiring_AlertFiring(t *testing.T) {
 	// Create a mock server that returns a firing alert
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify the request method and path
-		if r.Method != "POST" {
-			t.Errorf("Expected POST request, got %s", r.Method)
-		}
-		if r.URL.Path != "/api/v1/query" {
-			t.Errorf("Expected path '/api/v1/query', got '%s'", r.URL.Path)
-		}
+		assert.Equal(t, "POST", r.Method, "Expected POST request")
+		assert.Equal(t, "/api/v1/query", r.URL.Path, "Expected correct API path")
 
 		// Parse form data
 		err := r.ParseForm()
-		if err != nil {
-			t.Errorf("Failed to parse form: %v", err)
-			return
-		}
+		require.NoError(t, err, "Failed to parse form data")
 
 		// Verify the query is for the specific alert
 		query := r.Form.Get("query")
-		expectedQuery := `vmalert_alerts_firing{alertname="CriticalAlert"}`
+		expectedQuery := `vmalert_alerts_firing{alertname="TestAlert"}`
 		if query != expectedQuery {
 			t.Errorf("Expected query to be '%s', got '%s'", expectedQuery, query)
 		}
@@ -463,19 +451,17 @@ func TestCheckAlertIsFiring_AlertFiring(t *testing.T) {
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client")
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckAlertIsFiring(ctx, mockTest, "CriticalAlert")
+	client.CheckAlertIsFiring(ctx, mockTest, "TestAlert")
 
 	// Should not fail when alert is firing
-	if mockTest.failed {
-		t.Errorf("Test should not have failed when alert is firing, but got errors: %v, fatals: %v", mockTest.errors, mockTest.fatals)
-	}
+	assert.False(t, mockTest.failed, "Test should not have failed when alert is firing")
+	assert.Empty(t, mockTest.errors, "Should not have any errors when alert is firing")
+	assert.Empty(t, mockTest.fatals, "Should not have any fatal errors when alert is firing")
 }
 
 func TestCheckAlertIsFiring_AlertNotFiring(t *testing.T) {
@@ -501,19 +487,16 @@ func TestCheckAlertIsFiring_AlertNotFiring(t *testing.T) {
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client")
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckAlertIsFiring(ctx, mockTest, "ResolvedAlert")
+	client.CheckAlertIsFiring(ctx, mockTest, "TestAlert")
 
 	// Should fail when alert is not firing
-	if !mockTest.failed {
-		t.Error("Test should have failed when alert is not firing")
-	}
+	assert.True(t, mockTest.failed, "Test should have failed when alert is not firing")
+	assert.NotEmpty(t, mockTest.errors, "Should have error when alert is not firing")
 
 	// Should have error message about alert not firing
 	if len(mockTest.errors) == 0 {
@@ -539,9 +522,7 @@ func TestCheckAlertIsFiring_AlertNotFound(t *testing.T) {
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client")
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
@@ -549,9 +530,8 @@ func TestCheckAlertIsFiring_AlertNotFound(t *testing.T) {
 	client.CheckAlertIsFiring(ctx, mockTest, "NonExistentAlert")
 
 	// Should fail when alert is not found
-	if !mockTest.failed {
-		t.Error("Test should have failed when alert is not found")
-	}
+	assert.True(t, mockTest.failed, "Test should have failed when alert is not found")
+	assert.NotEmpty(t, mockTest.errors, "Should have error when alert is not found")
 
 	// Should have error message about alert not being present
 	if len(mockTest.errors) == 0 {
@@ -590,19 +570,17 @@ func TestCheckAlertIsFiring_MultipleAlerts(t *testing.T) {
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client")
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckAlertIsFiring(ctx, mockTest, "CriticalAlert")
+	client.CheckAlertIsFiring(ctx, mockTest, "TestAlert")
 
-	// Should not fail when target alert is firing among multiple alerts
-	if mockTest.failed {
-		t.Errorf("Test should not have failed when target alert is firing, but got errors: %v, fatals: %v", mockTest.errors, mockTest.fatals)
-	}
+	// Should not fail - the function should handle multiple alerts gracefully
+	assert.False(t, mockTest.failed, "Test should not have failed with multiple alerts")
+	assert.Empty(t, mockTest.errors, "Should not have any errors with multiple alerts")
+	assert.Empty(t, mockTest.fatals, "Should not have any fatal errors with multiple alerts")
 }
 
 func TestCheckAlertIsFiring_QueryError(t *testing.T) {
@@ -615,19 +593,16 @@ func TestCheckAlertIsFiring_QueryError(t *testing.T) {
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client")
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
 	client.CheckAlertIsFiring(ctx, mockTest, "TestAlert")
 
-	// Should fail when query returns an error
-	if !mockTest.failed {
-		t.Error("Test should have failed when query returns an error")
-	}
+	// Should fail due to query error
+	assert.True(t, mockTest.failed, "Test should have failed due to query error")
+	assert.NotEmpty(t, mockTest.fatals, "Should have fatal error due to query failure")
 }
 
 func TestCheckAlertIsFiring_WrongResultType(t *testing.T) {
@@ -684,17 +659,14 @@ func TestCheckNoAlertsFiring_EmptyVectorShouldFail(t *testing.T) {
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client")
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
 	client.CheckNoAlertsFiring(ctx, mockTest, []string{})
 
-	// Should fail when vector is empty because function requires at least one result
-	if !mockTest.failed {
-		t.Error("Test should have failed for empty vector")
-	}
+	// Should fail due to query error
+	assert.True(t, mockTest.failed, "Test should have failed due to query error")
+	assert.NotEmpty(t, mockTest.fatals, "Should have fatal error due to query failure")
 }

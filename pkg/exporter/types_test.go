@@ -4,26 +4,41 @@ import (
 	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAuthSerialization(t *testing.T) {
-	auth := Auth{
-		Type: "none",
+	testCases := []struct {
+		name string
+		auth Auth
+	}{
+		{
+			name: "none auth",
+			auth: Auth{Type: "none"},
+		},
+		{
+			name: "basic auth",
+			auth: Auth{Type: "basic"},
+		},
+		{
+			name: "bearer auth",
+			auth: Auth{Type: "bearer"},
+		},
 	}
 
-	data, err := json.Marshal(auth)
-	if err != nil {
-		t.Fatalf("Failed to marshal Auth: %v", err)
-	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			data, err := json.Marshal(tc.auth)
+			require.NoError(t, err, "Failed to marshal Auth")
 
-	var unmarshaled Auth
-	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal Auth: %v", err)
-	}
+			var unmarshaled Auth
+			err = json.Unmarshal(data, &unmarshaled)
+			require.NoError(t, err, "Failed to unmarshal Auth")
 
-	if unmarshaled.Type != auth.Type {
-		t.Errorf("Expected Type to be %s, got %s", auth.Type, unmarshaled.Type)
+			assert.Equal(t, tc.auth.Type, unmarshaled.Type, "Auth type should match")
+		})
 	}
 }
 
@@ -42,37 +57,19 @@ func TestConnectionSerialization(t *testing.T) {
 	}
 
 	data, err := json.Marshal(conn)
-	if err != nil {
-		t.Fatalf("Failed to marshal Connection: %v", err)
-	}
+	require.NoError(t, err, "Failed to marshal Connection")
 
 	var unmarshaled Connection
 	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal Connection: %v", err)
-	}
+	require.NoError(t, err, "Failed to unmarshal Connection")
 
-	if unmarshaled.URL != conn.URL {
-		t.Errorf("Expected URL to be %s, got %s", conn.URL, unmarshaled.URL)
-	}
-	if unmarshaled.APIBasePath != conn.APIBasePath {
-		t.Errorf("Expected APIBasePath to be %s, got %s", conn.APIBasePath, unmarshaled.APIBasePath)
-	}
-	if *unmarshaled.TenantID != *conn.TenantID {
-		t.Errorf("Expected TenantID to be %d, got %d", *conn.TenantID, *unmarshaled.TenantID)
-	}
-	if unmarshaled.IsMultitenant != conn.IsMultitenant {
-		t.Errorf("Expected IsMultitenant to be %t, got %t", conn.IsMultitenant, unmarshaled.IsMultitenant)
-	}
-	if unmarshaled.FullAPIURL != conn.FullAPIURL {
-		t.Errorf("Expected FullAPIURL to be %s, got %s", conn.FullAPIURL, unmarshaled.FullAPIURL)
-	}
-	if unmarshaled.Auth.Type != conn.Auth.Type {
-		t.Errorf("Expected Auth.Type to be %s, got %s", conn.Auth.Type, unmarshaled.Auth.Type)
-	}
-	if unmarshaled.SkipTLSVerify != conn.SkipTLSVerify {
-		t.Errorf("Expected SkipTLSVerify to be %t, got %t", conn.SkipTLSVerify, unmarshaled.SkipTLSVerify)
-	}
+	assert.Equal(t, conn.URL, unmarshaled.URL, "URL should match")
+	assert.Equal(t, conn.APIBasePath, unmarshaled.APIBasePath, "APIBasePath should match")
+	assert.Equal(t, *conn.TenantID, *unmarshaled.TenantID, "TenantID should match")
+	assert.Equal(t, conn.IsMultitenant, unmarshaled.IsMultitenant, "IsMultitenant should match")
+	assert.Equal(t, conn.FullAPIURL, unmarshaled.FullAPIURL, "FullAPIURL should match")
+	assert.Equal(t, conn.Auth.Type, unmarshaled.Auth.Type, "Auth.Type should match")
+	assert.Equal(t, conn.SkipTLSVerify, unmarshaled.SkipTLSVerify, "SkipTLSVerify should match")
 }
 
 func TestConnectionWithNullTenantID(t *testing.T) {
@@ -89,19 +86,13 @@ func TestConnectionWithNullTenantID(t *testing.T) {
 	}
 
 	data, err := json.Marshal(conn)
-	if err != nil {
-		t.Fatalf("Failed to marshal Connection: %v", err)
-	}
+	require.NoError(t, err, "Failed to marshal Connection")
 
 	var unmarshaled Connection
 	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal Connection: %v", err)
-	}
+	require.NoError(t, err, "Failed to unmarshal Connection")
 
-	if unmarshaled.TenantID != nil {
-		t.Errorf("Expected TenantID to be nil, got %v", unmarshaled.TenantID)
-	}
+	assert.Nil(t, unmarshaled.TenantID, "TenantID should be nil")
 }
 
 func TestTimeRangeSerialization(t *testing.T) {
@@ -114,22 +105,14 @@ func TestTimeRangeSerialization(t *testing.T) {
 	}
 
 	data, err := json.Marshal(timeRange)
-	if err != nil {
-		t.Fatalf("Failed to marshal TimeRange: %v", err)
-	}
+	require.NoError(t, err, "Failed to marshal TimeRange")
 
 	var unmarshaled TimeRange
 	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal TimeRange: %v", err)
-	}
+	require.NoError(t, err, "Failed to unmarshal TimeRange")
 
-	if !unmarshaled.Start.Equal(timeRange.Start) {
-		t.Errorf("Expected Start to be %v, got %v", timeRange.Start, unmarshaled.Start)
-	}
-	if !unmarshaled.End.Equal(timeRange.End) {
-		t.Errorf("Expected End to be %v, got %v", timeRange.End, unmarshaled.End)
-	}
+	assert.True(t, unmarshaled.Start.Equal(timeRange.Start), "Start time should match")
+	assert.True(t, unmarshaled.End.Equal(timeRange.End), "End time should match")
 }
 
 func TestObfuscationSerialization(t *testing.T) {
@@ -142,64 +125,56 @@ func TestObfuscationSerialization(t *testing.T) {
 	}
 
 	data, err := json.Marshal(obf)
-	if err != nil {
-		t.Fatalf("Failed to marshal Obfuscation: %v", err)
-	}
+	require.NoError(t, err, "Failed to marshal Obfuscation")
 
 	var unmarshaled Obfuscation
 	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal Obfuscation: %v", err)
-	}
+	require.NoError(t, err, "Failed to unmarshal Obfuscation")
 
-	if unmarshaled.Enabled != obf.Enabled {
-		t.Errorf("Expected Enabled to be %t, got %t", obf.Enabled, unmarshaled.Enabled)
-	}
-	if unmarshaled.ObfuscateInstance != obf.ObfuscateInstance {
-		t.Errorf("Expected ObfuscateInstance to be %t, got %t", obf.ObfuscateInstance, unmarshaled.ObfuscateInstance)
-	}
-	if unmarshaled.ObfuscateJob != obf.ObfuscateJob {
-		t.Errorf("Expected ObfuscateJob to be %t, got %t", obf.ObfuscateJob, unmarshaled.ObfuscateJob)
-	}
-	if unmarshaled.PreserveStructure != obf.PreserveStructure {
-		t.Errorf("Expected PreserveStructure to be %t, got %t", obf.PreserveStructure, unmarshaled.PreserveStructure)
-	}
-	if len(unmarshaled.CustomLabels) != len(obf.CustomLabels) {
-		t.Errorf("Expected CustomLabels length to be %d, got %d", len(obf.CustomLabels), len(unmarshaled.CustomLabels))
-	}
-	for i, label := range obf.CustomLabels {
-		if unmarshaled.CustomLabels[i] != label {
-			t.Errorf("Expected CustomLabels[%d] to be %s, got %s", i, label, unmarshaled.CustomLabels[i])
-		}
-	}
+	assert.Equal(t, obf.Enabled, unmarshaled.Enabled, "Enabled should match")
+	assert.Equal(t, obf.ObfuscateInstance, unmarshaled.ObfuscateInstance, "ObfuscateInstance should match")
+	assert.Equal(t, obf.ObfuscateJob, unmarshaled.ObfuscateJob, "ObfuscateJob should match")
+	assert.Equal(t, obf.PreserveStructure, unmarshaled.PreserveStructure, "PreserveStructure should match")
+	assert.Len(t, unmarshaled.CustomLabels, len(obf.CustomLabels), "CustomLabels length should match")
+	assert.Equal(t, obf.CustomLabels, unmarshaled.CustomLabels, "CustomLabels should match")
 }
 
 func TestBatchingSerialization(t *testing.T) {
-	batching := Batching{
-		Enabled:            true,
-		Strategy:           "custom",
-		CustomIntervalSecs: 60,
+	testCases := []struct {
+		name     string
+		batching Batching
+	}{
+		{
+			name: "custom strategy",
+			batching: Batching{
+				Enabled:            true,
+				Strategy:           "custom",
+				CustomIntervalSecs: 60,
+			},
+		},
+		{
+			name: "disabled batching",
+			batching: Batching{
+				Enabled:            false,
+				Strategy:           "",
+				CustomIntervalSecs: 0,
+			},
+		},
 	}
 
-	data, err := json.Marshal(batching)
-	if err != nil {
-		t.Fatalf("Failed to marshal Batching: %v", err)
-	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			data, err := json.Marshal(tc.batching)
+			require.NoError(t, err, "Failed to marshal Batching")
 
-	var unmarshaled Batching
-	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal Batching: %v", err)
-	}
+			var unmarshaled Batching
+			err = json.Unmarshal(data, &unmarshaled)
+			require.NoError(t, err, "Failed to unmarshal Batching")
 
-	if unmarshaled.Enabled != batching.Enabled {
-		t.Errorf("Expected Enabled to be %t, got %t", batching.Enabled, unmarshaled.Enabled)
-	}
-	if unmarshaled.Strategy != batching.Strategy {
-		t.Errorf("Expected Strategy to be %s, got %s", batching.Strategy, unmarshaled.Strategy)
-	}
-	if unmarshaled.CustomIntervalSecs != batching.CustomIntervalSecs {
-		t.Errorf("Expected CustomIntervalSecs to be %d, got %d", batching.CustomIntervalSecs, unmarshaled.CustomIntervalSecs)
+			assert.Equal(t, tc.batching.Enabled, unmarshaled.Enabled, "Enabled should match")
+			assert.Equal(t, tc.batching.Strategy, unmarshaled.Strategy, "Strategy should match")
+			assert.Equal(t, tc.batching.CustomIntervalSecs, unmarshaled.CustomIntervalSecs, "CustomIntervalSecs should match")
+		})
 	}
 }
 
@@ -332,23 +307,40 @@ func TestEmptySlicesSerialization(t *testing.T) {
 	}
 
 	data, err := json.Marshal(reqBody)
-	if err != nil {
-		t.Fatalf("Failed to marshal RequestBody with empty slices: %v", err)
-	}
+	require.NoError(t, err, "Failed to marshal RequestBody with empty slices")
 
 	var unmarshaled RequestBody
 	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal RequestBody with empty slices: %v", err)
-	}
+	require.NoError(t, err, "Failed to unmarshal RequestBody with empty slices")
 
-	if len(unmarshaled.Components) != 0 {
-		t.Errorf("Expected empty Components slice, got length %d", len(unmarshaled.Components))
-	}
-	if len(unmarshaled.Jobs) != 0 {
-		t.Errorf("Expected empty Jobs slice, got length %d", len(unmarshaled.Jobs))
-	}
-	if len(unmarshaled.Obfuscation.CustomLabels) != 0 {
-		t.Errorf("Expected empty CustomLabels slice, got length %d", len(unmarshaled.Obfuscation.CustomLabels))
-	}
+	assert.Empty(t, unmarshaled.Components, "Components slice should be empty")
+	assert.Empty(t, unmarshaled.Jobs, "Jobs slice should be empty")
+	assert.Empty(t, unmarshaled.Obfuscation.CustomLabels, "CustomLabels slice should be empty")
+}
+
+// TestJSONMarshallingEdgeCases tests various edge cases for JSON marshalling
+func TestJSONMarshallingEdgeCases(t *testing.T) {
+	t.Run("invalid JSON", func(t *testing.T) {
+		var conn Connection
+		invalidJSON := `{"url": "invalid json`
+		err := json.Unmarshal([]byte(invalidJSON), &conn)
+		assert.Error(t, err, "Should fail on invalid JSON")
+	})
+
+	t.Run("zero time values", func(t *testing.T) {
+		timeRange := TimeRange{
+			Start: time.Time{},
+			End:   time.Time{},
+		}
+
+		data, err := json.Marshal(timeRange)
+		require.NoError(t, err, "Should marshal zero time values")
+
+		var unmarshaled TimeRange
+		err = json.Unmarshal(data, &unmarshaled)
+		require.NoError(t, err, "Should unmarshal zero time values")
+
+		assert.True(t, unmarshaled.Start.IsZero(), "Start should be zero time")
+		assert.True(t, unmarshaled.End.IsZero(), "End should be zero time")
+	})
 }

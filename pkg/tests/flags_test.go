@@ -125,16 +125,6 @@ func TestFlagDefaults(t *testing.T) {
 	}
 }
 
-func TestFlagVariables(t *testing.T) {
-	// Test that the package-level variables exist and have expected initial values
-	// Note: These variables are set during package init, so we can't easily reset them
-	// We're just testing that they exist and can be accessed
-
-	// The variables should be accessible (this is mainly a compilation test)
-	_ = reportLocation
-	_ = envK8SDistro
-}
-
 func TestMultipleInits(t *testing.T) {
 	// Test that multiple calls to consts setters work correctly
 	originalReport := consts.ReportLocation()

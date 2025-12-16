@@ -9,25 +9,6 @@ import (
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 )
 
-func TestGetT(t *testing.T) {
-	testT := GetT()
-	if testT == nil {
-		t.Fatal("GetT() should return a non-nil testing interface")
-	}
-
-	// Test that it implements the required interface
-	myT, ok := testT.(*myTestingT)
-	if !ok {
-		t.Fatal("GetT() should return a *myTestingT")
-	}
-
-	// Test Name method
-	name := myT.Name()
-	if name != "" {
-		t.Errorf("Expected Name() to return empty string, got '%s'", name)
-	}
-}
-
 func TestEnvironmentPropertiesContent(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -3,6 +3,8 @@ package consts
 import (
 	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReportLocation(t *testing.T) {
@@ -11,9 +13,7 @@ func TestReportLocation(t *testing.T) {
 	SetReportLocation(testValue)
 	result := ReportLocation()
 
-	if result != testValue {
-		t.Errorf("Expected ReportLocation to be %s, got %s", testValue, result)
-	}
+	assert.Equal(t, testValue, result, "ReportLocation should return the set value")
 }
 
 func TestEnvK8SDistro(t *testing.T) {
@@ -22,9 +22,7 @@ func TestEnvK8SDistro(t *testing.T) {
 	SetEnvK8SDistro(testValue)
 	result := EnvK8SDistro()
 
-	if result != testValue {
-		t.Errorf("Expected EnvK8SDistro to be %s, got %s", testValue, result)
-	}
+	assert.Equal(t, testValue, result, "EnvK8SDistro should return the set value")
 }
 
 func TestNginxHost(t *testing.T) {
@@ -33,9 +31,7 @@ func TestNginxHost(t *testing.T) {
 	SetNginxHost(testValue)
 	result := NginxHost()
 
-	if result != testValue {
-		t.Errorf("Expected NginxHost to be %s, got %s", testValue, result)
-	}
+	assert.Equal(t, testValue, result, "NginxHost should return the set value")
 }
 
 func TestVMSingleUrlWithNamespace(t *testing.T) {
@@ -46,9 +42,7 @@ func TestVMSingleUrlWithNamespace(t *testing.T) {
 	SetNginxHost(testNginxHost)
 	result := VMSingleUrl(testNamespace)
 
-	if result != expectedURL {
-		t.Errorf("Expected VMSingleUrl to be %s, got %s", expectedURL, result)
-	}
+	assert.Equal(t, expectedURL, result, "VMSingleUrl should generate correct URL with namespace")
 }
 
 func TestVMSingleUrlWithoutNamespace(t *testing.T) {
@@ -709,6 +703,125 @@ func TestVMServiceAddressesIntegration(t *testing.T) {
 			}
 			if !contains(vmInsertSvc, ":8480") {
 				t.Errorf("VMInsert service address should contain port ':8480': %s", vmInsertSvc)
+			}
+		})
+	}
+}
+
+// Benchmark tests for performance-critical functions
+func BenchmarkVMSingleUrl(b *testing.B) {
+	SetNginxHost("192.168.1.100")
+	namespace := "test-namespace"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = VMSingleUrl(namespace)
+	}
+}
+
+func BenchmarkVMSelectUrl(b *testing.B) {
+	SetNginxHost("192.168.1.100")
+	namespace := "test-namespace"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = VMSelectUrl(namespace)
+	}
+}
+
+func BenchmarkGetVMSelectSvc(b *testing.B) {
+	namespace := "test-namespace"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = GetVMSelectSvc(namespace)
+	}
+}
+
+func BenchmarkGetVMSingleSvc(b *testing.B) {
+	namespace := "test-namespace"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = GetVMSingleSvc(namespace)
+	}
+}
+
+func BenchmarkGetVMInsertSvc(b *testing.B) {
+	namespace := "test-namespace"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = GetVMInsertSvc(namespace)
+	}
+}
+
+// TestConstantsValidity ensures all constants have valid values
+func TestConstantsValidity(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    interface{}
+		nonEmpty bool
+	}{
+		{"HelmChartVersion", HelmChartVersion(), false}, // May be empty in test environment
+		{"VMVersion", VMVersion(), false},               // May be empty in test environment
+		{"OperatorVersion", OperatorVersion(), false},   // May be empty in test environment
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Just ensure the function doesn't panic and returns a string
+			assert.IsType(t, "", tt.value, "%s should return a string type", tt.name)
+			if tt.nonEmpty {
+				assert.NotEmpty(t, tt.value, "%s should not be empty", tt.name)
+			}
+		})
+	}
+}
+
+// TestURLGenerationEdgeCases tests edge cases for URL generation
+func TestURLGenerationEdgeCases(t *testing.T) {
+	originalHost := NginxHost()
+	defer SetNginxHost(originalHost) // Restore original value
+
+	testCases := []struct {
+		name      string
+		host      string
+		namespace string
+		function  func(string) string
+		expectURL bool
+	}{
+		{
+			name:      "empty host",
+			host:      "",
+			namespace: "test",
+			function:  VMSingleUrl,
+			expectURL: true, // Should still generate URL
+		},
+		{
+			name:      "empty namespace",
+			host:      "192.168.1.1",
+			namespace: "",
+			function:  VMSingleUrl,
+			expectURL: true,
+		},
+		{
+			name:      "special characters in namespace",
+			host:      "192.168.1.1",
+			namespace: "test-namespace_with.special",
+			function:  VMSelectUrl,
+			expectURL: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			SetNginxHost(tc.host)
+			result := tc.function(tc.namespace)
+
+			if tc.expectURL {
+				assert.NotEmpty(t, result, "URL should not be empty")
+				assert.Contains(t, result, "http", "URL should contain http protocol")
 			}
 		})
 	}

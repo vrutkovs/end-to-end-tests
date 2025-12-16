@@ -580,7 +580,7 @@ jobs:
           mkdir -p /tmp/allure-results
           ginkgo -v \
             -github-output=true \
-            -procs=3 \
+            -procs=10 \
             -timeout=240m \
             --label-filter=${{ env.LABEL_FILTER }} \
             ./tests/${{ env.SUITE_CHAOS }} --\

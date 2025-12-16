@@ -1162,7 +1162,7 @@ kubeControllerManager:
 # Component scraping kubeDns. Use either this or coreDns
 kubeDns:
   # -- Enabled KubeDNS metrics scraping
-  enabled: true
+  enabled: false
   service:
     # -- Create Service for KubeDNS metrics
     enabled: false

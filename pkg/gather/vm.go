@@ -27,7 +27,7 @@ import (
 // VMAfterAll provides cleanup and data collection logic for VictoriaMetrics components.
 // It starts vmexporter, calls its /api/export/start, polls /api/export/status,
 // calls /api/export/download endpoints, and adds the downloaded archive to the report.
-func VMAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout time.Duration, namespace string) {
+func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout time.Duration, namespace string) {
 	// TODO: Deploy vmgather as deployment + service + ingress instead
 	timeBoundContext, cancel := context.WithTimeout(ctx, resourceWaitTimeout)
 	defer cancel()
@@ -209,8 +209,9 @@ OuterLoop:
 	if vmexporterCmd.Process != nil {
 		_ = vmexporterCmd.Process.Kill()
 	}
+}
 
-	// Restart overwatch instaner
+func RestartOverwatchInstance(ctx context.Context, t testing.TestingT, namespace string) {
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 	client, err := k8s.GetKubernetesClientE(t)
 	require.NoError(t, err, "failed to get Kubernetes client")
@@ -220,6 +221,7 @@ OuterLoop:
 	})
 	firstPod := pods[0]
 
+	// TODO: Implement logic to restart overwatch instance
 	err = client.CoreV1().Pods(namespace).Delete(ctx, firstPod.Name, metav1.DeleteOptions{})
 	require.NoError(t, err, "failed to delete pod %s", firstPod.Name)
 

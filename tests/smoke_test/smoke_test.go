@@ -48,8 +48,8 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 		install.InstallWithHelm(ctx, helmChart, valuesFile, t, namespace, releaseName)
 	})
 	AfterEach(func() {
-		gather.K8sAfterAll(t, ctx, consts.ResourceWaitTimeout)
-		gather.VMAfterAll(t, ctx, consts.ResourceWaitTimeout, namespace)
+		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
+		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, namespace)
 	})
 
 	Describe("Inner", func() {

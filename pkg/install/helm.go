@@ -157,6 +157,14 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	// Apply the updated vmagent configuration
 	k8s.KubectlApplyFromString(t, kubeOpts, updatedVmagentYaml)
 
+	// By("Wait for VMAgent to become operational")
+	WaitForVMAgentToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
+
+	// By("Ensure VMAgent has valid remoteWrite URLs")
+	vmReleaseName := "vmks"
+	remoteWriteURL := fmt.Sprintf("http://vminsert-%s.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write", vmReleaseName, namespace)
+	EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, namespace, vmReleaseName, remoteWriteURL)
+
 	// By("Wait for VMCluster object to become operational")
 	WaitForVMClusterToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
 
@@ -176,7 +184,7 @@ func GetVMClient(t terratesting.TestingT, kubeOpts *k8s.KubectlOptions) *vmclien
 	return vmclient
 }
 
-func WaitForVMSingleToBeOperational(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient *vmclient.Clientset) {
+func WaitForVMSingleToBeOperational(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient vmclient.Interface) {
 	watchInterface, err := vmclient.OperatorV1beta1().VMSingles(namespace).Watch(ctx, metav1.ListOptions{})
 	require.NoError(t, err)
 	defer watchInterface.Stop()
@@ -195,7 +203,7 @@ func WaitForVMSingleToBeOperational(ctx context.Context, t terratesting.TestingT
 	require.NoError(t, err)
 }
 
-func WaitForVMClusterToBeOperational(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient *vmclient.Clientset) {
+func WaitForVMClusterToBeOperational(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient vmclient.Interface) {
 	watchInterface, err := vmclient.OperatorV1beta1().VMClusters(namespace).Watch(ctx, metav1.ListOptions{})
 	require.NoError(t, err)
 	defer watchInterface.Stop()
@@ -212,4 +220,52 @@ func WaitForVMClusterToBeOperational(ctx context.Context, t terratesting.Testing
 		return false, nil
 	})
 	require.NoError(t, err)
+}
+
+func WaitForVMAgentToBeOperational(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient vmclient.Interface) {
+	watchInterface, err := vmclient.OperatorV1beta1().VMAgents(namespace).Watch(ctx, metav1.ListOptions{})
+	require.NoError(t, err)
+	defer watchInterface.Stop()
+
+	timeBoundContext, cancel := context.WithTimeout(ctx, consts.ResourceWaitTimeout)
+	defer cancel()
+
+	_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {
+		obj := event.Object
+		vmAgent := obj.(*vmv1beta1.VMAgent)
+		if vmAgent.Status.UpdateStatus == vmv1beta1.UpdateStatusOperational {
+			return true, nil
+		}
+		return false, nil
+	})
+	require.NoError(t, err)
+}
+
+func EnsureVMAgentRemoteWriteURL(ctx context.Context, t terratesting.TestingT, vmclient vmclient.Interface, kubeOpts *k8s.KubectlOptions, namespace, vmAgentName, url string) {
+	// Get the VMAgent resource
+	vmAgent, err := vmclient.OperatorV1beta1().VMAgents(namespace).Get(ctx, vmAgentName, metav1.GetOptions{})
+	require.NoError(t, err)
+
+	// Check if remoteWrite is configured and has at least one URL
+	if vmAgent == nil || len(vmAgent.Spec.RemoteWrite) == 0 {
+		t.Errorf("VMAgent %s in namespace %s does not have any remoteWrite configuration", vmAgentName, namespace)
+		return
+	}
+
+	// Validate that at least one remoteWrite entry has a URL
+	found := false
+	for _, rw := range vmAgent.Spec.RemoteWrite {
+		if rw.URL == url {
+			found = true
+			break
+		}
+	}
+	if !found {
+		vmAgent.Spec.RemoteWrite = append(vmAgent.Spec.RemoteWrite, vmv1beta1.VMAgentRemoteWriteSpec{
+			URL: url,
+		})
+		_, err := vmclient.OperatorV1beta1().VMAgents(namespace).Update(ctx, vmAgent, metav1.UpdateOptions{})
+		require.NoError(t, err)
+		WaitForVMAgentToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
+	}
 }

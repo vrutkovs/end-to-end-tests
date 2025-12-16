@@ -18,7 +18,7 @@ import (
 
 // K8sAfterAll provides cleanup and data collection logic for Kubernetes resources.
 // It collects crust-gather information, archives it, and adds it to the report.
-func K8sAfterAll(t testing.TestingT, ctx context.Context, resourceWaitTimeout time.Duration) {
+func K8sAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout time.Duration) {
 	timeBoundContext, cancel := context.WithTimeout(ctx, resourceWaitTimeout)
 	defer cancel()
 

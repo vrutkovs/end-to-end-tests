@@ -60,12 +60,13 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 		k8s.CreateNamespace(t, kubeOpts, k6TestsNamespace)
 	})
 	AfterEach(func() {
-		gather.K8sAfterAll(t, ctx, consts.ResourceWaitTimeout)
+		defer func() {
+			kubeOpts := k8s.NewKubectlOptions("", "", k6TestsNamespace)
+			k8s.DeleteNamespace(t, kubeOpts, k6TestsNamespace)
+		}()
 
-		kubeOpts := k8s.NewKubectlOptions("", "", k6TestsNamespace)
-		k8s.DeleteNamespace(t, kubeOpts, k6TestsNamespace)
-
-		gather.VMAfterAll(t, ctx, consts.ResourceWaitTimeout, vmNamespace)
+		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
+		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, vmNamespace)
 	})
 
 	Describe("Inner", func() {

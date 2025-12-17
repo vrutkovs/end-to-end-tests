@@ -23,8 +23,15 @@ func (p PrometheusClient) CheckNoAlertsFiring(ctx context.Context, t testing.Tes
 		return
 	}
 
-	require.Equal(t, prommodel.ValVector, result.Type())
-	vec := result.(prommodel.Vector)
+	if result.Type() != prommodel.ValVector {
+		require.Fail(t, fmt.Sprintf("Expected vector result, got %s", result.Type()))
+		return
+	}
+	vec, ok := result.(prommodel.Vector)
+	if !ok {
+		require.Fail(t, "Failed to cast result to prommodel.Vector")
+		return
+	}
 	// At least one result is returned
 	require.GreaterOrEqual(t, len(vec), 1, "No alerts firing")
 	for _, alert := range vec {
@@ -42,8 +49,15 @@ func (p PrometheusClient) CheckAlertIsFiring(ctx context.Context, t testing.Test
 		return
 	}
 
-	require.Equal(t, prommodel.ValVector, result.Type(), "Expected vector result for alert query")
-	vec := result.(prommodel.Vector)
+	if result.Type() != prommodel.ValVector {
+		require.Fail(t, fmt.Sprintf("Expected vector result for alert query, got %s", result.Type()))
+		return
+	}
+	vec, ok := result.(prommodel.Vector)
+	if !ok {
+		require.Fail(t, "Failed to cast result to prommodel.Vector")
+		return
+	}
 	require.GreaterOrEqual(t, len(vec), 1, "Alert %s should be present in results", alertName)
 
 	// Check that at least one alert is firing (value > 0)

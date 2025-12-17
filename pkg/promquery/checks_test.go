@@ -9,6 +9,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 )
 
 type mockTestingT struct {
@@ -328,14 +330,12 @@ func TestCheckNoAlertsFiring_WrongResultType(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	// This should cause a panic in the current implementation
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("Expected panic when result type is not vector")
-		}
-	}()
-
 	client.CheckNoAlertsFiring(ctx, mockTest, []string{})
+
+	// Expect the mock test to record a failure when result type is not vector
+	if !mockTest.failed {
+		t.Error("Expected test to have failed when result type is not vector")
+	}
 }
 
 func TestCheckNoAlertsFiring_DefaultExceptions(t *testing.T) {
@@ -630,14 +630,12 @@ func TestCheckAlertIsFiring_WrongResultType(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	// This should cause a panic in the current implementation
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("Expected panic when result type is not vector")
-		}
-	}()
-
 	client.CheckAlertIsFiring(ctx, mockTest, "TestAlert")
+
+	// Expect the mock test to record a failure when result type is not vector
+	if !mockTest.failed {
+		t.Error("Expected test to have failed when result type is not vector")
+	}
 }
 
 func TestCheckNoAlertsFiring_EmptyVectorShouldFail(t *testing.T) {
@@ -669,4 +667,22 @@ func TestCheckNoAlertsFiring_EmptyVectorShouldFail(t *testing.T) {
 	// Should fail due to query error
 	assert.True(t, mockTest.failed, "Test should have failed due to query error")
 	assert.NotEmpty(t, mockTest.fatals, "Should have fatal error due to query failure")
+}
+
+func TestVMGatherHost(t *testing.T) {
+	// Test behavior of VMGatherHost via consts package
+	originalHost := consts.NginxHost()
+	defer consts.SetNginxHost(originalHost)
+
+	consts.SetNginxHost("192.0.2.1")
+	expected := "vmgather.192.0.2.1.nip.io"
+	if consts.VMGatherHost() != expected {
+		t.Errorf("Expected VMGatherHost to be %s, got %s", expected, consts.VMGatherHost())
+	}
+
+	// Empty nginx host should yield empty VMGatherHost
+	consts.SetNginxHost("")
+	if consts.VMGatherHost() != "" {
+		t.Errorf("Expected VMGatherHost to be empty when nginx host is empty, got %s", consts.VMGatherHost())
+	}
 }

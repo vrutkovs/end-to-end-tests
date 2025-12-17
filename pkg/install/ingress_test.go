@@ -11,6 +11,7 @@ import (
 )
 
 func TestDiscoverIngressHostWithLoadBalancer(t *testing.T) {
+	t.Parallel()
 	// Create a fake Kubernetes client
 	fakeClient := fake.NewSimpleClientset()
 
@@ -40,11 +41,16 @@ func TestDiscoverIngressHostWithLoadBalancer(t *testing.T) {
 		t.Fatalf("Failed to create fake service: %v", err)
 	}
 
-	// Reset consts values
-	consts.SetEnvK8SDistro("test")
-	consts.SetNginxHost("")
+	// Preserve original consts and restore after test
+	originalDistro := consts.EnvK8SDistro()
+	originalNginx := consts.NginxHost()
+	defer func() {
+		consts.SetEnvK8SDistro(originalDistro)
+		consts.SetNginxHost(originalNginx)
+	}()
 
-	// Test the new nginx host API behavior
+	// Set test values
+	consts.SetEnvK8SDistro("test")
 	consts.SetNginxHost("192.168.1.100")
 
 	// Test hosts with different namespaces
@@ -69,6 +75,15 @@ func TestDiscoverIngressHostWithLoadBalancer(t *testing.T) {
 }
 
 func TestDiscoverIngressHostKindLogic(t *testing.T) {
+	t.Parallel()
+	// Preserve original consts and restore after test
+	originalDistro := consts.EnvK8SDistro()
+	originalNginx := consts.NginxHost()
+	defer func() {
+		consts.SetEnvK8SDistro(originalDistro)
+		consts.SetNginxHost(originalNginx)
+	}()
+
 	// Test the kind-specific logic
 	consts.SetEnvK8SDistro("kind")
 	consts.SetNginxHost("127.0.0.1")
@@ -95,6 +110,11 @@ func TestDiscoverIngressHostKindLogic(t *testing.T) {
 }
 
 func TestHostnameFormatting(t *testing.T) {
+	t.Parallel()
+	// Preserve original nginx host and restore after test
+	original := consts.NginxHost()
+	defer consts.SetNginxHost(original)
+
 	tests := []struct {
 		name              string
 		nginxHost         string
@@ -130,7 +150,9 @@ func TestHostnameFormatting(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			consts.SetNginxHost(tt.nginxHost)
 
 			// Test with empty namespace (no namespace prefix)
@@ -153,6 +175,11 @@ func TestHostnameFormatting(t *testing.T) {
 }
 
 func TestConstsIntegration(t *testing.T) {
+	t.Parallel()
+	// Preserve original nginx host and restore after test
+	original := consts.NginxHost()
+	defer consts.SetNginxHost(original)
+
 	// Test integration with consts package using nginx host
 	testNginxHost := "192.168.100.50"
 	testNamespace := "integration"
@@ -178,6 +205,7 @@ func TestConstsIntegration(t *testing.T) {
 }
 
 func TestWaitForLoadBalancerIngress(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		services       []*corev1.Service
@@ -208,7 +236,9 @@ func TestWaitForLoadBalancerIngress(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Create a fake Kubernetes client
 			fakeClient := fake.NewSimpleClientset()
 
@@ -252,6 +282,7 @@ func TestWaitForLoadBalancerIngress(t *testing.T) {
 }
 
 func TestEnvironmentDistroLogic(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		distro       string
@@ -285,7 +316,9 @@ func TestEnvironmentDistroLogic(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Set the environment distro
 			originalDistro := consts.EnvK8SDistro()
 			defer consts.SetEnvK8SDistro(originalDistro) // Restore original value
@@ -309,6 +342,7 @@ func TestEnvironmentDistroLogic(t *testing.T) {
 }
 
 func TestExtractIngressHost(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		service      *corev1.Service
@@ -368,7 +402,9 @@ func TestExtractIngressHost(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			host := extractIngressHost(tt.service)
 			if host != tt.expectedHost {
 				t.Errorf("Expected host to be '%s', got '%s'", tt.expectedHost, host)

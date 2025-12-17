@@ -9,18 +9,15 @@ import (
 )
 
 func TestInit(t *testing.T) {
-	// Skip this test if flags are already parsed to avoid conflicts
-	if flag.Parsed() {
-		t.Skip("Flags already parsed, skipping test to avoid conflicts")
-	}
-
-	// Save original command line arguments and flags
+	// Isolate global flag state so tests can run even if flags were parsed elsewhere.
 	origArgs := os.Args
 	origCommandLine := flag.CommandLine
 	defer func() {
 		os.Args = origArgs
 		flag.CommandLine = origCommandLine
 	}()
+	// Replace global command line with a fresh FlagSet for isolation.
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 
 	// Create a new flag set to avoid conflicts
 	testFlagSet := flag.NewFlagSet("test", flag.ContinueOnError)
@@ -44,10 +41,15 @@ func TestInit(t *testing.T) {
 }
 
 func TestInitWithCustomFlags(t *testing.T) {
-	// Skip this test if flags are already parsed to avoid conflicts
-	if flag.Parsed() {
-		t.Skip("Flags already parsed, skipping test to avoid conflicts")
-	}
+	// Isolate global flag state so tests can run even if flags were parsed elsewhere.
+	origArgs := os.Args
+	origCommandLine := flag.CommandLine
+	defer func() {
+		os.Args = origArgs
+		flag.CommandLine = origCommandLine
+	}()
+	// Replace global command line with a fresh FlagSet for isolation.
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 
 	// Create a new flag set to test custom values
 	testFlagSet := flag.NewFlagSet("test", flag.ContinueOnError)

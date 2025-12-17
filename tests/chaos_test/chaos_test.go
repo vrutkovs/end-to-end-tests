@@ -40,10 +40,9 @@ var _ = SynchronizedBeforeSuite(
 		install.DiscoverIngressHost(ctx, t)
 		install.InstallChaosMesh(ctx, chaosHelmChart, chaosValuesFile, t, chaosNamespace, chaosReleaseName)
 
+		install.InstallVMGather(t)
 		namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
 		install.InstallWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, namespace, vmReleaseName)
-
-		install.InstallVMGather(t)
 	}, func() {},
 )
 

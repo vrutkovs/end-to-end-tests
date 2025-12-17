@@ -28,7 +28,7 @@ func TestLoadTestsTests(t *testing.T) {
 
 var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), func() {
 	const (
-		vmNamespace         = "vm"
+		vmNamespace         = "vm-1"
 		k6OperatorNamespace = "k6-operator-system"
 		k6TestsNamespace    = "k6-tests"
 		releaseName         = "vmks"
@@ -48,11 +48,10 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 		var err error
 		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl(vmNamespace)))
 		require.NoError(t, err)
-
 		overwatch.Start = time.Now()
-		install.InstallWithHelm(ctx, helmChart, valuesFile, t, vmNamespace, releaseName)
 
 		install.InstallVMGather(t)
+		install.InstallWithHelm(ctx, helmChart, valuesFile, t, vmNamespace, releaseName)
 
 		// Install k6 operator
 		install.InstallK6(ctx, t, k6OperatorNamespace)

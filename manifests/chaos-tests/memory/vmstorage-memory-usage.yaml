@@ -13,4 +13,4 @@ spec:
     memory:
       size: 100%
       workers: 16
-  duration: 10m
+  duration: 7m

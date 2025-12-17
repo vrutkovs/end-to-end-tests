@@ -13,4 +13,4 @@ spec:
   abort: true
   port: 8481
   path: /select/*
-  duration: 5m
+  duration: 7m

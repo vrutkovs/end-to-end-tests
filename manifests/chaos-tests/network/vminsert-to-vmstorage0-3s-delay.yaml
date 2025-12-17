@@ -10,7 +10,7 @@ spec:
       app.kubernetes.io/name: vminsert
   mode: all
   action: delay
-  duration: 10m
+  duration: 7m
   delay:
     latency: 3s
     correlation: '0'

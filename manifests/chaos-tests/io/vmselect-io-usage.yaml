@@ -16,4 +16,4 @@ spec:
         - '--io=16'
         - '--agressive'
       workers: 16
-  duration: 10m
+  duration: 7m

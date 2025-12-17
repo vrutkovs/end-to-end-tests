@@ -15,4 +15,4 @@ spec:
   replace:
     code: 418
   path: '/select*'
-  duration: 5m
+  duration: 7m

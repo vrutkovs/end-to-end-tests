@@ -20,7 +20,7 @@ spec:
   vmselect:
     cacheMountPath: /select-cache
     extraArgs:
-      vmalert.proxyURL: http://vmalert-vmks.vm-1.svc.cluster.local.:8080
+      vmalert.proxyURL: http://vmalert-vmks.vm1.svc.cluster.local.:8080
     port: "8481"
     replicaCount: 2
     resources:

@@ -42,7 +42,7 @@ var _ = SynchronizedBeforeSuite(
 		install.InstallChaosMesh(ctx, chaosHelmChart, chaosValuesFile, t, chaosNamespace, chaosReleaseName)
 
 		install.InstallVMGather(t)
-		namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
+		namespace := fmt.Sprintf("vm%d", GinkgoParallelProcess())
 		install.InstallWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, namespace, vmReleaseName)
 	}, func() {},
 )
@@ -61,7 +61,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 
 	BeforeEach(func() {
 		var err error
-		namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
+		namespace := fmt.Sprintf("vm%d", GinkgoParallelProcess())
 
 		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl(namespace))
 		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl(namespace)))
@@ -76,17 +76,17 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			// Create VMCluster object for other projects
 			install.InstallVMCluster(ctx, t, kubeOpts, namespace, vmclient)
 
-			// Ensure VMAgent remote write URL is set up. vmagent always created in vm-1 namespace
+			// Ensure VMAgent remote write URL is set up. vmagent always created in vm1 namespace
 			remoteWriteURL := fmt.Sprintf("http://vminsert-%s.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write", namespace, namespace)
 			logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
-			install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, "vm-1", vmReleaseName, remoteWriteURL)
+			install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, "vm1", vmReleaseName, remoteWriteURL)
 		}
 	})
 
 	AfterEach(func() {
-		namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
+		namespace := fmt.Sprintf("vm%d", GinkgoParallelProcess())
 		defer func() {
-			if namespace != "vm-1" {
+			if namespace != "vm1" {
 				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 
 				install.DeleteVMCluster(t, kubeOpts, namespace)
@@ -107,7 +107,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 
 		for uuid, scenario := range scenarios {
 			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func() {
-				namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
+				namespace := fmt.Sprintf("vm%d", GinkgoParallelProcess())
 				By("Run scenario")
 				install.RunChaosScenario(ctx, t, namespace, "pods", scenario, "podchaos")
 
@@ -127,7 +127,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		for uuid, scenario := range scenarios {
 			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func() {
 				By("Run scenario")
-				namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
+				namespace := fmt.Sprintf("vm%d", GinkgoParallelProcess())
 				install.RunChaosScenario(ctx, t, namespace, "cpu", scenario, "stresschaos")
 
 				By("Only CPUThrottlingHigh is firing")
@@ -147,7 +147,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		for uuid, scenario := range scenarios {
 			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func() {
 				By("Run scenario")
-				namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
+				namespace := fmt.Sprintf("vm%d", GinkgoParallelProcess())
 				install.RunChaosScenario(ctx, t, namespace, "memory", scenario, "stresschaos")
 
 				By("No alerts are firing")
@@ -166,7 +166,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		for uuid, scenario := range scenarios {
 			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func() {
 				By("Run scenario")
-				namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
+				namespace := fmt.Sprintf("vm%d", GinkgoParallelProcess())
 				install.RunChaosScenario(ctx, t, namespace, "io", scenario, "stresschaos")
 
 				By("No alerts are firing")
@@ -186,7 +186,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		for uuid, scenarioName := range networkScenarios {
 			It(fmt.Sprintf("Run %s scenario", scenarioName), Label("gke", fmt.Sprintf("id=%s", uuid)), func() {
 				By("Run scenario")
-				namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
+				namespace := fmt.Sprintf("vm%d", GinkgoParallelProcess())
 				install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")
 
 				By("No alerts are firing")
@@ -204,7 +204,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		for uuid, scenarioName := range httpScenarios {
 			It(fmt.Sprintf("Run %s scenario", scenarioName), Label("gke", fmt.Sprintf("id=%s", uuid)), func() {
 				By("Run scenario")
-				namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
+				namespace := fmt.Sprintf("vm%d", GinkgoParallelProcess())
 				install.RunChaosScenario(ctx, t, namespace, "http", scenarioName, "httpchaos")
 
 				By("No alerts are firing")
@@ -216,7 +216,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 	Describe("rerouting", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-rerouting"), func() {
 		It("Emulate row rerouting when vmstorage-0 becomes unreachable", Label("gke", "id=3a9e309f-eec7-4d37-a7ee-918abd3a3d44"), func() {
 			By("Run scenario")
-			namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
+			namespace := fmt.Sprintf("vm%d", GinkgoParallelProcess())
 			scenarioName := "vminsert-to-vmstorage0-3s-delay"
 			install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "NetworkChaos")
 

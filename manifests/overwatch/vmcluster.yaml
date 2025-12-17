@@ -38,6 +38,8 @@ spec:
               storage: 2Gi
   vmstorage:
     replicaCount: 2
+    nodeSelector:
+      app: vm
     resources:
       limits:
         cpu: 500m

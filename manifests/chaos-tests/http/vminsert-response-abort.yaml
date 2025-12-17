@@ -13,3 +13,4 @@ spec:
   abort: true
   port: 8480
   path: /insert*
+  duration: 5m

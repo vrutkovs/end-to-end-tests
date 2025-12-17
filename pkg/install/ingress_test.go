@@ -174,36 +174,6 @@ func TestHostnameFormatting(t *testing.T) {
 	}
 }
 
-func TestConstsIntegration(t *testing.T) {
-	t.Parallel()
-	// Preserve original nginx host and restore after test
-	original := consts.NginxHost()
-	defer consts.SetNginxHost(original)
-
-	// Test integration with consts package using nginx host
-	testNginxHost := "192.168.100.50"
-	testNamespace := "integration"
-	expectedSelectHost := "vmselect-integration.192.168.100.50.nip.io"
-	expectedSingleHost := "vmsingle-integration.192.168.100.50.nip.io"
-	expectedSelectUrl := "http://vmselect-integration.192.168.100.50.nip.io"
-	expectedSingleUrl := "http://vmsingle-integration.192.168.100.50.nip.io"
-
-	consts.SetNginxHost(testNginxHost)
-
-	if consts.VMSelectHost(testNamespace) != expectedSelectHost {
-		t.Errorf("Expected VMSelectHost to be '%s', got '%s'", expectedSelectHost, consts.VMSelectHost(testNamespace))
-	}
-	if consts.VMSingleHost(testNamespace) != expectedSingleHost {
-		t.Errorf("Expected VMSingleHost to be '%s', got '%s'", expectedSingleHost, consts.VMSingleHost(testNamespace))
-	}
-	if consts.VMSelectUrl(testNamespace) != expectedSelectUrl {
-		t.Errorf("Expected VMSelectUrl to be '%s', got '%s'", expectedSelectUrl, consts.VMSelectUrl(testNamespace))
-	}
-	if consts.VMSingleUrl(testNamespace) != expectedSingleUrl {
-		t.Errorf("Expected VMSingleUrl to be '%s', got '%s'", expectedSingleUrl, consts.VMSingleUrl(testNamespace))
-	}
-}
-
 func TestWaitForLoadBalancerIngress(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

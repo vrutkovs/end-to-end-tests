@@ -114,7 +114,7 @@ func TestCheckNoAlertsFiring_NoAlerts(t *testing.T) {
 
 		// Verify the query contains the expected exclusions
 		query := r.Form.Get("query")
-		expectedSubstring := `sum by (alertname) (vmalert_alerts_firing{alertname!~"InfoInhibitor|Watchdog"})`
+		expectedSubstring := `sum by (alertname) (vmalert_alerts_firing{namespace="ns", alertname!~"InfoInhibitor|Watchdog"})`
 		assert.Equal(t, expectedSubstring, query, "Query should match expected format")
 
 		// Return vector with non-firing alert (value = 0)
@@ -141,7 +141,7 @@ func TestCheckNoAlertsFiring_NoAlerts(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckNoAlertsFiring(ctx, mockTest, []string{})
+	client.CheckNoAlertsFiring(ctx, mockTest, "ns", []string{})
 
 	// Should not fail when alert value is 0
 	assert.False(t, mockTest.failed, "Test should not have failed when alert value is 0")
@@ -167,7 +167,7 @@ func TestCheckNoAlertsFiring_WithCustomExceptions(t *testing.T) {
 
 		// Verify the query includes custom exceptions
 		query := r.Form.Get("query")
-		expectedSubstring := `sum by (alertname) (vmalert_alerts_firing{alertname!~"InfoInhibitor|Watchdog|TestAlert1|TestAlert2"})`
+		expectedSubstring := `sum by (alertname) (vmalert_alerts_firing{namespace="ns", alertname!~"InfoInhibitor|Watchdog|TestAlert1|TestAlert2"})`
 		assert.Equal(t, expectedSubstring, query, "Query should include custom exceptions")
 
 		// Return vector with non-firing alert (value = 0)
@@ -194,7 +194,7 @@ func TestCheckNoAlertsFiring_WithCustomExceptions(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckNoAlertsFiring(ctx, mockTest, []string{"TestAlert1", "TestAlert2"})
+	client.CheckNoAlertsFiring(ctx, mockTest, "ns", []string{"TestAlert1", "TestAlert2"})
 
 	// Should not fail when alert value is 0 with custom exceptions
 	assert.False(t, mockTest.failed, "Test should not have failed with custom exceptions")
@@ -234,7 +234,7 @@ func TestCheckNoAlertsFiring_WithFiringAlerts(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckNoAlertsFiring(ctx, mockTest, []string{})
+	client.CheckNoAlertsFiring(ctx, mockTest, "ns", []string{})
 
 	// Should fail when alert value is > 0
 	assert.True(t, mockTest.failed, "Test should have failed when alerts are firing")
@@ -274,7 +274,7 @@ func TestCheckNoAlertsFiring_WithZeroValueAlerts(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckNoAlertsFiring(ctx, mockTest, []string{"TestAlert1", "TestAlert2"})
+	client.CheckNoAlertsFiring(ctx, mockTest, "ns", []string{"TestAlert1", "TestAlert2"})
 
 	// Should not fail when alert value is 0 with custom exceptions
 	assert.False(t, mockTest.failed, "Test should not have failed with custom exceptions")
@@ -297,7 +297,7 @@ func TestCheckNoAlertsFiring_QueryError(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckNoAlertsFiring(ctx, mockTest, []string{})
+	client.CheckNoAlertsFiring(ctx, mockTest, "ns", []string{})
 
 	// Should not fail when alert value is 0
 	assert.False(t, mockTest.failed, "Test should not have failed with zero value alerts")
@@ -330,7 +330,7 @@ func TestCheckNoAlertsFiring_WrongResultType(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckNoAlertsFiring(ctx, mockTest, []string{})
+	client.CheckNoAlertsFiring(ctx, mockTest, "ns", []string{})
 
 	// Expect the mock test to record a failure when result type is not vector
 	if !mockTest.failed {
@@ -373,7 +373,7 @@ func TestCheckNoAlertsFiring_DefaultExceptions(t *testing.T) {
 				}
 
 				query := r.Form.Get("query")
-				expectedQuery := fmt.Sprintf(`sum by (alertname) (vmalert_alerts_firing{alertname!~"%s"})`, tt.expectedQueryPart)
+				expectedQuery := fmt.Sprintf(`sum by (alertname) (vmalert_alerts_firing{namespace="ns", alertname!~"%s"})`, tt.expectedQueryPart)
 
 				if query != expectedQuery {
 					t.Errorf("Expected query to be '%s', got '%s'", expectedQuery, query)
@@ -404,7 +404,7 @@ func TestCheckNoAlertsFiring_DefaultExceptions(t *testing.T) {
 			mockTest := &mockTestingT{}
 			ctx := context.Background()
 
-			client.CheckNoAlertsFiring(ctx, mockTest, tt.customExceptions)
+			client.CheckNoAlertsFiring(ctx, mockTest, "ns", tt.customExceptions)
 
 			if mockTest.failed {
 				t.Errorf("Test should not have failed, but got errors: %v", mockTest.errors)
@@ -427,7 +427,7 @@ func TestCheckAlertIsFiring_AlertFiring(t *testing.T) {
 
 		// Verify the query is for the specific alert
 		query := r.Form.Get("query")
-		expectedQuery := `vmalert_alerts_firing{alertname="TestAlert"}`
+		expectedQuery := `vmalert_alerts_firing{namespace="ns", alertname="TestAlert"}`
 		if query != expectedQuery {
 			t.Errorf("Expected query to be '%s', got '%s'", expectedQuery, query)
 		}
@@ -456,7 +456,7 @@ func TestCheckAlertIsFiring_AlertFiring(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckAlertIsFiring(ctx, mockTest, "TestAlert")
+	client.CheckAlertIsFiring(ctx, mockTest, "ns", "TestAlert")
 
 	// Should not fail when alert is firing
 	assert.False(t, mockTest.failed, "Test should not have failed when alert is firing")
@@ -492,7 +492,7 @@ func TestCheckAlertIsFiring_AlertNotFiring(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckAlertIsFiring(ctx, mockTest, "TestAlert")
+	client.CheckAlertIsFiring(ctx, mockTest, "ns", "TestAlert")
 
 	// Should fail when alert is not firing
 	assert.True(t, mockTest.failed, "Test should have failed when alert is not firing")
@@ -527,7 +527,7 @@ func TestCheckAlertIsFiring_AlertNotFound(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckAlertIsFiring(ctx, mockTest, "NonExistentAlert")
+	client.CheckAlertIsFiring(ctx, mockTest, "ns", "NonExistentAlert")
 
 	// Should fail when alert is not found
 	assert.True(t, mockTest.failed, "Test should have failed when alert is not found")
@@ -575,7 +575,7 @@ func TestCheckAlertIsFiring_MultipleAlerts(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckAlertIsFiring(ctx, mockTest, "TestAlert")
+	client.CheckAlertIsFiring(ctx, mockTest, "ns", "TestAlert")
 
 	// Should not fail - the function should handle multiple alerts gracefully
 	assert.False(t, mockTest.failed, "Test should not have failed with multiple alerts")
@@ -598,7 +598,7 @@ func TestCheckAlertIsFiring_QueryError(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckAlertIsFiring(ctx, mockTest, "TestAlert")
+	client.CheckAlertIsFiring(ctx, mockTest, "ns", "TestAlert")
 
 	// Should fail due to query error
 	assert.True(t, mockTest.failed, "Test should have failed due to query error")
@@ -630,7 +630,7 @@ func TestCheckAlertIsFiring_WrongResultType(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckAlertIsFiring(ctx, mockTest, "TestAlert")
+	client.CheckAlertIsFiring(ctx, mockTest, "ns", "TestAlert")
 
 	// Expect the mock test to record a failure when result type is not vector
 	if !mockTest.failed {
@@ -662,7 +662,7 @@ func TestCheckNoAlertsFiring_EmptyVectorShouldFail(t *testing.T) {
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	client.CheckNoAlertsFiring(ctx, mockTest, []string{})
+	client.CheckNoAlertsFiring(ctx, mockTest, "ns", []string{})
 
 	// Should fail due to query error
 	assert.True(t, mockTest.failed, "Test should have failed due to query error")

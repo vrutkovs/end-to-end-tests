@@ -118,7 +118,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				install.RunChaosScenario(ctx, t, namespace, "pods", scenario, "podchaos")
 
 				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{})
 			})
 		}
 	})
@@ -136,8 +136,8 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				install.RunChaosScenario(ctx, t, namespace, "cpu", scenario, "stresschaos")
 
 				By("Only CPUThrottlingHigh is firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, []string{"CPUThrottlingHigh"})
-				overwatch.CheckAlertIsFiring(ctx, t, "CPUThrottlingHigh")
+				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{"CPUThrottlingHigh"})
+				overwatch.CheckAlertIsFiring(ctx, t, namespace, "CPUThrottlingHigh")
 			})
 		}
 	})
@@ -155,7 +155,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				install.RunChaosScenario(ctx, t, namespace, "memory", scenario, "stresschaos")
 
 				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{})
 			})
 		}
 	})
@@ -173,7 +173,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				install.RunChaosScenario(ctx, t, namespace, "io", scenario, "stresschaos")
 
 				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{})
 			})
 		}
 	})
@@ -192,7 +192,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")
 
 				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{})
 			})
 		}
 
@@ -209,7 +209,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				install.RunChaosScenario(ctx, t, namespace, "http", scenarioName, "httpchaos")
 
 				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{})
 			})
 		}
 	})
@@ -221,7 +221,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")
 
 			By("No alerts are firing")
-			overwatch.CheckNoAlertsFiring(ctx, t, []string{})
+			overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{})
 		})
 	})
 })

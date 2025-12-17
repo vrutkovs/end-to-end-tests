@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (p PrometheusClient) CheckNoAlertsFiring(ctx context.Context, t testing.TestingT, exceptions []string) {
+func (p PrometheusClient) CheckNoAlertsFiring(ctx context.Context, t testing.TestingT, namespace string, exceptions []string) {
 	defaultExceptions := []string{
 		"InfoInhibitor", "Watchdog",
 	}
 	allExceptions := append(defaultExceptions, exceptions...)
-	query := fmt.Sprintf(`sum by (alertname) (vmalert_alerts_firing{alertname!~"%s"})`, strings.Join(allExceptions, "|"))
+	query := fmt.Sprintf(`sum by (alertname) (vmalert_alerts_firing{namespace="%s", alertname!~"%s"})`, namespace, strings.Join(allExceptions, "|"))
 
 	result, _, err := p.Query(ctx, query)
 	if err != nil {
@@ -40,8 +40,8 @@ func (p PrometheusClient) CheckNoAlertsFiring(ctx context.Context, t testing.Tes
 }
 
 // CheckAlertIsFiring verifies that a specific alert is currently firing (value > 0)
-func (p PrometheusClient) CheckAlertIsFiring(ctx context.Context, t testing.TestingT, alertName string) {
-	query := fmt.Sprintf(`vmalert_alerts_firing{alertname="%s"}`, alertName)
+func (p PrometheusClient) CheckAlertIsFiring(ctx context.Context, t testing.TestingT, namespace, alertName string) {
+	query := fmt.Sprintf(`vmalert_alerts_firing{namespace="%s", alertname="%s"}`, namespace, alertName)
 
 	result, _, err := p.Query(ctx, query)
 	if err != nil {

@@ -68,6 +68,7 @@ const (
 var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 
 	BeforeEach(func() {
+		install.DiscoverIngressHost(ctx, t)
 		var err error
 
 		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl(namespace))

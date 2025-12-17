@@ -59,7 +59,6 @@ func waitForLoadBalancerIngress(ctx context.Context, t terratesting.TestingT, ku
 
 	// Check if LoadBalancer ingress IP is already available
 	if host := extractIngressHost(svc); host != "" {
-		logger.Default.Logf(t, "LoadBalancer IP already available: %s", host)
 		return host
 	}
 

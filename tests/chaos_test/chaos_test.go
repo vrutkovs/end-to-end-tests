@@ -93,7 +93,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 
 	AfterEach(func() {
 		defer func() {
-			if namespace != "vm1" {
+			if GinkgoParallelProcess() != 1 {
 				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 
 				install.DeleteVMCluster(t, kubeOpts, namespace)

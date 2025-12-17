@@ -370,8 +370,6 @@ vmcluster:
     vmstorage:
       replicaCount: 2
       storageDataPath: /vm-data
-      nodeSelector:
-        app: vm
       tolerations:
         - key: "storage"
           operator: "Exists"

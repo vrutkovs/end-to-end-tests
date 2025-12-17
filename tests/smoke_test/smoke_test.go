@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/stretchr/testify/require"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -41,6 +42,7 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 		install.DiscoverIngressHost(ctx, t)
 
 		var err error
+		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl(namespace))
 		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl(namespace)))
 		require.NoError(t, err)
 		overwatch.Start = time.Now()
@@ -59,6 +61,7 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 			By("Send requests for 5 minutes")
 			tickerPeriod := time.Second
 
+			logger.Default.Logf(t, "Sending requests to %s", consts.VMSelectUrl(namespace))
 			promAPI, err := promquery.NewPrometheusClient(fmt.Sprintf("%s/select/0/prometheus", consts.VMSelectUrl(namespace)))
 			promAPI.Start = overwatch.Start
 			require.NoError(t, err)

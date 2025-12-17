@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
+	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/stretchr/testify/require"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -46,6 +47,7 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 		install.DiscoverIngressHost(ctx, t)
 
 		var err error
+		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl(vmNamespace))
 		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl(vmNamespace)))
 		require.NoError(t, err)
 		overwatch.Start = time.Now()

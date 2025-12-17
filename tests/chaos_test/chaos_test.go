@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
+	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/stretchr/testify/require"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -62,6 +63,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		var err error
 		namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
 
+		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl(namespace))
 		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl(namespace)))
 		require.NoError(t, err)
 		overwatch.Start = time.Now()
@@ -76,6 +78,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 
 			// Ensure VMAgent remote write URL is set up. vmagent always created in vm-1 namespace
 			remoteWriteURL := fmt.Sprintf("http://vminsert-%s.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write", namespace, namespace)
+			logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
 			install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, "vm-1", vmReleaseName, remoteWriteURL)
 		}
 	})

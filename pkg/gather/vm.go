@@ -143,6 +143,7 @@ OuterLoop:
 				require.NotEmpty(t, archivePath, "archive_path should not be empty when state is complete")
 				break OuterLoop
 			case "failed":
+				logger.Default.Logf(t, "vmexporter job %s statusResponse: %#v", startExportResponse.JobID, statusResponse)
 				require.FailNow(t, fmt.Sprintf("vmexporter job %s failed", startExportResponse.JobID))
 			default:
 				time.Sleep(5 * time.Second)

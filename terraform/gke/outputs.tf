@@ -27,11 +27,6 @@ output "zone" {
   value       = var.zone
 }
 
-output "network_name" {
-  description = "The name of the VPC network"
-  value       = google_compute_network.vpc.name
-}
-
 output "service_account_email" {
   description = "The email of the service account created for the cluster"
   value       = google_service_account.kubernetes.email

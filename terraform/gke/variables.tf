@@ -134,3 +134,8 @@ variable "ingress_external_ip" {
   type        = string
   default     = ""
 }
+
+variable "vpc_name" {
+  description = "The name of the existing GCP VPC network to use for the cluster and firewall"
+  type        = string
+}

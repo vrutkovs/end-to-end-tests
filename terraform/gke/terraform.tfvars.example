@@ -45,3 +45,5 @@ vm_preemptible_nodes = true
 enable_autoscaling    = true
 autoscaling_profile   = "BALANCED" # Can be "BALANCED" or "OPTIMIZE_UTILIZATION"
 enable_vm_autoscaling = true
+
+vpc_name = "default"

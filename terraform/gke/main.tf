@@ -21,6 +21,12 @@ provider "google" {
   region  = var.region
 }
 
+# Use an existing VPC by name instead of creating a new one
+data "google_compute_network" "vpc" {
+  name    = var.vpc_name
+  project = var.project_id
+}
+
 # Get GKE cluster credentials for Kubernetes/Helm providers
 data "google_client_config" "default" {}
 
@@ -38,7 +44,7 @@ resource "google_container_cluster" "primary" {
   remove_default_node_pool = false
   deletion_protection      = false
 
-  network           = google_compute_network.vpc.self_link
+  network           = data.google_compute_network.vpc.self_link
   datapath_provider = "ADVANCED_DATAPATH"
 
   min_master_version = var.kubernetes_version
@@ -157,7 +163,7 @@ resource "google_container_cluster" "primary" {
 # Ingress firewall rule
 resource "google_compute_firewall" "nginx_ingress" {
   name    = "${var.cluster_name}-nginx-ingress"
-  network = google_compute_network.vpc.name
+  network = data.google_compute_network.vpc.name
   project = var.project_id
 
   allow {
@@ -176,9 +182,4 @@ resource "google_service_account" "kubernetes" {
   project      = var.project_id
 }
 
-# Create VPC network
-resource "google_compute_network" "vpc" {
-  name                    = "${var.cluster_name}-vpc"
-  auto_create_subnetworks = true
-  project                 = var.project_id
-}
+# Using existing VPC specified by variable `vpc_name`; do not create a new VPC here.

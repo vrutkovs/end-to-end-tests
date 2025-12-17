@@ -476,7 +476,7 @@ vmcluster:
       labels: {}
 
       # -- Ingress controller class name
-      ingressClassName: ""
+      ingressClassName: "nginx"
 
       # -- Ingress path type
       pathType: Prefix

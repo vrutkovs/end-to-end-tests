@@ -127,6 +127,6 @@ func DeleteVMCluster(t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, vmcl
 	// In a real scenario, you might want to implement proper cleanup waiting
 	deployments := []string{vmstorageName, vmselectName, vminsertName}
 	for _, deployment := range deployments {
-		k8s.RunKubectl(t, kubeOpts, "wait", "--for=delete", "deployment", deployment, "--timeout=60s", "--ignore-not-found=true")
+		k8s.RunKubectl(t, kubeOpts, "wait", "--for=delete", "deployment", deployment, "--timeout=60s")
 	}
 }

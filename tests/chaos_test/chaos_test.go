@@ -217,7 +217,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		It("Emulate row rerouting when vmstorage-0 becomes unreachable", Label("gke", "id=3a9e309f-eec7-4d37-a7ee-918abd3a3d44"), func() {
 			By("Run scenario")
 			scenarioName := "vminsert-to-vmstorage0-3s-delay"
-			install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "NetworkChaos")
+			install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")
 
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, []string{})

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os/exec"
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
@@ -25,28 +24,9 @@ import (
 )
 
 // VMAfterAll provides cleanup and data collection logic for VictoriaMetrics components.
-// It starts vmexporter, calls its /api/export/start, polls /api/export/status,
+// It calls vmgather /api/export/start, polls /api/export/status,
 // calls /api/export/download endpoints, and adds the downloaded archive to the report.
 func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout time.Duration, namespace string) {
-	// TODO: Deploy vmgather as deployment + service + ingress instead
-	timeBoundContext, cancel := context.WithTimeout(ctx, resourceWaitTimeout)
-	defer cancel()
-
-	// Start vmexporter binary with -no-browser in goroutine
-	vmexporterCmd := exec.CommandContext(timeBoundContext, "vmexporter", "-no-browser")
-	var vmexporterOutb, vmexporterErrb bytes.Buffer
-	vmexporterCmd.Stdout = &vmexporterOutb
-	vmexporterCmd.Stderr = &vmexporterErrb
-	go func() {
-		err := vmexporterCmd.Run()
-		if err != nil && err.Error() != "signal: killed" { // Ignore killed signal
-			logger.Default.Logf(t, "vmexporter exited with error: %v, stdout: %s, stderr: %s", err, vmexporterOutb.String(), vmexporterErrb.String())
-		}
-	}()
-	// Give vmexporter some time to start
-	time.Sleep(2 * time.Second)
-
-	// Prepare the request body using the exporter.RequestBody struct
 	// Set start and end times dynamically
 	endTime := time.Now()
 	startTime := endTime.Add(-1 * time.Hour)
@@ -77,7 +57,7 @@ func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout tim
 			PreserveStructure: true,
 			CustomLabels:      []string{},
 		},
-		StagingDir:        "/tmp/staging", // Use /tmp/staging as specified in the request
+		StagingDir:        "/tmp/staging",
 		MetricStepSeconds: 0,
 		Batching: exporter.Batching{
 			Enabled:            true,
@@ -89,13 +69,13 @@ func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout tim
 	marshaledBody, err := json.Marshal(reqBody)
 	require.NoError(t, err, "failed to marshal request body")
 
-	// Call localhost:8080/api/export/start endpoint with JSON body
-	exportStartURL := url.URL{
+	// Call vmgather's /api/export/start endpoint
+	startURL := url.URL{
 		Scheme: "http",
-		Host:   "localhost:8080",
+		Host:   consts.VMGatherHost(),
 		Path:   "/api/export/start",
 	}
-	startReq, err := http.NewRequest(http.MethodPost, exportStartURL.String(), bytes.NewBuffer(marshaledBody))
+	startReq, err := http.NewRequest(http.MethodPost, startURL.String(), bytes.NewBuffer(marshaledBody))
 	require.NoError(t, err, "failed to create HTTP request for /api/export/start")
 	startReq.Header.Set("Content-Type", "application/json")
 	logger.Default.Logf(t, "vmexporter /api/export/start request body: %s", string(marshaledBody))
@@ -118,12 +98,13 @@ func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout tim
 	// Poll for job status until complete
 	statusURL := url.URL{
 		Scheme: "http",
-		Host:   "localhost:8080",
+		Host:   consts.VMGatherHost(),
 		Path:   "/api/export/status",
 	}
 	q := statusURL.Query()
 	q.Add("id", startExportResponse.JobID)
 	statusURL.RawQuery = q.Encode()
+	statusURLStr := statusURL.String()
 
 	var archivePath string
 	pollCtx, pollCancel := context.WithTimeout(ctx, resourceWaitTimeout)
@@ -136,7 +117,7 @@ OuterLoop:
 			// Exit loop if context is cancelled, check archivePath later
 			break OuterLoop
 		default:
-			statusReq, err := http.NewRequest(http.MethodGet, statusURL.String(), nil)
+			statusReq, err := http.NewRequest(http.MethodGet, statusURLStr, nil)
 			require.NoError(t, err, "failed to create HTTP request for /api/export/status")
 
 			statusRes, err := http.DefaultClient.Do(statusReq)
@@ -179,14 +160,15 @@ OuterLoop:
 	// Call download endpoint with archive_path as query param
 	downloadURL := url.URL{
 		Scheme: "http",
-		Host:   "localhost:8080",
+		Host:   consts.VMGatherHost(),
 		Path:   "/api/download",
 	}
-	q = downloadURL.Query() // Reuse q from statusURL for building download query
+	q = downloadURL.Query()
 	q.Add("path", archivePath)
 	downloadURL.RawQuery = q.Encode()
+	downloadURLStr := downloadURL.String()
 
-	req, err := http.NewRequest(http.MethodGet, downloadURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, downloadURLStr, nil)
 	require.NoError(t, err, "failed to create HTTP request for /api/download")
 
 	res, err = http.DefaultClient.Do(req)
@@ -204,11 +186,6 @@ OuterLoop:
 
 	// Add the downloaded zip file content to the report
 	ginkgo.AddReportEntry("vmexporter-report.zip", zipBuffer.String(), ginkgo.ReportEntryVisibilityNever)
-
-	// Shutdown vmexporter command
-	if vmexporterCmd.Process != nil {
-		_ = vmexporterCmd.Process.Kill()
-	}
 }
 
 func RestartOverwatchInstance(ctx context.Context, t testing.TestingT, namespace string) {

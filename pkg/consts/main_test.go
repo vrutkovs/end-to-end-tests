@@ -154,30 +154,6 @@ func TestVMHostsWithEmptyNginxHost(t *testing.T) {
 	}
 }
 
-func TestBackwardCompatibilityFunctions(t *testing.T) {
-	testNginxHost := "172.17.0.100"
-	SetNginxHost(testNginxHost)
-
-	// Test that compat functions use "vm" namespace by default
-	expectedSingleHost := "vmsingle-vm.172.17.0.100.nip.io"
-	expectedSelectHost := "vmselect-vm.172.17.0.100.nip.io"
-	expectedSingleUrl := "http://vmsingle-vm.172.17.0.100.nip.io"
-	expectedSelectUrl := "http://vmselect-vm.172.17.0.100.nip.io"
-
-	if VMSingleHostCompat() != expectedSingleHost {
-		t.Errorf("Expected VMSingleHostCompat to be %s, got %s", expectedSingleHost, VMSingleHostCompat())
-	}
-	if VMSelectHostCompat() != expectedSelectHost {
-		t.Errorf("Expected VMSelectHostCompat to be %s, got %s", expectedSelectHost, VMSelectHostCompat())
-	}
-	if VMSingleUrlCompat() != expectedSingleUrl {
-		t.Errorf("Expected VMSingleUrlCompat to be %s, got %s", expectedSingleUrl, VMSingleUrlCompat())
-	}
-	if VMSelectUrlCompat() != expectedSelectUrl {
-		t.Errorf("Expected VMSelectUrlCompat to be %s, got %s", expectedSelectUrl, VMSelectUrlCompat())
-	}
-}
-
 func TestHelmChartVersion(t *testing.T) {
 	testValue := "v1.2.3"
 

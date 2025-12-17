@@ -52,6 +52,8 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 		overwatch.Start = time.Now()
 		install.InstallWithHelm(ctx, helmChart, valuesFile, t, vmNamespace, releaseName)
 
+		install.InstallVMGather(t)
+
 		// Install k6 operator
 		install.InstallK6(ctx, t, k6OperatorNamespace)
 

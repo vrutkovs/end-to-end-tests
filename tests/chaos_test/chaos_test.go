@@ -42,6 +42,8 @@ var _ = SynchronizedBeforeSuite(
 
 		namespace := fmt.Sprintf("vm-%d", GinkgoParallelProcess())
 		install.InstallWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, namespace, vmReleaseName)
+
+		install.InstallVMGather(t)
 	}, func() {},
 )
 

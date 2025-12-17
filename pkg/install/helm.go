@@ -17,7 +17,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	watchtools "k8s.io/client-go/tools/watch"
 
-	// . "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo/v2" //nolint
 
 	vmclient "github.com/VictoriaMetrics/operator/api/client/versioned"
 	vmv1beta1 "github.com/VictoriaMetrics/operator/api/operator/v1beta1"
@@ -69,7 +69,7 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	}
 	vmclient := GetVMClient(t, kubeOpts)
 
-	// By(fmt.Sprintf("Install %s chart", helmChart))
+	By(fmt.Sprintf("Install %s chart", helmChart))
 	helm.Upgrade(t, helmOpts, helmChart, releaseName)
 
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmks-victoria-metrics-operator", consts.Retries, consts.PollingInterval)
@@ -107,11 +107,11 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 	}
 	consts.SetHelmChartVersion(helmChartVersion)
 
-	// By("Install VMSingle overwatch instance")
+	By("Install VMSingle overwatch instance")
 	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmsingle.yaml")
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmsingle-overwatch", consts.Retries, consts.PollingInterval)
 
-	// By("Install VMSingle ingress")
+	By("Install VMSingle ingress")
 	// Copy vmsingle-ingress.yaml to temp file, update ingress host and apply it
 	vmsingleYaml, err := os.ReadFile("../../manifests/overwatch/vmsingle-ingress.yaml")
 	require.NoError(t, err)
@@ -131,7 +131,7 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 
 	k8s.KubectlApply(t, kubeOpts, tempFile.Name())
 
-	// By("Reconfigure VMAgent to send data to VMSingle")
+	By("Reconfigure VMAgent to send data to VMSingle")
 
 	// Read vmagent.yaml content
 	vmagentYamlPath := "../../manifests/overwatch/vmagent.yaml"

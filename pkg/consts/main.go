@@ -131,6 +131,16 @@ func VMSelectHost(namespace string) string {
 	return fmt.Sprintf("vmselect-%s.%s.nip.io", namespace, host)
 }
 
+func VMGatherHost() string {
+	mu.Lock()
+	host := nginxHost
+	mu.Unlock()
+	if host == "" {
+		return ""
+	}
+	return fmt.Sprintf("vmgather.%s.nip.io", host)
+}
+
 // Kubernetes service address functions
 func GetVMSelectSvc(namespace string) string {
 	return fmt.Sprintf("vmselect-vmks.%s.svc.cluster.local.:8481", namespace)
@@ -142,23 +152,6 @@ func GetVMSingleSvc(namespace string) string {
 
 func GetVMInsertSvc(namespace string) string {
 	return fmt.Sprintf("vminsert-vmks.%s.svc.cluster.local.:8480", namespace)
-}
-
-// Backward compatibility functions that use "vm" as default namespace
-func VMSingleUrlCompat() string {
-	return VMSingleUrl("vm")
-}
-
-func VMSelectUrlCompat() string {
-	return VMSelectUrl("vm")
-}
-
-func VMSingleHostCompat() string {
-	return VMSingleHost("vm")
-}
-
-func VMSelectHostCompat() string {
-	return VMSelectHost("vm")
 }
 
 func HelmChartVersion() string {

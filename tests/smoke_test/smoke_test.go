@@ -46,6 +46,7 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 		overwatch.Start = time.Now()
 
 		install.InstallWithHelm(ctx, helmChart, valuesFile, t, namespace, releaseName)
+		install.InstallVMGather(t)
 	})
 	AfterEach(func() {
 		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)

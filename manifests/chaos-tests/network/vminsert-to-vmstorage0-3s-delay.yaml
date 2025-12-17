@@ -1,7 +1,7 @@
 kind: NetworkChaos
 apiVersion: chaos-mesh.org/v1alpha1
 metadata:
-  name: vminsert-to-vmstorage-packet-delay
+  name: vminsert-to-vmstorage0-3s-delay
 spec:
   selector:
     namespaces:

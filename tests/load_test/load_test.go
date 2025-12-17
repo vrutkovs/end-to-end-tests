@@ -83,7 +83,7 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 			install.WaitForK6JobsToComplete(ctx, t, k6TestsNamespace, scenario, 3)
 
 			By("No alerts are firing")
-			overwatch.CheckNoAlertsFiring(ctx, t, []string{
+			overwatch.CheckNoAlertsFiring(ctx, t, vmNamespace, []string{
 				// TODO[vrutkovs]: sort out these exceptions? These are probably kind-specific
 				"TooManyLogs",
 				"RecordingRulesError",

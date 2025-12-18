@@ -11,8 +11,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/tools/clientcmd"
+	watchtools "k8s.io/client-go/tools/watch"
 
 	vmclient "github.com/VictoriaMetrics/operator/api/client/versioned"
+	vmv1beta1 "github.com/VictoriaMetrics/operator/api/operator/v1beta1"
+
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 )
 
 // InstallVMCluster installs a VMCluster custom resource into the target namespace.
@@ -167,4 +173,69 @@ func DeleteVMCluster(t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, vmcl
 	for _, deployment := range deployments {
 		k8s.RunKubectl(t, kubeOpts, "wait", "--for=delete", "deployment", deployment, "--timeout=60s")
 	}
+}
+
+// GetVMClient creates and returns a VictoriaMetrics operator clientset using the
+// kubeconfig referenced by kubeOpts.
+//
+// The function reads the kubeconfig path from kubeOpts, builds a REST config and
+// constructs a typed client for the VictoriaMetrics Operator CRDs.
+func GetVMClient(t terratesting.TestingT, kubeOpts *k8s.KubectlOptions) *vmclient.Clientset {
+	kubeConfigPath, err := kubeOpts.GetConfigPath(t)
+	require.NoError(t, err)
+	clientConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeConfigPath}, &clientcmd.ConfigOverrides{})
+	restConfig, err := clientConfig.ClientConfig()
+	require.NoError(t, err)
+	vmclient := vmclient.NewForConfigOrDie(restConfig)
+	require.NoError(t, err)
+	return vmclient
+}
+
+// WaitForVMSingleToBeOperational watches a VMSingle custom resource until it reports an operational status.
+//
+// The function sets up a watch for VMSingle objects in the provided namespace and
+// blocks until the VMSingle's Status.UpdateStatus becomes UpdateStatusOperational or
+// the wait times out. It uses consts.ResourceWaitTimeout to bound the wait.
+func WaitForVMSingleToBeOperational(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient vmclient.Interface) {
+	watchInterface, err := vmclient.OperatorV1beta1().VMSingles(namespace).Watch(ctx, metav1.ListOptions{})
+	require.NoError(t, err)
+	defer watchInterface.Stop()
+
+	timeBoundContext, cancel := context.WithTimeout(ctx, consts.ResourceWaitTimeout)
+	defer cancel()
+
+	_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {
+		obj := event.Object
+		vmSingle := obj.(*vmv1beta1.VMSingle)
+		if vmSingle.Status.UpdateStatus == vmv1beta1.UpdateStatusOperational {
+			return true, nil
+		}
+		return false, nil
+	})
+	require.NoError(t, err)
+}
+
+// WaitForVMClusterToBeOperational watches a VMCluster custom resource until it reports an operational status.
+//
+// This helper uses a watch on VMCluster objects and returns when the cluster's
+// Status.UpdateStatus equals UpdateStatusOperational. A timeout is applied using
+// consts.ResourceWaitTimeout to avoid blocking indefinitely.
+func WaitForVMClusterToBeOperational(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient vmclient.Interface) {
+	watchInterface, err := vmclient.OperatorV1beta1().VMClusters(namespace).Watch(ctx, metav1.ListOptions{})
+	require.NoError(t, err)
+	defer watchInterface.Stop()
+
+	timeBoundContext, cancel := context.WithTimeout(ctx, consts.ResourceWaitTimeout)
+	defer cancel()
+
+	_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {
+		obj := event.Object
+		vmCluster := obj.(*vmv1beta1.VMCluster)
+		if vmCluster.Status.UpdateStatus == vmv1beta1.UpdateStatusOperational {
+			return true, nil
+		}
+		return false, nil
+	})
+	require.NoError(t, err)
 }

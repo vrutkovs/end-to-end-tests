@@ -28,10 +28,11 @@ func TestSmokeTests(t *testing.T) {
 
 var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func() {
 	const (
-		namespace   = "vm1"
-		releaseName = "vmks"
-		helmChart   = "vm/victoria-metrics-k8s-stack"
-		valuesFile  = "../../manifests/smoke.yaml"
+		namespace          = "vm1"
+		overwatchNamespace = "overwatch"
+		releaseName        = "vmks"
+		helmChart          = "vm/victoria-metrics-k8s-stack"
+		valuesFile         = "../../manifests/smoke.yaml"
 	)
 
 	ctx := context.Background()
@@ -49,6 +50,7 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 
 		install.InstallVMGather(t)
 		install.InstallWithHelm(ctx, helmChart, valuesFile, t, namespace, releaseName)
+		install.InstallOverwatch(ctx, t, overwatchNamespace, namespace, releaseName)
 	})
 	AfterEach(func() {
 		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)

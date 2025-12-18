@@ -33,6 +33,12 @@ const (
 	chaosReleaseName = "chaos-mesh"
 	chaosNamespace   = "chaos-mesh"
 	chaosHelmChart   = "chaos-mesh/chaos-mesh"
+
+	releaseName        = "vmks"
+	overwatchNamespace = "overwatch"
+	k8sStackNamespace  = "monitoring"
+	vmHelmChart        = "vm/victoria-metrics-k8s-stack"
+	vmValuesFile       = "../../manifests/chaos-test.yaml"
 )
 
 var (
@@ -49,10 +55,9 @@ var _ = SynchronizedBeforeSuite(
 		t := tests.GetT()
 		install.DiscoverIngressHost(ctx, t)
 		install.InstallChaosMesh(ctx, chaosHelmChart, chaosValuesFile, t, chaosNamespace, chaosReleaseName)
-
 		install.InstallVMGather(t)
-		namespace = fmt.Sprintf("vm%d", GinkgoParallelProcess())
-		install.InstallWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, namespace, vmReleaseName)
+		install.InstallWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, k8sStackNamespace, releaseName)
+		install.InstallOverwatch(ctx, t, overwatchNamespace, k8sStackNamespace, releaseName)
 	}, func() {
 		ctx = context.Background()
 		t = tests.GetT()
@@ -60,14 +65,19 @@ var _ = SynchronizedBeforeSuite(
 	},
 )
 
-const (
-	vmReleaseName = "vmks"
-	vmHelmChart   = "vm/victoria-metrics-k8s-stack"
-	vmValuesFile  = "../../manifests/smoke.yaml"
+// Collect k8s resources and overwatch data once after all scenarios have finished
+var _ = SynchronizedAfterSuite(
+	func() {},
+	func() {
+		ctx := context.Background()
+		t := tests.GetT()
+
+		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
+		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, overwatchNamespace)
+	},
 )
 
 var _ = Describe("Chaos tests", Label("chaos-test"), func() {
-
 	BeforeEach(func() {
 		install.DiscoverIngressHost(ctx, t)
 		var err error
@@ -77,33 +87,24 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		require.NoError(t, err)
 		overwatch.Start = time.Now()
 
-		// First project should setup victoria-metrics-k8s-stack chart, others will create VMCluster objects
-		if GinkgoParallelProcess() != 1 {
-			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
-			vmclient := install.GetVMClient(t, kubeOpts)
+		// Create new VMCluster object
+		kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+		vmclient := install.GetVMClient(t, kubeOpts)
 
-			// Create VMCluster object for other projects
-			install.InstallVMCluster(ctx, t, kubeOpts, namespace, vmclient)
+		// Create VMCluster object for other projects
+		install.InstallVMCluster(ctx, t, kubeOpts, namespace, vmclient)
 
-			// Ensure VMAgent remote write URL is set up. vmagent always created in vm1 namespace
-			remoteWriteURL := fmt.Sprintf("http://vminsert-%s.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write", namespace, namespace)
-			logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
-			install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, "vm1", vmReleaseName, remoteWriteURL)
-		}
+		// Ensure VMAgent remote write URL is set up. vmagent already created in k8sStackNamespace namespace
+		remoteWriteURL := fmt.Sprintf("http://vminsert-%s.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write", namespace, namespace)
+		logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
+		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, k8sStackNamespace, releaseName, remoteWriteURL)
 	})
 
 	AfterEach(func() {
-		defer func() {
-			if GinkgoParallelProcess() != 1 {
-				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+		kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 
-				install.DeleteVMCluster(t, kubeOpts, namespace)
-				k8s.RunKubectl(t, kubeOpts, "delete", "namespace", namespace, "--ignore-not-found=true")
-			}
-		}()
-
-		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
-		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, namespace)
+		install.DeleteVMCluster(t, kubeOpts, namespace)
+		k8s.RunKubectl(t, kubeOpts, "delete", "namespace", namespace, "--ignore-not-found=true")
 	})
 
 	Describe("pod restarts", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-pod-failure"), func() {

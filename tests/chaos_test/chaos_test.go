@@ -38,7 +38,7 @@ const (
 	overwatchNamespace = "overwatch"
 	k8sStackNamespace  = "monitoring"
 	vmHelmChart        = "vm/victoria-metrics-k8s-stack"
-	vmValuesFile       = "../../manifests/chaos-test.yaml"
+	vmValuesFile       = "../../manifests/smoke.yaml"
 )
 
 var (
@@ -58,6 +58,13 @@ var _ = SynchronizedBeforeSuite(
 		install.InstallVMGather(t)
 		install.InstallWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, k8sStackNamespace, releaseName)
 		install.InstallOverwatch(ctx, t, overwatchNamespace, k8sStackNamespace, releaseName)
+
+		// Reconfigure VMAlert to use overwatch
+		install.ReconfigureVMAlert(ctx, t, k8sStackNamespace, releaseName, consts.GetVMSingleSvc(overwatchNamespace))
+
+		// Remove stock VMCluster - it would be recreated in vm* namespaces
+		kubeOpts := k8s.NewKubectlOptions("", "", k8sStackNamespace)
+		install.DeleteVMCluster(t, kubeOpts, releaseName)
 	}, func() {
 		ctx = context.Background()
 		t = tests.GetT()
@@ -82,22 +89,21 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		install.DiscoverIngressHost(ctx, t)
 		var err error
 
-		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl(namespace))
-		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl(namespace)))
+		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl())
+		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
 		require.NoError(t, err)
 		overwatch.Start = time.Now()
 
 		// Create new VMCluster object
 		kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 		vmclient := install.GetVMClient(t, kubeOpts)
-
-		// Create VMCluster object for other projects
 		install.InstallVMCluster(ctx, t, kubeOpts, namespace, vmclient)
 
 		// Ensure VMAgent remote write URL is set up. vmagent already created in k8sStackNamespace namespace
 		remoteWriteURL := fmt.Sprintf("http://vminsert-%s.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write", namespace, namespace)
 		logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
 		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, k8sStackNamespace, releaseName, remoteWriteURL)
+
 	})
 
 	AfterEach(func() {

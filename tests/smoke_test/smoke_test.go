@@ -43,8 +43,8 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 		install.DiscoverIngressHost(ctx, t)
 
 		var err error
-		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl(namespace))
-		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl(namespace)))
+		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl())
+		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
 		require.NoError(t, err)
 		overwatch.Start = time.Now()
 

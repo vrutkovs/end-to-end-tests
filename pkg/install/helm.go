@@ -147,7 +147,7 @@ func InstallOverwatch(ctx context.Context, t terratesting.TestingT, namespace, v
 	}()
 
 	// Extract host from consts.VMSingleUrl
-	vmsingleYaml = []byte(strings.ReplaceAll(string(vmsingleYaml), "vmsingle.example.com", consts.VMSingleHost(namespace)))
+	vmsingleYaml = []byte(strings.ReplaceAll(string(vmsingleYaml), "vmsingle.example.com", consts.VMSingleHost()))
 
 	_, err = tempFile.Write(vmsingleYaml)
 	require.NoError(t, err)

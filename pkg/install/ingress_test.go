@@ -56,21 +56,21 @@ func TestDiscoverIngressHostWithLoadBalancer(t *testing.T) {
 	// Test hosts with different namespaces
 	testNamespace := "test-ns"
 	expectedVMSelectHost := "vmselect-test-ns.192.168.1.100.nip.io"
-	expectedVMSingleHost := "vmsingle-test-ns.192.168.1.100.nip.io"
+	expectedVMSingleHost := "vmsingle.192.168.1.100.nip.io"
 	expectedVMSelectUrl := "http://vmselect-test-ns.192.168.1.100.nip.io"
-	expectedVMSingleUrl := "http://vmsingle-test-ns.192.168.1.100.nip.io"
+	expectedVMSingleUrl := "http://vmsingle.192.168.1.100.nip.io"
 
 	if consts.VMSelectHost(testNamespace) != expectedVMSelectHost {
 		t.Errorf("Expected VMSelect host to be '%s', got '%s'", expectedVMSelectHost, consts.VMSelectHost(testNamespace))
 	}
-	if consts.VMSingleHost(testNamespace) != expectedVMSingleHost {
-		t.Errorf("Expected VMSingle host to be '%s', got '%s'", expectedVMSingleHost, consts.VMSingleHost(testNamespace))
+	if consts.VMSingleHost() != expectedVMSingleHost {
+		t.Errorf("Expected VMSingle host to be '%s', got '%s'", expectedVMSingleHost, consts.VMSingleHost())
 	}
 	if consts.VMSelectUrl(testNamespace) != expectedVMSelectUrl {
 		t.Errorf("Expected VMSelect URL to be '%s', got '%s'", expectedVMSelectUrl, consts.VMSelectUrl(testNamespace))
 	}
-	if consts.VMSingleUrl(testNamespace) != expectedVMSingleUrl {
-		t.Errorf("Expected VMSingle URL to be '%s', got '%s'", expectedVMSingleUrl, consts.VMSingleUrl(testNamespace))
+	if consts.VMSingleUrl() != expectedVMSingleUrl {
+		t.Errorf("Expected VMSingle URL to be '%s', got '%s'", expectedVMSingleUrl, consts.VMSingleUrl())
 	}
 }
 
@@ -91,21 +91,21 @@ func TestDiscoverIngressHostKindLogic(t *testing.T) {
 	// Test with "vm" namespace (most common case)
 	namespace := "vm"
 	expectedVMSelectHost := "vmselect-vm.127.0.0.1.nip.io"
-	expectedVMSingleHost := "vmsingle-vm.127.0.0.1.nip.io"
+	expectedVMSingleHost := "vmsingle.127.0.0.1.nip.io"
 	expectedVMSelectUrl := "http://vmselect-vm.127.0.0.1.nip.io"
-	expectedVMSingleUrl := "http://vmsingle-vm.127.0.0.1.nip.io"
+	expectedVMSingleUrl := "http://vmsingle.127.0.0.1.nip.io"
 
 	if consts.VMSelectHost(namespace) != expectedVMSelectHost {
 		t.Errorf("Expected VMSelect host for kind to be '%s', got '%s'", expectedVMSelectHost, consts.VMSelectHost(namespace))
 	}
-	if consts.VMSingleHost(namespace) != expectedVMSingleHost {
-		t.Errorf("Expected VMSingle host for kind to be '%s', got '%s'", expectedVMSingleHost, consts.VMSingleHost(namespace))
+	if consts.VMSingleHost() != expectedVMSingleHost {
+		t.Errorf("Expected VMSingle host for kind to be '%s', got '%s'", expectedVMSingleHost, consts.VMSingleHost())
 	}
 	if consts.VMSelectUrl(namespace) != expectedVMSelectUrl {
 		t.Errorf("Expected VMSelect URL for kind to be '%s', got '%s'", expectedVMSelectUrl, consts.VMSelectUrl(namespace))
 	}
-	if consts.VMSingleUrl(namespace) != expectedVMSingleUrl {
-		t.Errorf("Expected VMSingle URL for kind to be '%s', got '%s'", expectedVMSingleUrl, consts.VMSingleUrl(namespace))
+	if consts.VMSingleUrl() != expectedVMSingleUrl {
+		t.Errorf("Expected VMSingle URL for kind to be '%s', got '%s'", expectedVMSingleUrl, consts.VMSingleUrl())
 	}
 }
 
@@ -161,14 +161,14 @@ func TestHostnameFormatting(t *testing.T) {
 			if consts.VMSelectHost(namespace) != tt.expectedSelect {
 				t.Errorf("Expected VMSelect host to be '%s', got '%s'", tt.expectedSelect, consts.VMSelectHost(namespace))
 			}
-			if consts.VMSingleHost(namespace) != tt.expectedSingle {
-				t.Errorf("Expected VMSingle host to be '%s', got '%s'", tt.expectedSingle, consts.VMSingleHost(namespace))
+			if consts.VMSingleHost() != tt.expectedSingle {
+				t.Errorf("Expected VMSingle host to be '%s', got '%s'", tt.expectedSingle, consts.VMSingleHost())
 			}
 			if consts.VMSelectUrl(namespace) != tt.expectedSelectUrl {
 				t.Errorf("Expected VMSelect URL to be '%s', got '%s'", tt.expectedSelectUrl, consts.VMSelectUrl(namespace))
 			}
-			if consts.VMSingleUrl(namespace) != tt.expectedSingleUrl {
-				t.Errorf("Expected VMSingle URL to be '%s', got '%s'", tt.expectedSingleUrl, consts.VMSingleUrl(namespace))
+			if consts.VMSingleUrl() != tt.expectedSingleUrl {
+				t.Errorf("Expected VMSingle URL to be '%s', got '%s'", tt.expectedSingleUrl, consts.VMSingleUrl())
 			}
 		})
 	}

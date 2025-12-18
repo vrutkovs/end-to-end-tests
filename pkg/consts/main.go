@@ -97,25 +97,22 @@ func NginxHost() string {
 	return nginxHost
 }
 
-func VMSingleUrl(namespace string) string {
-	return fmt.Sprintf("http://%s", VMSingleHost(namespace))
+func VMSingleUrl() string {
+	return fmt.Sprintf("http://%s", VMSingleHost())
 }
 
 func VMSelectUrl(namespace string) string {
 	return fmt.Sprintf("http://%s", VMSelectHost(namespace))
 }
 
-func VMSingleHost(namespace string) string {
+func VMSingleHost() string {
 	mu.Lock()
 	host := nginxHost
 	mu.Unlock()
 	if host == "" {
 		return ""
 	}
-	if namespace == "" {
-		return fmt.Sprintf("vmsingle.%s.nip.io", host)
-	}
-	return fmt.Sprintf("vmsingle-%s.%s.nip.io", namespace, host)
+	return fmt.Sprintf("vmsingle.%s.nip.io", host)
 }
 
 func VMSelectHost(namespace string) string {

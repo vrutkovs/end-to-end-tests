@@ -48,8 +48,8 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 		install.DiscoverIngressHost(ctx, t)
 
 		var err error
-		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl(vmNamespace))
-		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl(vmNamespace)))
+		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl())
+		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
 		require.NoError(t, err)
 		overwatch.Start = time.Now()
 

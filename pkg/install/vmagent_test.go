@@ -109,12 +109,7 @@ metadata:
   name: vmks
 spec:
   remoteWrite:
-  - url: http://vminsert-vmks.vm.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write
-  - url: http://vmsingle-overwatch.vm.svc.cluster.local.:8428/prometheus/api/v1/write
-    inlineUrlRelabelConfig:
-    - source_labels: [__name__]
-      regex: '(vm.*|operator.*|ALERTS|ALERTS_FOR_STATE)'
-      action: keep`
+  - url: http://vmsingle-overwatch.vm.svc.cluster.local.:8428/prometheus/api/v1/write`
 
 	testCases := []struct {
 		name      string
@@ -212,12 +207,7 @@ metadata:
   name: vmks
 spec:
   remoteWrite:
-  - url: http://vminsert-vmks.vm.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write
-  - url: http://vmsingle-overwatch.vm.svc.cluster.local.:8428/prometheus/api/v1/write
-    inlineUrlRelabelConfig:
-    - source_labels: [__name__]
-      regex: '(vm.*|operator.*|ALERTS|ALERTS_FOR_STATE)'
-      action: keep`
+  - url: http://vmsingle-overwatch.vm.svc.cluster.local.:8428/prometheus/api/v1/write`
 
 	namespace := "production"
 	vmInsertSvc := consts.GetVMInsertSvc(namespace)

@@ -2,6 +2,7 @@ package install
 
 import (
 	"context"
+	"sync"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	vmclient "github.com/VictoriaMetrics/operator/api/client/versioned"
@@ -33,7 +34,11 @@ import (
 //   - namespace: Kubernetes namespace where the VMAgent CR lives.
 //   - vmAgentName: name of the VMAgent custom resource to inspect and potentially update.
 //   - url: the remoteWrite URL that must be present in the VMAgent configuration.
-func EnsureVMAgentRemoteWriteURL(ctx context.Context, t terratesting.TestingT, vmclient vmclient.Interface, kubeOpts *k8s.KubectlOptions, namespace, vmAgentName, url string) {
+func EnsureVMAgentRemoteWriteURL(ctx context.Context, t terratesting.TestingT, vmclient vmclient.Interface, kubeOpts *k8s.KubectlOptions, mu *sync.Mutex, namespace, vmAgentName, url string) {
+	// Acquire the lock before proceeding
+	mu.Lock()
+	defer mu.Unlock()
+
 	// Get the VMAgent resource
 	vmAgent, err := vmclient.OperatorV1beta1().VMAgents(namespace).Get(ctx, vmAgentName, metav1.GetOptions{})
 	require.NoError(t, err)

@@ -3,6 +3,7 @@ package chaos_test
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -46,6 +47,8 @@ var (
 	t         terratesting.TestingT
 	namespace string
 	overwatch promquery.PrometheusClient
+
+	mu sync.Mutex
 )
 
 // Install VM from helm chart for the first process, set namespace for the rest
@@ -102,7 +105,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		// Ensure VMAgent remote write URL is set up. vmagent already created in k8sStackNamespace namespace
 		remoteWriteURL := fmt.Sprintf("http://vminsert-%s.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write", namespace, namespace)
 		logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
-		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, k8sStackNamespace, releaseName, remoteWriteURL)
+		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, &mu, k8sStackNamespace, releaseName, remoteWriteURL)
 
 	})
 

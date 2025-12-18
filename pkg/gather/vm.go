@@ -48,7 +48,7 @@ func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout tim
 			Start: startTime,
 			End:   endTime,
 		},
-		Components: []string{"operator", "victoria", "vmagent", "vmalert", "vminsert", "vmselect", "vmstorage"},
+		Components: []string{"operator", "vmagent", "vmalert", "vminsert", "vmselect", "vmstorage"},
 		Jobs:       []string{"vmks-victoria-metrics-operator", "vmsingle-overwatch", "vmagent-vmks", "vmalert-vmks", "vminsert-vmks", "vmselect-vmks", "vmstorage-vmks"},
 		Obfuscation: exporter.Obfuscation{
 			Enabled:           false,

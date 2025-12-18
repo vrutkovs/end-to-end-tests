@@ -54,13 +54,13 @@ resource "google_container_cluster" "primary" {
     autoscaling_profile = var.autoscaling_profile
     resource_limits {
       resource_type = "cpu"
-      minimum       = (var.min_node_count * 2) + (var.vm_min_node_count * 2)
-      maximum       = (var.max_node_count * 4) + (var.vm_max_node_count * 4)
+      minimum       = (var.min_node_count * 2)
+      maximum       = (var.max_node_count * 16)
     }
     resource_limits {
       resource_type = "memory"
-      minimum       = (var.min_node_count * 8) + (var.vm_min_node_count * 16)
-      maximum       = (var.max_node_count * 8) + (var.vm_max_node_count * 16)
+      minimum       = (var.min_node_count * 8)
+      maximum       = (var.max_node_count * 16)
     }
     auto_provisioning_defaults {
       service_account = google_service_account.kubernetes.email
@@ -103,52 +103,6 @@ resource "google_container_cluster" "primary" {
       }
     }
   }
-
-  node_pool {
-    name = "vm-node-pool"
-    # Note: inline pools use 'node_count', not 'initial_node_count'
-    # You might need to adjust this based on your variable
-    node_count = var.vm_min_node_count
-
-    autoscaling {
-      min_node_count  = var.vm_min_node_count
-      max_node_count  = var.vm_max_node_count
-      location_policy = "ANY"
-    }
-
-    management {
-      auto_repair  = true
-      auto_upgrade = true
-    }
-
-    node_config {
-      preemptible     = var.vm_preemptible_nodes
-      machine_type    = var.vm_machine_type
-      disk_size_gb    = var.vm_disk_size_gb
-      disk_type       = "pd-standard"
-      image_type      = "UBUNTU_CONTAINERD"
-      service_account = google_service_account.kubernetes.email
-      oauth_scopes = [
-        "https://www.googleapis.com/auth/cloud-platform"
-      ]
-      labels = {
-        app       = "vm"
-        node_pool = "vm-pool"
-      }
-      taint {
-        key    = "vm"
-        value  = "true"
-        effect = "NO_SCHEDULE"
-      }
-    }
-
-    upgrade_settings {
-      max_surge       = 1
-      max_unavailable = 0
-      strategy        = "SURGE"
-    }
-  }
-
   monitoring_config {
     managed_prometheus {
       enabled = false

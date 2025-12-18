@@ -55,6 +55,17 @@ func buildVMTagSetValues(namespace string) map[string]string {
 	return setValues
 }
 
+// InstallWithHelm installs or upgrades a Helm chart into the specified namespace and waits for key operator
+// and component deployments to become available. The function also reads version labels from deployed resources
+// and stores them in package-level consts for later use by tests.
+//
+// Parameters:
+// - ctx: parent context for the operation (not used directly for Helm invocation here).
+// - helmChart: path or name of the Helm chart to install/upgrade.
+// - valuesFile: path to the Helm values file to apply.
+// - t: terratest testing interface for running commands and assertions.
+// - namespace: Kubernetes namespace for the release.
+// - releaseName: Helm release name to use for the upgrade.
 func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terratesting.TestingT, namespace string, releaseName string) {
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 	setValues := buildVMTagSetValues(namespace)
@@ -106,6 +117,27 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 		fmt.Printf("Found helm.sh/chart label: %s\n", helmChartVersion)
 	}
 	consts.SetHelmChartVersion(helmChartVersion)
+}
+
+// InstallOverwatch provisions a lightweight VMSingle overwatch instance and a VMAgent that forwards data to it.
+//
+// The function creates resources from manifests under the manifests/overwatch directory, adjusts ingress hosts
+// and VMAgent configuration to point to the dynamically determined service addresses, and waits for both VMAgent
+// and VMSingle to become operational.
+//
+// Parameters:
+// - ctx: context used for waiting operations (timeouts are applied by the underlying wait functions).
+// - t: terratest testing interface for running commands and assertions.
+// - namespace: Kubernetes namespace in which to install the overwatch ingress and related resources.
+// - vmAgentNamespace: Namespace where the VMAgent instance lives (may differ from the overwatch namespace).
+// - vmAgentReleaseName: Release name of the VMAgent (used when waiting for VMAgent readiness).
+func InstallOverwatch(ctx context.Context, t terratesting.TestingT, namespace, vmAgentNamespace, vmAgentReleaseName string) {
+	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+	// Make sure namespace exists
+	if _, err := k8s.GetNamespaceE(t, kubeOpts, namespace); err != nil {
+		k8s.CreateNamespace(t, kubeOpts, namespace)
+	}
+	vmclient := GetVMClient(t, kubeOpts)
 
 	By("Install VMSingle overwatch instance")
 	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmsingle.yaml")

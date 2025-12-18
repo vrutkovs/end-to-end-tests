@@ -18,12 +18,40 @@ import (
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 )
 
+// InstallK6 installs the k6-operator into the given namespace.
+//
+// The function applies the bundled operator manifests located under
+// manifests/k6-operator/bundle.yaml and waits for the operator controller
+// deployment to become available. The provided terratest testing interface is
+// used for applying manifests and waiting for readiness.
+//
+// Parameters:
+// - ctx: parent context for the operation (currently not used for cancellation).
+// - t: terratest testing interface used for running commands and assertions.
+// - namespace: Kubernetes namespace in which to install the k6 operator.
 func InstallK6(ctx context.Context, t terratesting.TestingT, namespace string) {
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 	k8s.KubectlApply(t, kubeOpts, "../../manifests/k6-operator/bundle.yaml")
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "k6-operator-controller-manager", consts.Retries, consts.PollingInterval)
 }
 
+// RunK6Scenario creates the required k6 resources for running a load test scenario.
+//
+// This function reads a JavaScript scenario file from manifests/load-tests, replaces
+// a hardcoded vmselect URL pattern with a dynamically computed VMSelect service
+// address for the target namespace, and creates a ConfigMap containing the
+// scenario script. It then creates a k6-operator TestRun custom resource that
+// references that ConfigMap and triggers the test run. The function waits for
+// the initializer and starter jobs to complete before returning.
+//
+// Parameters:
+// - ctx: parent context used for waiting operations (not currently used for cancellation).
+// - t: terratest testing interface used for applying manifests and assertions.
+// - k6namespace: namespace where k6-operator and associated TestRun/ConfigMap should be created.
+// - targetNamespace: namespace of the VictoriaMetrics deployment that is the target of the test.
+// - scenario: base name of the scenario file (without .js extension).
+// - parallelism: number of k6 parallel instances to request for the TestRun.
+// Returns an error if reading or marshaling manifests fails.
 func RunK6Scenario(ctx context.Context, t terratesting.TestingT, k6namespace, targetNamespace, scenario string, parallelism int) error {
 	kubeOpts := k8s.NewKubectlOptions("", "", k6namespace)
 
@@ -97,6 +125,20 @@ func RunK6Scenario(ctx context.Context, t terratesting.TestingT, k6namespace, ta
 	return nil
 }
 
+// WaitForK6JobsToComplete waits for all parallel k6 jobs for the given scenario to finish.
+//
+// The function polls Kubernetes Jobs created by the k6 operator using the naming
+// pattern "<scenario>-<index>". It waits for each job up to K6Retries with a
+// polling interval defined by K6JobPollingInterval. The function uses terratest
+// helpers to perform the waits and will fail the test if any job does not
+// succeed within the timeout.
+//
+// Parameters:
+// - ctx: parent context for waiting (not currently used for cancellation).
+// - t: terratest testing interface used for assertions and waits.
+// - namespace: Kubernetes namespace where the k6 jobs are executed.
+// - scenario: base name of the scenario whose jobs should be waited on.
+// - parallelism: number of parallel job instances to wait for.
 func WaitForK6JobsToComplete(ctx context.Context, t terratesting.TestingT, namespace, scenario string, parallelism int) {
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 

@@ -13,6 +13,18 @@ import (
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 )
 
+// InstallVMGather provisions the VMGather deployment used by some end-to-end tests.
+//
+// Behavior:
+//   - Ensures the `vmgather` namespace exists.
+//   - Reads the VMGather manifest from the repository manifests.
+//   - Replaces the placeholder host `vmgather.example.com` with the runtime value
+//     provided by `consts.VMGatherHost()` so the ingress/host configuration matches
+//     the test environment.
+//   - Applies the modified manifest and waits for the `vmgather` deployment to become available.
+//
+// Parameters:
+// - t: terratest testing interface used to perform kubectl operations and assertions.
 func InstallVMGather(t terratesting.TestingT) {
 	namespace := "vmgather"
 

@@ -15,7 +15,21 @@ import (
 	vmclient "github.com/VictoriaMetrics/operator/api/client/versioned"
 )
 
-// InstallVMCluster installs a VMCluster using the template manifest with namespace-specific modifications
+// InstallVMCluster installs a VMCluster custom resource into the target namespace.
+//
+// The function ensures the namespace exists, reads a VMCluster template manifest
+// from the repository manifests, replaces occurrences of the hardcoded cluster
+// name `vm` with the provided namespace (so multiple test namespaces can coexist),
+// writes the modified manifest to a temporary file and applies it to the cluster.
+// After applying the manifest it waits for the VMCluster to reach an operational
+// state by calling WaitForVMClusterToBeOperational.
+//
+// Parameters:
+// - ctx: context used for waiting operations (timeouts are applied by the wait helper).
+// - t: terratest testing interface used for assertions and running kubectl operations.
+// - kubeOpts: terratest KubectlOptions pointing at the cluster to operate against.
+// - namespace: Kubernetes namespace where the VMCluster will be created.
+// - vmclient: client for interacting with VictoriaMetrics Operator CRDs.
 func InstallVMCluster(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient vmclient.Interface) {
 	// Make sure namespace exists
 	if _, err := k8s.GetNamespaceE(t, kubeOpts, namespace); err != nil {
@@ -51,7 +65,23 @@ func InstallVMCluster(ctx context.Context, t terratesting.TestingT, kubeOpts *k8
 	WaitForVMClusterToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
 }
 
-// EnsureVMClusterComponents validates that all VMCluster components are properly configured and running
+// EnsureVMClusterComponents validates that the given VMCluster resource is properly configured
+// and that its components' specifications look reasonable.
+//
+// The function fetches the VMCluster by name and performs basic checks such as:
+// - retention period is set
+// - VMStorage, VMSelect and VMInsert specs are present
+// - replica counts and storage data path are set for VMStorage
+// It also prints status information and reports non-fatal test errors through the
+// provided testing interface when misconfigurations are detected.
+//
+// Parameters:
+// - ctx: parent context for the operation (not used directly in this helper).
+// - t: terratest testing interface used for assertions and reporting errors.
+// - kubeOpts: terratest KubectlOptions (not used by the client but kept for symmetry).
+// - namespace: Kubernetes namespace where the VMCluster resource is located.
+// - vmclient: client for interacting with VictoriaMetrics Operator CRDs.
+// - vmclusterName: name of the VMCluster custom resource to validate.
 func EnsureVMClusterComponents(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient vmclient.Interface, vmclusterName string) {
 	// Get the VMCluster resource
 	vmcluster, err := vmclient.OperatorV1beta1().VMClusters(namespace).Get(ctx, vmclusterName, metav1.GetOptions{})
@@ -96,7 +126,10 @@ func EnsureVMClusterComponents(ctx context.Context, t terratesting.TestingT, kub
 	}
 }
 
-// GetVMClusterServiceEndpoints returns the service endpoints for VMCluster components
+// GetVMClusterServiceEndpoints returns the DNS service endpoints for core VMCluster components.
+//
+// The returned endpoints point to the namespaced Kubernetes service addresses for
+// VMInsert, VMSelect and VMStorage components for the given cluster name.
 func GetVMClusterServiceEndpoints(namespace string, vmclusterName string) VMClusterEndpoints {
 	return VMClusterEndpoints{
 		VMInsert:  fmt.Sprintf("vminsert-%s.%s.svc.cluster.local:8480", vmclusterName, namespace),
@@ -105,14 +138,19 @@ func GetVMClusterServiceEndpoints(namespace string, vmclusterName string) VMClus
 	}
 }
 
-// VMClusterEndpoints holds the service endpoints for VMCluster components
+// VMClusterEndpoints holds the service endpoints for a VMCluster deployment.
 type VMClusterEndpoints struct {
 	VMInsert  string
 	VMSelect  string
 	VMStorage string
 }
 
-// DeleteVMCluster removes a VMCluster and waits for cleanup
+// DeleteVMCluster deletes the named VMCluster resource and waits for the corresponding
+// deployments (vmstorage, vmselect, vminsert) to be removed from the cluster.
+//
+// The function issues a kubectl delete for the VMCluster and then waits for the
+// deployments with names derived from vmclusterName to be deleted. In case of
+// missing resources the delete is tolerant due to --ignore-not-found=true.
 func DeleteVMCluster(t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, vmclusterName string) {
 	// Delete the VMCluster resource
 	fmt.Printf("Deleting VMCluster %s\n", vmclusterName)

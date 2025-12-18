@@ -14,6 +14,23 @@ import (
 	watchtools "k8s.io/client-go/tools/watch"
 )
 
+// DiscoverIngressHost finds and records the external host/IP address of the
+// ingress controller used by the test environment.
+//
+// Behavior:
+//   - Waits for the `ingress-nginx-controller` deployment to be available.
+//   - If the cluster distro (as returned by consts.EnvK8SDistro()) is "kind",
+//     it assumes the ingress is accessible via localhost and sets the nginx host
+//     to 127.0.0.1 immediately.
+//   - For non-kind environments, it waits for the `ingress-nginx-controller`
+//     Service to have a LoadBalancer ingress address and uses that address.
+//
+// The discovered host is stored via `consts.SetNginxHost` for consumption by
+// other test helpers.
+//
+// Parameters:
+// - ctx: context used for timeouts/cancellation while waiting for resources.
+// - t: terratest testing interface used for running commands and assertions.
 func DiscoverIngressHost(ctx context.Context, t terratesting.TestingT) {
 	kubeOpts := k8s.NewKubectlOptions("", "", "ingress-nginx")
 
@@ -36,6 +53,12 @@ func DiscoverIngressHost(ctx context.Context, t terratesting.TestingT) {
 	consts.SetNginxHost(nginxHost)
 }
 
+// waitForLoadBalancerIngress watches the ingress-nginx-controller Service until
+// its status contains a LoadBalancer ingress IP, then returns that IP.
+//
+// It performs an initial check and if needed sets up a watch on the specific
+// Service object. On error or timeout it will fail the test via the provided
+// terratest testing interface.
 func waitForLoadBalancerIngress(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions) string {
 	logger.Default.Logf(t, "Waiting for ingress-nginx-controller service to have LoadBalancer.Ingress set...")
 
@@ -111,6 +134,9 @@ func waitForLoadBalancerIngress(ctx context.Context, t terratesting.TestingT, ku
 	return ""
 }
 
+// extractIngressHost returns the IP address from the first LoadBalancer ingress
+// entry of the provided Service, or an empty string if none is present. Only IP
+// addresses are considered; hostnames are ignored by this helper.
 func extractIngressHost(svc *corev1.Service) string {
 	if len(svc.Status.LoadBalancer.Ingress) > 0 {
 		ingress := svc.Status.LoadBalancer.Ingress[0]

@@ -42,6 +42,7 @@ var (
 	overwatch promquery.PrometheusClient
 )
 
+// Install VM from helm chart for the first process, set namespace for the rest
 var _ = SynchronizedBeforeSuite(
 	func() {
 		ctx := context.Background()

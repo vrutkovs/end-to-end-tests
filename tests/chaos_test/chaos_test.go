@@ -116,7 +116,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		k8s.RunKubectl(t, kubeOpts, "delete", "namespace", namespace, "--ignore-not-found=true")
 	})
 
-	Describe("pod restarts", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-pod-failure"), func() {
+	Describe("pod restarts", Label("kind", "gke", "chaos-pod-failure"), func() {
 		scenarios := map[string]string{
 			"17f2e31b-9249-4283-845b-aae0bc81e5f2": "vminsert-pod-failure",
 			"e340d25f-b14f-4f21-acb4-68c4fdf39a85": "vmstorage-pod-failure",
@@ -134,7 +134,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 	})
 
-	Describe("cpu stress", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-cpu-stress"), func() {
+	Describe("cpu stress", Label("kind", "gke", "chaos-cpu-stress"), func() {
 		scenarios := map[string]string{
 			"4c571bca-2442-4a1b-8e54-4f9878f8dd6d": "vminsert-cpu-usage",
 			"d1ebdfd3-a0cf-4525-89b9-e998ec7b0c1e": "vmstorage-cpu-usage",
@@ -153,7 +153,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 	})
 
-	Describe("memory stress", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-memory-stress"), func() {
+	Describe("memory stress", Label("kind", "gke", "chaos-memory-stress"), func() {
 		scenarios := map[string]string{
 			"47690837-45e5-4cae-9e60-abadf59e4e66": "vminsert-memory-usage",
 			"357cef7e-c2ce-4a76-8768-7b142a4e7997": "vmstorage-memory-usage",
@@ -171,7 +171,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 	})
 
-	Describe("io stress", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-io-stress"), func() {
+	Describe("io stress", Label("kind", "gke", "chaos-io-stress"), func() {
 		scenarios := map[string]string{
 			"c70ce6cc-84fe-447d-8b5f-48871a2ebf99": "vminsert-io-usage",
 			"357cef7e-c2ce-4a76-8768-7b142a4e7997": "vmstorage-io-usage",
@@ -189,7 +189,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 	})
 
-	Describe("network failure", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-network-failure"), func() {
+	Describe("network failure", Label("kind", "gke", "chaos-network-failure"), func() {
 		networkScenarios := map[string]string{
 			"ef3455cd-7687-49a4-b423-7c4541aa051c": "vminsert-to-vmstorage-packet-corrupt",
 			"e13108bd-00df-40f5-acc9-b134bc619dc8": "vmselect-to-vmstorage-packet-delay",
@@ -225,7 +225,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 	})
 
-	Describe("rerouting", Ordered, ContinueOnFailure, Label("kind", "gke", "chaos-rerouting"), func() {
+	Describe("rerouting", Label("kind", "gke", "chaos-rerouting"), func() {
 		It("Emulate row rerouting when vmstorage-0 becomes unreachable", Label("gke", "id=3a9e309f-eec7-4d37-a7ee-918abd3a3d44"), func() {
 			By("Run scenario")
 			scenarioName := "vminsert-to-vmstorage0-3s-delay"

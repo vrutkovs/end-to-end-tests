@@ -36,11 +36,11 @@ func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout tim
 
 	reqBody := exporter.RequestBody{
 		Connection: exporter.Connection{
-			URL:           consts.VMSingleUrl(),
+			URL:           fmt.Sprintf("%s/prometheus", consts.GetVMSingleSvc("overwatch")),
 			APIBasePath:   "/prometheus",
 			TenantID:      tenantID,
 			IsMultitenant: false,
-			FullAPIURL:    fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()),
+			FullAPIURL:    fmt.Sprintf("%s/prometheus", consts.GetVMSingleSvc("overwatch")),
 			Auth:          exporter.Auth{Type: "none"},
 			SkipTLSVerify: false,
 		},
@@ -49,7 +49,7 @@ func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout tim
 			End:   endTime,
 		},
 		Components: []string{"operator", "victoria", "vmagent", "vmalert", "vminsert", "vmselect", "vmstorage"},
-		Jobs:       []string{"vmsingle"},
+		Jobs:       []string{"vmks-victoria-metrics-operator", "vmsingle-overwatch", "vmagent-vmks", "vmalert-vmks", "vminsert-vmks", "vmselect-vmks", "vmstorage-vmks"},
 		Obfuscation: exporter.Obfuscation{
 			Enabled:           false,
 			ObfuscateInstance: false,

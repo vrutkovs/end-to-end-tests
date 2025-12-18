@@ -3,6 +3,8 @@ kind: VMSingle
 metadata:
   name: overwatch
 spec:
+  extraArgs:
+    maxLabelsPerTimeseries: "50"
   initContainers:
   - name: init-script
     image: busybox:1.36

@@ -93,7 +93,6 @@ func TestDiscoverIngressHostKindLogic(t *testing.T) {
 	expectedVMSelectHost := "vmselect-vm.127.0.0.1.nip.io"
 	expectedVMSingleHost := "vmsingle.127.0.0.1.nip.io"
 	expectedVMSelectUrl := "http://vmselect-vm.127.0.0.1.nip.io"
-	expectedVMSingleUrl := "http://vmsingle.127.0.0.1.nip.io"
 
 	if consts.VMSelectHost(namespace) != expectedVMSelectHost {
 		t.Errorf("Expected VMSelect host for kind to be '%s', got '%s'", expectedVMSelectHost, consts.VMSelectHost(namespace))
@@ -103,9 +102,6 @@ func TestDiscoverIngressHostKindLogic(t *testing.T) {
 	}
 	if consts.VMSelectUrl(namespace) != expectedVMSelectUrl {
 		t.Errorf("Expected VMSelect URL for kind to be '%s', got '%s'", expectedVMSelectUrl, consts.VMSelectUrl(namespace))
-	}
-	if consts.VMSingleUrl() != expectedVMSingleUrl {
-		t.Errorf("Expected VMSingle URL for kind to be '%s', got '%s'", expectedVMSingleUrl, consts.VMSingleUrl())
 	}
 }
 

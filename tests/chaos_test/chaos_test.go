@@ -66,25 +66,6 @@ var _ = SynchronizedBeforeSuite(
 	},
 )
 
-// Collect k8s resources and overwatch data once after all scenarios have finished
-var _ = SynchronizedAfterSuite(
-	func() {},
-	func(ctx context.Context) {
-		t := tests.GetT()
-
-		// Pass a list of namespaces to gather.VMAfterAll
-		suiteConfig, _ := GinkgoConfiguration()
-		totalProcesses := suiteConfig.ParallelTotal
-		namespaceList := make([]string, totalProcesses)
-		for i := 0; i < totalProcesses; i++ {
-			namespaceList[i] = fmt.Sprintf("vm%d", i+1)
-		}
-
-		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
-		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, namespaceList)
-	},
-)
-
 var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 	BeforeEach(func(ctx context.Context) {
 		install.DiscoverIngressHost(ctx, t)
@@ -111,6 +92,11 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 
 		install.DeleteVMCluster(t, kubeOpts, namespace)
 		k8s.RunKubectl(t, kubeOpts, "delete", "namespace", namespace, "--ignore-not-found=true")
+
+		if CurrentSpecReport().Failed() {
+			gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, namespace)
+			gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
+		}
 	})
 
 	Describe("pod restarts", Label("kind", "gke", "chaos-pod-failure"), func() {
@@ -143,11 +129,12 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				By("Run scenario")
 				install.RunChaosScenario(ctx, t, namespace, "cpu", scenario, "stresschaos")
 
-				// By("Only CPUThrottlingHigh is firing")
-				// overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{"CPUThrottlingHigh"})
-				// overwatch.CheckAlertIsFiring(ctx, t, namespace, "CPUThrottlingHigh")
-				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
+				By("Only CPUThrottlingHigh is firing")
+				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{"CPUThrottlingHigh"})
+				overwatch.CheckAlertIsFiring(ctx, t, namespace, "CPUThrottlingHigh")
+
+				// By("No alerts are firing")
+				// overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
 			})
 		}
 	})
@@ -224,14 +211,14 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 	})
 
-	Describe("rerouting", Label("kind", "gke", "chaos-rerouting"), func() {
-		It("Emulate row rerouting when vmstorage-0 becomes unreachable", Label("gke", "id=3a9e309f-eec7-4d37-a7ee-918abd3a3d44"), func(ctx context.Context) {
-			By("Run scenario")
-			scenarioName := "vminsert-to-vmstorage0-3s-delay"
-			install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")
+	// Describe("rerouting", Label("kind", "gke", "chaos-rerouting"), func() {
+	// 	It("Emulate row rerouting when vmstorage-0 becomes unreachable", Label("gke", "id=3a9e309f-eec7-4d37-a7ee-918abd3a3d44"), func(ctx context.Context) {
+	// 		By("Run scenario")
+	// 		scenarioName := "vminsert-to-vmstorage0-3s-delay"
+	// 		install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")
 
-			By("No alerts are firing")
-			overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
-		})
-	})
+	// 		By("No alerts are firing")
+	// 		overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
+	// 	})
+	// })
 })

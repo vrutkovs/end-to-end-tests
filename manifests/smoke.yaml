@@ -737,6 +737,7 @@ vmalert:
   spec:
     port: "8080"
     selectAllByDefault: true
+    enforceNamespaceLabel: true
     evaluationInterval: 20s
     extraArgs:
       http.pathPrefix: "/"

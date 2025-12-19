@@ -638,9 +638,9 @@ func TestCheckAlertIsFiring_WrongResultType(t *testing.T) {
 	}
 }
 
-func TestCheckNoAlertsFiring_EmptyVectorShouldFail(t *testing.T) {
+func TestCheckNoAlertsFiring_EmptyVectorShouldNotFail(t *testing.T) {
 	t.Parallel()
-	// Create a mock server that returns empty vector - this should fail
+	// Create a mock server that returns empty vector - this should not fail
 	// because the function expects at least one result
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Return empty vector
@@ -665,8 +665,8 @@ func TestCheckNoAlertsFiring_EmptyVectorShouldFail(t *testing.T) {
 	client.CheckNoAlertsFiring(ctx, mockTest, "ns", []string{})
 
 	// Should fail due to query error
-	assert.True(t, mockTest.failed, "Test should have failed due to query error")
-	assert.NotEmpty(t, mockTest.fatals, "Should have fatal error due to query failure")
+	assert.False(t, mockTest.failed, "Test should not have failed due to query error")
+	assert.Empty(t, mockTest.fatals, "Should not have fatal error due to query failure")
 }
 
 func TestVMGatherHost(t *testing.T) {

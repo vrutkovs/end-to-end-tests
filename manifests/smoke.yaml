@@ -726,7 +726,7 @@ vmalert:
   enabled: true
 
   # -- Controls whether VMAlert should use VMAgent or VMInsert as a target for remotewrite
-  remoteWriteVMAgent: false
+  remoteWriteVMAgent: true
   # -- (object) Full spec for VMAlert CRD. Allowed values described [here](https://docs.victoriametrics.com/operator/api/#vmalertspec)
   spec:
     port: "8080"

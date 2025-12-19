@@ -62,9 +62,6 @@ var _ = SynchronizedBeforeSuite(
 		install.InstallWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, k8sStackNamespace, releaseName)
 		install.InstallOverwatch(ctx, t, overwatchNamespace, k8sStackNamespace, releaseName)
 
-		// Reconfigure VMAlert to use overwatch
-		install.ReconfigureVMAlert(ctx, t, k8sStackNamespace, releaseName, consts.GetVMSingleSvc(overwatchNamespace))
-
 		// Remove stock VMCluster - it would be recreated in vm* namespaces
 		kubeOpts := k8s.NewKubectlOptions("", "", k8sStackNamespace)
 		install.DeleteVMCluster(t, kubeOpts, releaseName)

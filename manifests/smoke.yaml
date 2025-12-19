@@ -374,12 +374,15 @@ vmcluster:
         - key: "storage"
           operator: "Exists"
           effect: "NoSchedule"
+      persistentVolumeClaimRetentionPolicy:
+        whenDeleted: Delete
+        whenScaled: Delete
       storage:
         volumeClaimTemplate:
           spec:
             resources:
               requests:
-                storage: 40Gi
+                storage: 10Gi
       resources:
         limits:
           cpu: 500m
@@ -394,6 +397,9 @@ vmcluster:
       replicaCount: 2
       cacheMountPath: /select-cache
       extraArgs: {}
+      persistentVolumeClaimRetentionPolicy:
+        whenDeleted: Delete
+        whenScaled: Delete
       storage:
         volumeClaimTemplate:
           spec:

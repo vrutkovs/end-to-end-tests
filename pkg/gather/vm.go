@@ -36,11 +36,11 @@ func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout tim
 
 	reqBody := exporter.RequestBody{
 		Connection: exporter.Connection{
-			URL:           fmt.Sprintf("%s/prometheus", consts.GetVMSingleSvc("overwatch")),
+			URL:           fmt.Sprintf("http://%s/prometheus", consts.GetVMSingleSvc("overwatch")),
 			APIBasePath:   "/prometheus",
 			TenantID:      tenantID,
 			IsMultitenant: false,
-			FullAPIURL:    fmt.Sprintf("%s/prometheus", consts.GetVMSingleSvc("overwatch")),
+			FullAPIURL:    fmt.Sprintf("http://%s/prometheus", consts.GetVMSingleSvc("overwatch")),
 			Auth:          exporter.Auth{Type: "none"},
 			SkipTLSVerify: false,
 		},

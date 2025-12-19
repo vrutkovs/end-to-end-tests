@@ -58,10 +58,13 @@ func EnsureVMAgentRemoteWriteURL(ctx context.Context, t terratesting.TestingT, v
 		}
 	}
 	if !found {
+		// Get the fresh VMAgent resource version as it may have been updated by another test
+		vmAgent, err := vmclient.OperatorV1beta1().VMAgents(namespace).Get(ctx, vmAgentName, metav1.GetOptions{})
+		require.NoError(t, err)
 		vmAgent.Spec.RemoteWrite = append(vmAgent.Spec.RemoteWrite, vmv1beta1.VMAgentRemoteWriteSpec{
 			URL: url,
 		})
-		_, err := vmclient.OperatorV1beta1().VMAgents(namespace).Update(ctx, vmAgent, metav1.UpdateOptions{})
+		_, err = vmclient.OperatorV1beta1().VMAgents(namespace).Update(ctx, vmAgent, metav1.UpdateOptions{})
 		require.NoError(t, err)
 		WaitForVMAgentToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
 	}

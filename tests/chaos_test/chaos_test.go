@@ -42,10 +42,9 @@ const (
 )
 
 var (
-	t             terratesting.TestingT
-	namespace     string
-	overwatch     promquery.PrometheusClient
-	namespaceList []string
+	t         terratesting.TestingT
+	namespace string
+	overwatch promquery.PrometheusClient
 )
 
 // Install VM from helm chart for the first process, set namespace for the rest
@@ -64,15 +63,6 @@ var _ = SynchronizedBeforeSuite(
 	}, func(ctx context.Context) {
 		t = tests.GetT()
 		namespace = fmt.Sprintf("vm%d", GinkgoParallelProcess())
-
-		ctxValue := ctx.Value("namespaces")
-		if ctxValue == nil {
-			namespaceList = []string{namespace}
-		} else {
-			namespaceList = ctxValue.([]string)
-		}
-		namespaceList = append(namespaceList, namespace)
-		ctx = context.WithValue(ctx, "namespaces", namespaceList)
 	},
 )
 
@@ -82,9 +72,15 @@ var _ = SynchronizedAfterSuite(
 	func(ctx context.Context) {
 		t := tests.GetT()
 
-		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
+		// Pass a list of namespaces to gather.VMAfterAll
+		suiteConfig, _ := GinkgoConfiguration()
+		totalProcesses := suiteConfig.ParallelTotal
+		namespaceList := make([]string, totalProcesses)
+		for i := 0; i < totalProcesses; i++ {
+			namespaceList[i] = fmt.Sprintf("vm%d", i+1)
+		}
 
-		namespaceList = ctx.Value("namespaces").([]string)
+		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
 		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, namespaceList)
 	},
 )
@@ -108,7 +104,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		remoteWriteURL := fmt.Sprintf("http://vminsert-%s.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write", namespace, namespace)
 		logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
 		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, k8sStackNamespace, releaseName, remoteWriteURL)
-
 	})
 
 	AfterEach(func(ctx context.Context) {

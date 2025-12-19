@@ -140,15 +140,15 @@ func VMGatherHost() string {
 
 // Kubernetes service address functions
 func GetVMSelectSvc(namespace string) string {
-	return fmt.Sprintf("vmselect-vmks.%s.svc.cluster.local.:8481", namespace)
+	return fmt.Sprintf("vmselect-vmks.%s.svc.cluster.local:8481", namespace)
 }
 
 func GetVMSingleSvc(namespace string) string {
-	return fmt.Sprintf("vmsingle-overwatch.%s.svc.cluster.local.:8428", namespace)
+	return fmt.Sprintf("vmsingle-overwatch.%s.svc.cluster.local:8428", namespace)
 }
 
 func GetVMInsertSvc(namespace string) string {
-	return fmt.Sprintf("vminsert-vmks.%s.svc.cluster.local.:8480", namespace)
+	return fmt.Sprintf("vminsert-vmks.%s.svc.cluster.local:8480", namespace)
 }
 
 func HelmChartVersion() string {

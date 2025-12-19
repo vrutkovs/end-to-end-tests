@@ -124,7 +124,7 @@ jobs:
           kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
           mkdir -p /tmp/allure-results
           ginkgo -v \
-            -procs=0 \
+            -procs=1 \
             -github-output=true \
             -timeout=30m \
             --label-filter=${{ env.LABEL_FILTER }} \
@@ -268,7 +268,7 @@ jobs:
           mkdir -p /tmp/allure-results
           kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
           ginkgo -v \
-            -procs=0 \
+            -procs=1 \
             -github-output=true \
             -timeout=30m \
             --label-filter=${{ env.LABEL_FILTER }} \
@@ -423,7 +423,7 @@ jobs:
           kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
           mkdir -p /tmp/allure-results
           ginkgo -v \
-            -procs=0 \
+            -procs=1 \
             -github-output=true \
             -timeout=30m \
             --label-filter=${{ env.LABEL_FILTER }} \
@@ -580,7 +580,7 @@ jobs:
           mkdir -p /tmp/allure-results
           ginkgo -v \
             -github-output=true \
-            -procs=10 \
+            -procs=$(getconf _NPROCESSORS_ONLN) \
             -timeout=240m \
             --label-filter=${{ env.LABEL_FILTER }} \
             ./tests/${{ env.SUITE_CHAOS }} --\

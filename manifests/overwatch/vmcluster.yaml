@@ -33,6 +33,7 @@ spec:
     storage:
       volumeClaimTemplate:
         spec:
+          persistentVolumeReclaimPolicy: Delete
           resources:
             requests:
               storage: 2Gi
@@ -47,6 +48,7 @@ spec:
         memory: 500Mi
     storage:
       volumeClaimTemplate:
+        persistentVolumeReclaimPolicy: Delete
         spec:
           resources:
             requests:

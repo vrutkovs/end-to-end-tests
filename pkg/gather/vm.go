@@ -75,6 +75,7 @@ func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout tim
 		Host:   consts.VMGatherHost(),
 		Path:   "/api/export/start",
 	}
+	logger.Default.Logf(t, "Making request to %s", startURL.String())
 	startReq, err := http.NewRequest(http.MethodPost, startURL.String(), bytes.NewBuffer(marshaledBody))
 	require.NoError(t, err, "failed to create HTTP request for /api/export/start")
 	startReq.Header.Set("Content-Type", "application/json")
@@ -101,6 +102,7 @@ func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout tim
 		Host:   consts.VMGatherHost(),
 		Path:   "/api/export/status",
 	}
+	logger.Default.Logf(t, "Making request to %s", statusURL.String())
 	q := statusURL.Query()
 	q.Add("id", startExportResponse.JobID)
 	statusURL.RawQuery = q.Encode()

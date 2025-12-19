@@ -28,7 +28,7 @@ func TestSmokeTests(t *testing.T) {
 
 var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func() {
 	const (
-		namespace          = "vm1"
+		namespace          = "monitoring"
 		overwatchNamespace = "overwatch"
 		releaseName        = "vmks"
 		helmChart          = "vm/victoria-metrics-k8s-stack"

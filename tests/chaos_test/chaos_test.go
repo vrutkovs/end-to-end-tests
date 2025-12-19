@@ -126,7 +126,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				install.RunChaosScenario(ctx, t, namespace, "pods", scenario, "podchaos")
 
 				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{})
+				overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
 			})
 		}
 	})
@@ -163,7 +163,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				install.RunChaosScenario(ctx, t, namespace, "memory", scenario, "stresschaos")
 
 				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{})
+				overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
 			})
 		}
 	})
@@ -181,7 +181,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				install.RunChaosScenario(ctx, t, namespace, "io", scenario, "stresschaos")
 
 				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{})
+				overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
 			})
 		}
 	})
@@ -200,7 +200,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")
 
 				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{})
+				overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
 			})
 		}
 
@@ -217,7 +217,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				install.RunChaosScenario(ctx, t, namespace, "http", scenarioName, "httpchaos")
 
 				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{})
+				overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
 			})
 		}
 	})
@@ -229,7 +229,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")
 
 			By("No alerts are firing")
-			overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{})
+			overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
 		})
 	})
 })

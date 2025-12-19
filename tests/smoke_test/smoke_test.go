@@ -83,7 +83,7 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 			}
 
 			By("No alerts are firing")
-			overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{})
+			overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
 
 			// Expect to make at least 10k requests
 			By("At least 5k requests were made")

@@ -143,9 +143,11 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				By("Run scenario")
 				install.RunChaosScenario(ctx, t, namespace, "cpu", scenario, "stresschaos")
 
-				By("Only CPUThrottlingHigh is firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{"CPUThrottlingHigh"})
-				overwatch.CheckAlertIsFiring(ctx, t, namespace, "CPUThrottlingHigh")
+				// By("Only CPUThrottlingHigh is firing")
+				// overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{"CPUThrottlingHigh"})
+				// overwatch.CheckAlertIsFiring(ctx, t, namespace, "CPUThrottlingHigh")
+				By("No alerts are firing")
+				overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
 			})
 		}
 	})

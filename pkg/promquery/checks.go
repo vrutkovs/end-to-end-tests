@@ -32,10 +32,9 @@ func (p PrometheusClient) CheckNoAlertsFiring(ctx context.Context, t testing.Tes
 		require.Fail(t, "Failed to cast result to prommodel.Vector")
 		return
 	}
-	// At least one result is returned
-	require.GreaterOrEqual(t, len(vec), 1, "No alerts firing")
+	// No results expected here, so throw errors if there alerts firing
 	for _, alert := range vec {
-		require.Equal(t, prommodel.SampleValue(0), alert.Value, "Unexpected alert firing: %s", alert.Metric)
+		require.Equal(t, prommodel.SampleValue(0), alert.Value, "Unexpected alert firing for namespace %s: %s", namespace, alert.Metric)
 	}
 }
 
@@ -45,7 +44,7 @@ func (p PrometheusClient) CheckAlertIsFiring(ctx context.Context, t testing.Test
 
 	result, _, err := p.Query(ctx, query)
 	if err != nil {
-		require.NoError(t, err, "Failed to query for alert %s", alertName)
+		require.NoError(t, err, "Failed to query for alert %s for namespace %s", alertName, namespace)
 		return
 	}
 
@@ -58,7 +57,7 @@ func (p PrometheusClient) CheckAlertIsFiring(ctx context.Context, t testing.Test
 		require.Fail(t, "Failed to cast result to prommodel.Vector")
 		return
 	}
-	require.GreaterOrEqual(t, len(vec), 1, "Alert %s should be present in results", alertName)
+	require.GreaterOrEqual(t, len(vec), 1, "Alert %s should be present in results for namespace %s", alertName, namespace)
 
 	// Check that at least one alert is firing (value > 0)
 	firingCount := 0
@@ -67,5 +66,5 @@ func (p PrometheusClient) CheckAlertIsFiring(ctx context.Context, t testing.Test
 			firingCount++
 		}
 	}
-	require.Greater(t, firingCount, 0, "Alert %s should be firing (value > 0)", alertName)
+	require.Greater(t, firingCount, 0, "Alert %s should be firing (value > 0) in namespace %s", alertName, namespace)
 }

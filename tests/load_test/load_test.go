@@ -29,7 +29,7 @@ func TestLoadTestsTests(t *testing.T) {
 
 var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), func() {
 	const (
-		vmNamespace         = "vm1"
+		vmNamespace         = "monitoring"
 		overwatchNamespace  = "overwatch"
 		k6OperatorNamespace = "k6-operator-system"
 		k6TestsNamespace    = "k6-tests"

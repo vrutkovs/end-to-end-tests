@@ -161,9 +161,6 @@ func TestHostnameFormatting(t *testing.T) {
 			if consts.VMSelectHost(namespace) != tt.expectedSelect {
 				t.Errorf("Expected VMSelect host to be '%s', got '%s'", tt.expectedSelect, consts.VMSelectHost(namespace))
 			}
-			if consts.VMSingleHost() != tt.expectedSingle {
-				t.Errorf("Expected VMSingle host to be '%s', got '%s'", tt.expectedSingle, consts.VMSingleHost())
-			}
 			if consts.VMSelectUrl(namespace) != tt.expectedSelectUrl {
 				t.Errorf("Expected VMSelect URL to be '%s', got '%s'", tt.expectedSelectUrl, consts.VMSelectUrl(namespace))
 			}

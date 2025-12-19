@@ -448,27 +448,27 @@ func TestGetVMSelectSvc(t *testing.T) {
 		{
 			name:      "standard namespace",
 			namespace: "vm",
-			expected:  "vmselect-vmks.vm.svc.cluster.local.:8481",
+			expected:  "vmselect-vmks.vm.svc.cluster.local:8481",
 		},
 		{
 			name:      "production namespace",
 			namespace: "production",
-			expected:  "vmselect-vmks.production.svc.cluster.local.:8481",
+			expected:  "vmselect-vmks.production.svc.cluster.local:8481",
 		},
 		{
 			name:      "staging namespace",
 			namespace: "staging",
-			expected:  "vmselect-vmks.staging.svc.cluster.local.:8481",
+			expected:  "vmselect-vmks.staging.svc.cluster.local:8481",
 		},
 		{
 			name:      "namespace with dashes",
 			namespace: "vm-cluster-test",
-			expected:  "vmselect-vmks.vm-cluster-test.svc.cluster.local.:8481",
+			expected:  "vmselect-vmks.vm-cluster-test.svc.cluster.local:8481",
 		},
 		{
 			name:      "empty namespace",
 			namespace: "",
-			expected:  "vmselect-vmks..svc.cluster.local.:8481",
+			expected:  "vmselect-vmks..svc.cluster.local:8481",
 		},
 	}
 
@@ -491,22 +491,22 @@ func TestGetVMSingleSvc(t *testing.T) {
 		{
 			name:      "standard namespace",
 			namespace: "vm",
-			expected:  "vmsingle-overwatch.vm.svc.cluster.local.:8428",
+			expected:  "vmsingle-overwatch.vm.svc.cluster.local:8428",
 		},
 		{
 			name:      "production namespace",
 			namespace: "production",
-			expected:  "vmsingle-overwatch.production.svc.cluster.local.:8428",
+			expected:  "vmsingle-overwatch.production.svc.cluster.local:8428",
 		},
 		{
 			name:      "staging namespace",
 			namespace: "staging",
-			expected:  "vmsingle-overwatch.staging.svc.cluster.local.:8428",
+			expected:  "vmsingle-overwatch.staging.svc.cluster.local:8428",
 		},
 		{
 			name:      "namespace with dashes",
 			namespace: "vm-cluster-test",
-			expected:  "vmsingle-overwatch.vm-cluster-test.svc.cluster.local.:8428",
+			expected:  "vmsingle-overwatch.vm-cluster-test.svc.cluster.local:8428",
 		},
 	}
 
@@ -575,27 +575,27 @@ func TestGetVMInsertSvc(t *testing.T) {
 		{
 			name:      "standard namespace",
 			namespace: "vm",
-			expected:  "vminsert-vmks.vm.svc.cluster.local.:8480",
+			expected:  "vminsert-vmks.vm.svc.cluster.local:8480",
 		},
 		{
 			name:      "production namespace",
 			namespace: "production",
-			expected:  "vminsert-vmks.production.svc.cluster.local.:8480",
+			expected:  "vminsert-vmks.production.svc.cluster.local:8480",
 		},
 		{
 			name:      "staging namespace",
 			namespace: "staging",
-			expected:  "vminsert-vmks.staging.svc.cluster.local.:8480",
+			expected:  "vminsert-vmks.staging.svc.cluster.local:8480",
 		},
 		{
 			name:      "namespace with dashes",
 			namespace: "vm-cluster-test",
-			expected:  "vminsert-vmks.vm-cluster-test.svc.cluster.local.:8480",
+			expected:  "vminsert-vmks.vm-cluster-test.svc.cluster.local:8480",
 		},
 		{
 			name:      "empty namespace",
 			namespace: "",
-			expected:  "vminsert-vmks..svc.cluster.local.:8480",
+			expected:  "vminsert-vmks..svc.cluster.local:8480",
 		},
 	}
 

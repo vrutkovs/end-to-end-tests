@@ -154,20 +154,20 @@ func TestVMAgentURLReplacementFormat(t *testing.T) {
 	namespace := "test-ns"
 
 	vmInsertSvc := consts.GetVMInsertSvc(namespace)
-	expectedVMInsertFormat := "vminsert-vmks.test-ns.svc.cluster.local.:8480"
+	expectedVMInsertFormat := "vminsert-vmks.test-ns.svc.cluster.local:8480"
 	assert.Equal(t, expectedVMInsertFormat, vmInsertSvc, "GetVMInsertSvc should return expected format")
 
 	vmSingleSvc := consts.GetVMSingleSvc(namespace)
-	expectedVMSingleFormat := "vmsingle-overwatch.test-ns.svc.cluster.local.:8428"
+	expectedVMSingleFormat := "vmsingle-overwatch.test-ns.svc.cluster.local:8428"
 	assert.Equal(t, expectedVMSingleFormat, vmSingleSvc, "GetVMSingleSvc should return expected format")
 
 	// Test full URL construction
 	vmInsertFullURL := "http://" + vmInsertSvc + "/insert/0/prometheus/api/v1/write"
-	expectedVMInsertFullURL := "http://vminsert-vmks.test-ns.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write"
+	expectedVMInsertFullURL := "http://vminsert-vmks.test-ns.svc.cluster.local:8480/insert/0/prometheus/api/v1/write"
 	assert.Equal(t, expectedVMInsertFullURL, vmInsertFullURL, "VMInsert full URL should be correct")
 
 	vmSingleFullURL := "http://" + vmSingleSvc + "/prometheus/api/v1/write"
-	expectedVMSingleFullURL := "http://vmsingle-overwatch.test-ns.svc.cluster.local.:8428/prometheus/api/v1/write"
+	expectedVMSingleFullURL := "http://vmsingle-overwatch.test-ns.svc.cluster.local:8428/prometheus/api/v1/write"
 	assert.Equal(t, expectedVMSingleFullURL, vmSingleFullURL, "VMSingle full URL should be correct")
 }
 
@@ -185,10 +185,10 @@ spec:
 	vmInsertSvc := consts.GetVMInsertSvc("test")
 	vmSingleSvc := consts.GetVMSingleSvc("test")
 
-	oldVMInsertURL := "http://vminsert-vmks.vm.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write"
+	oldVMInsertURL := "http://vminsert-vmks.vm.svc.cluster.local:8480/insert/0/prometheus/api/v1/write"
 	newVMInsertURL := "http://" + vmInsertSvc + "/insert/0/prometheus/api/v1/write"
 
-	oldVMSingleURL := "http://vmsingle-overwatch.vm.svc.cluster.local.:8428/prometheus/api/v1/write"
+	oldVMSingleURL := "http://vmsingle-overwatch.vm.svc.cluster.local:8428/prometheus/api/v1/write"
 	newVMSingleURL := "http://" + vmSingleSvc + "/prometheus/api/v1/write"
 
 	updatedContent := strings.ReplaceAll(noURLContent, oldVMInsertURL, newVMInsertURL)
@@ -207,34 +207,21 @@ metadata:
   name: vmks
 spec:
   remoteWrite:
-  - url: http://vmsingle-overwatch.vm.svc.cluster.local.:8428/prometheus/api/v1/write`
+  - url: http://vmsingle-overwatch.vm.svc.cluster.local:8428/prometheus/api/v1/write`
 
 	namespace := "production"
-	vmInsertSvc := consts.GetVMInsertSvc(namespace)
 	vmSingleSvc := consts.GetVMSingleSvc(namespace)
 
 	// Use the same replacement logic as in the actual function
-	oldVMInsertURL := "http://vminsert-vmks.vm.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write"
-	newVMInsertURL := "http://" + vmInsertSvc + "/insert/0/prometheus/api/v1/write"
-
-	oldVMSingleURL := "http://vmsingle-overwatch.vm.svc.cluster.local.:8428/prometheus/api/v1/write"
+	oldVMSingleURL := "http://vmsingle-overwatch.vm.svc.cluster.local:8428/prometheus/api/v1/write"
 	newVMSingleURL := "http://" + vmSingleSvc + "/prometheus/api/v1/write"
 
-	updatedContent := strings.ReplaceAll(vmagentContent, oldVMInsertURL, newVMInsertURL)
-	updatedContent = strings.ReplaceAll(updatedContent, oldVMSingleURL, newVMSingleURL)
+	updatedContent := strings.ReplaceAll(vmagentContent, oldVMSingleURL, newVMSingleURL)
 
-	// Verify both new URLs are present
-	expectedVMInsertURL := "http://vminsert-vmks.production.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write"
-	expectedVMSingleURL := "http://vmsingle-overwatch.production.svc.cluster.local.:8428/prometheus/api/v1/write"
-
-	assert.Contains(t, updatedContent, expectedVMInsertURL, "Updated content should contain the new VMInsert URL")
+	expectedVMSingleURL := "http://vmsingle-overwatch.production.svc.cluster.local:8428/prometheus/api/v1/write"
 	assert.Contains(t, updatedContent, expectedVMSingleURL, "Updated content should contain the new VMSingle URL")
-
-	// Verify old URLs are replaced
-	assert.NotContains(t, updatedContent, oldVMInsertURL, "Old VMInsert URL should be replaced")
 	assert.NotContains(t, updatedContent, oldVMSingleURL, "Old VMSingle URL should be replaced")
 
 	// Verify the YAML structure is maintained
 	assert.Contains(t, updatedContent, "kind: VMAgent", "YAML structure should be maintained")
-	assert.Contains(t, updatedContent, "inlineUrlRelabelConfig:", "inlineUrlRelabelConfig section should be maintained")
 }

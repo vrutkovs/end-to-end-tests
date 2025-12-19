@@ -23,6 +23,9 @@ spec:
       vmalert.proxyURL: http://vmalert-vmks.vm1.svc.cluster.local.:8080
     port: "8481"
     replicaCount: 2
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Delete
+      whenScaled: Delete
     resources:
       limits:
         cpu: 250m
@@ -33,12 +36,14 @@ spec:
     storage:
       volumeClaimTemplate:
         spec:
-          persistentVolumeReclaimPolicy: Delete
           resources:
             requests:
               storage: 2Gi
   vmstorage:
     replicaCount: 2
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Delete
+      whenScaled: Delete
     resources:
       limits:
         cpu: 500m
@@ -48,7 +53,6 @@ spec:
         memory: 500Mi
     storage:
       volumeClaimTemplate:
-        persistentVolumeReclaimPolicy: Delete
         spec:
           resources:
             requests:

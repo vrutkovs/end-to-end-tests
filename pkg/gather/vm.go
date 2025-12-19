@@ -26,13 +26,20 @@ import (
 // VMAfterAll provides cleanup and data collection logic for VictoriaMetrics components.
 // It calls vmgather /api/export/start, polls /api/export/status,
 // calls /api/export/download endpoints, and adds the downloaded archive to the report.
-func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout time.Duration, namespace string) {
+func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout time.Duration, namespaceList []string) {
 	// Set start and end times dynamically
 	endTime := time.Now()
 	startTime := endTime.Add(-1 * time.Hour)
 
 	// nil for TenantID as per JSON specification
 	var tenantID *int = nil
+
+	jobs := []string{"vmagent-vmks", "vmalert-vmks"}
+	for _, namespace := range namespaceList {
+		jobs = append(jobs, fmt.Sprintf("vmselect-%s", namespace))
+		jobs = append(jobs, fmt.Sprintf("vmstorage-%s", namespace))
+		jobs = append(jobs, fmt.Sprintf("vminsert-%s", namespace))
+	}
 
 	reqBody := exporter.RequestBody{
 		Connection: exporter.Connection{
@@ -49,7 +56,7 @@ func VMAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout tim
 			End:   endTime,
 		},
 		Components: []string{"operator", "vmagent", "vmalert", "vminsert", "vmselect", "vmstorage"},
-		Jobs:       []string{"vmks-victoria-metrics-operator", "vmsingle-overwatch", "vmagent-vmks", "vmalert-vmks", "vminsert-vmks", "vmselect-vmks", "vmstorage-vmks"},
+		Jobs:       jobs,
 		Obfuscation: exporter.Obfuscation{
 			Enabled:           false,
 			ObfuscateInstance: false,

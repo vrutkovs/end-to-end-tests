@@ -28,7 +28,7 @@ func TestSmokeTests(t *testing.T) {
 
 var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func() {
 	const (
-		namespace          = "monitoring"
+		vmNamespace        = "monitoring"
 		overwatchNamespace = "overwatch"
 		releaseName        = "vmks"
 		helmChart          = "vm/victoria-metrics-k8s-stack"
@@ -49,12 +49,12 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 		overwatch.Start = time.Now()
 
 		install.InstallVMGather(t)
-		install.InstallWithHelm(ctx, helmChart, valuesFile, t, namespace, releaseName)
-		install.InstallOverwatch(ctx, t, overwatchNamespace, namespace, releaseName)
+		install.InstallWithHelm(ctx, helmChart, valuesFile, t, vmNamespace, releaseName)
+		install.InstallOverwatch(ctx, t, overwatchNamespace, vmNamespace, releaseName)
 	})
 	AfterEach(func() {
 		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
-		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, namespace)
+		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, []string{vmNamespace})
 	})
 
 	Describe("Inner", func() {
@@ -63,8 +63,8 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 			By("Send requests for 5 minutes")
 			tickerPeriod := time.Second
 
-			logger.Default.Logf(t, "Sending requests to %s", consts.VMSelectUrl(namespace))
-			promAPI, err := promquery.NewPrometheusClient(fmt.Sprintf("%s/select/0/prometheus", consts.VMSelectUrl(namespace)))
+			logger.Default.Logf(t, "Sending requests to %s", consts.VMSelectUrl(vmNamespace))
+			promAPI, err := promquery.NewPrometheusClient(fmt.Sprintf("%s/select/0/prometheus", consts.VMSelectUrl(vmNamespace)))
 			promAPI.Start = overwatch.Start
 			require.NoError(t, err)
 
@@ -83,7 +83,7 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 			}
 
 			By("No alerts are firing")
-			overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
+			overwatch.CheckNoAlertsFiring(ctx, t, vmNamespace, nil)
 
 			// Expect to make at least 10k requests
 			By("At least 5k requests were made")

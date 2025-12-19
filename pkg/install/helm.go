@@ -173,6 +173,10 @@ func InstallOverwatch(ctx context.Context, t terratesting.TestingT, namespace, v
 	By("Wait for VMAgent to become operational")
 	WaitForVMAgentToBeOperational(ctx, t, kubeOpts, vmAgentNamespace, vmclient)
 
+	By("Reconfigure VMAlert to read data from VMSingle")
+	ReconfigureVMAlert(ctx, t, vmAgentNamespace, vmAgentReleaseName, consts.GetVMSingleSvc(namespace))
+	WaitForVMAlertToBeOperational(ctx, t, kubeOpts, vmAgentNamespace, vmclient)
+
 	By("Wait for overwatch VMSingle to become operational")
 	WaitForVMSingleToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
 }

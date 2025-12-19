@@ -3,7 +3,6 @@ package chaos_test
 import (
 	"context"
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 
@@ -43,18 +42,15 @@ const (
 )
 
 var (
-	ctx       context.Context
-	t         terratesting.TestingT
-	namespace string
-	overwatch promquery.PrometheusClient
-
-	mu sync.Mutex
+	t             terratesting.TestingT
+	namespace     string
+	overwatch     promquery.PrometheusClient
+	namespaceList []string
 )
 
 // Install VM from helm chart for the first process, set namespace for the rest
 var _ = SynchronizedBeforeSuite(
-	func() {
-		ctx := context.Background()
+	func(ctx context.Context) {
 		t := tests.GetT()
 		install.DiscoverIngressHost(ctx, t)
 		install.InstallChaosMesh(ctx, chaosHelmChart, chaosValuesFile, t, chaosNamespace, chaosReleaseName)
@@ -65,27 +61,36 @@ var _ = SynchronizedBeforeSuite(
 		// Remove stock VMCluster - it would be recreated in vm* namespaces
 		kubeOpts := k8s.NewKubectlOptions("", "", k8sStackNamespace)
 		install.DeleteVMCluster(t, kubeOpts, releaseName)
-	}, func() {
-		ctx = context.Background()
+	}, func(ctx context.Context) {
 		t = tests.GetT()
 		namespace = fmt.Sprintf("vm%d", GinkgoParallelProcess())
+
+		ctxValue := ctx.Value("namespaces")
+		if ctxValue == nil {
+			namespaceList = []string{namespace}
+		} else {
+			namespaceList = ctxValue.([]string)
+		}
+		namespaceList = append(namespaceList, namespace)
+		ctx = context.WithValue(ctx, "namespaces", namespaceList)
 	},
 )
 
 // Collect k8s resources and overwatch data once after all scenarios have finished
 var _ = SynchronizedAfterSuite(
 	func() {},
-	func() {
-		ctx := context.Background()
+	func(ctx context.Context) {
 		t := tests.GetT()
 
 		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
-		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, overwatchNamespace)
+
+		namespaceList = ctx.Value("namespaces").([]string)
+		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, namespaceList)
 	},
 )
 
 var _ = Describe("Chaos tests", Label("chaos-test"), func() {
-	BeforeEach(func() {
+	BeforeEach(func(ctx context.Context) {
 		install.DiscoverIngressHost(ctx, t)
 		var err error
 
@@ -102,11 +107,11 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		// Ensure VMAgent remote write URL is set up. vmagent already created in k8sStackNamespace namespace
 		remoteWriteURL := fmt.Sprintf("http://vminsert-%s.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write", namespace, namespace)
 		logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
-		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, &mu, k8sStackNamespace, releaseName, remoteWriteURL)
+		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, k8sStackNamespace, releaseName, remoteWriteURL)
 
 	})
 
-	AfterEach(func() {
+	AfterEach(func(ctx context.Context) {
 		kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 
 		install.DeleteVMCluster(t, kubeOpts, namespace)
@@ -121,7 +126,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 
 		for uuid, scenario := range scenarios {
-			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func() {
+			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func(ctx context.Context) {
 				By("Run scenario")
 				install.RunChaosScenario(ctx, t, namespace, "pods", scenario, "podchaos")
 
@@ -139,7 +144,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 
 		for uuid, scenario := range scenarios {
-			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func() {
+			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func(ctx context.Context) {
 				By("Run scenario")
 				install.RunChaosScenario(ctx, t, namespace, "cpu", scenario, "stresschaos")
 
@@ -158,7 +163,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 
 		for uuid, scenario := range scenarios {
-			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func() {
+			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func(ctx context.Context) {
 				By("Run scenario")
 				install.RunChaosScenario(ctx, t, namespace, "memory", scenario, "stresschaos")
 
@@ -176,7 +181,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 
 		for uuid, scenario := range scenarios {
-			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func() {
+			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func(ctx context.Context) {
 				By("Run scenario")
 				install.RunChaosScenario(ctx, t, namespace, "io", scenario, "stresschaos")
 
@@ -195,7 +200,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 
 		for uuid, scenarioName := range networkScenarios {
-			It(fmt.Sprintf("Run %s scenario", scenarioName), Label("gke", fmt.Sprintf("id=%s", uuid)), func() {
+			It(fmt.Sprintf("Run %s scenario", scenarioName), Label("gke", fmt.Sprintf("id=%s", uuid)), func(ctx context.Context) {
 				By("Run scenario")
 				install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")
 
@@ -212,7 +217,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 
 		for uuid, scenarioName := range httpScenarios {
-			It(fmt.Sprintf("Run %s scenario", scenarioName), Label("gke", fmt.Sprintf("id=%s", uuid)), func() {
+			It(fmt.Sprintf("Run %s scenario", scenarioName), Label("gke", fmt.Sprintf("id=%s", uuid)), func(ctx context.Context) {
 				By("Run scenario")
 				install.RunChaosScenario(ctx, t, namespace, "http", scenarioName, "httpchaos")
 
@@ -223,7 +228,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 	})
 
 	Describe("rerouting", Label("kind", "gke", "chaos-rerouting"), func() {
-		It("Emulate row rerouting when vmstorage-0 becomes unreachable", Label("gke", "id=3a9e309f-eec7-4d37-a7ee-918abd3a3d44"), func() {
+		It("Emulate row rerouting when vmstorage-0 becomes unreachable", Label("gke", "id=3a9e309f-eec7-4d37-a7ee-918abd3a3d44"), func(ctx context.Context) {
 			By("Run scenario")
 			scenarioName := "vminsert-to-vmstorage0-3s-delay"
 			install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")

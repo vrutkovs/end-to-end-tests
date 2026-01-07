@@ -25,6 +25,9 @@ jobs:
 
   kind-smoke-test:
     executor: go-executor
+    machine:
+      image: ubuntu-2004:current
+    resource_class: large
     parameters:
       vm_version:
         type: string
@@ -227,12 +230,22 @@ workflows:
           filters:
             branches:
               only: main
+      - kind-smoke-test:
+          name: kind-smoke-test
+          vm_version: << pipeline.parameters.default_vm_version >>
+          requires:
+            - unit-tests
+          filters:
+            branches:
+              only: main
+          context:
+            - gcp-credentials
       - gke-test:
           name: gke-smoke-test
           cluster-name: smoke
           test-suite: "smoke_test"
           requires:
-            - unit-tests
+            - kind-smoke-test
           filters:
             branches:
               only: main

@@ -150,6 +150,11 @@ jobs:
             kubectl config set-context production --cluster gke --user cluster-admin
             kubectl config use-context production
       - run:
+          name: Install ingress controller
+          command: |
+            kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+            kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
+      - run:
           name: Run e2e tests
           command: |
             export PATH="$PATH:$(go env GOPATH)/bin"

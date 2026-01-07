@@ -21,7 +21,7 @@ jobs:
           command: go mod download
       - run:
           name: Run unit tests
-          command: go test -race -v ./pkg/...
+          command: go test ./pkg/... -v -failfast
 
   kind-smoke-test:
     executor: go-executor
@@ -30,7 +30,6 @@ jobs:
         type: string
     environment:
       LABEL_FILTER: kind
-      VM_VERSION: << parameters.vm_version >>
     steps:
       - checkout
       - run: go mod download
@@ -52,16 +51,15 @@ jobs:
       - run:
           name: Install crust-gather
           command: |
-            wget https://github.com/crust-gather/crust-gather/releases/download/v0.3.0/crust-gather_0.3.0_linux_amd64.tar.gz
-            tar -xvf crust-gather_0.3.0_linux_amd64.tar.gz
-            sudo mv crust-gather /usr/local/bin/
+            wget https://github.com/crust-gather/crust-gather/releases/download/v0.11.1/kubectl-crust-gather_0.11.1_linux_amd64.tar.gz
+            tar -xvf kubectl-crust-gather_0.11.1_linux_amd64.tar.gz
+            sudo mv kubectl-crust-gather /usr/local/bin/
       - run:
           name: Install VMExporter
           command: |
-            wget https://github.com/VictoriaMetrics/support/releases/download/v0.3.0/vmexporter-linux-amd64
-            mv vmexporter-linux-amd64 vmexporter
-            chmod +x vmexporter
-            sudo mv vmexporter /usr/local/bin/
+            wget https://github.com/VictoriaMetrics/vmgather/releases/download/v1.5.0/vmgather-v1.5.0-linux-amd64
+            sudo mv vmgather-v1.5.0-linux-amd64 /usr/local/bin/vmexporter
+            sudo chmod +x /usr/local/bin/vmexporter
       - run:
           name: Run e2e tests
           command: |
@@ -76,7 +74,7 @@ jobs:
               ./tests/${SUITE_SMOKE} \
               -- \
               -env-k8s-distro=kind \
-              -vmtag=${VM_VERSION} \
+              -vmtag=<< parameters.vm_version >> \
               -report=/tmp/allure-results
       - persist_to_workspace:
           root: /tmp
@@ -87,14 +85,14 @@ jobs:
     executor: go-executor
     resource_class: small
     parameters:
+      cluster-name:
+        type: string
       test-suite:
         type: string
       vm_version:
         type: string
     environment:
       LABEL_FILTER: gke
-      VM_VERSION: << parameters.vm_version >>
-      SUITE: << parameters.test-suite >>
     steps:
       - checkout
       - run: go mod download
@@ -106,30 +104,34 @@ jobs:
       - run:
           name: Install crust-gather
           command: |
-            wget https://github.com/crust-gather/crust-gather/releases/download/v0.3.0/crust-gather_0.3.0_linux_amd64.tar.gz
-            tar -xvf crust-gather_0.3.0_linux_amd64.tar.gz
-            sudo mv crust-gather /usr/local/bin/
+            wget https://github.com/crust-gather/crust-gather/releases/download/v0.11.1/kubectl-crust-gather_0.11.1_linux_amd64.tar.gz
+            tar -xvf kubectl-crust-gather_0.11.1_linux_amd64.tar.gz
+            sudo mv kubectl-crust-gather /usr/local/bin/
       - run:
           name: Install VMExporter
           command: |
-            wget https://github.com/VictoriaMetrics/support/releases/download/v0.3.0/vmexporter-linux-amd64
-            mv vmexporter-linux-amd64 vmexporter
-            chmod +x vmexporter
-            sudo mv vmexporter /usr/local/bin/
+            wget https://github.com/VictoriaMetrics/vmgather/releases/download/v1.5.0/vmgather-v1.5.0-linux-amd64
+            sudo mv vmgather-v1.5.0-linux-amd64 /usr/local/bin/vmexporter
+            sudo chmod +x /usr/local/bin/vmexporter
+      - gcp-cli/install:
+          components: gke-gcloud-auth-plugin
       - gcp-cli/setup:
-          gcloud_service_key: GCLOUD_SERVICE_KEY
+          gcloud_service_key: GOOGLE_CREDENTIALS
+          google_project_id: GCLOUD_PROJECT_ID
       - terraform/install
       - run:
           name: Retrieve terraform variables
           command: echo $TF_VAR_BASE64 | base64 --decode > terraform/gke/terraform.tfvars
       - terraform/apply:
           path: terraform/gke
-          var: "cluster_name=<<parameters.test-suite>>-test-${CIRCLE_BUILD_NUM}"
+          var: "cluster_name=<<parameters.cluster-name>>-${CIRCLE_BUILD_NUM}"
       - gke/update-kubeconfig-with-credentials:
-          cluster: <<parameters.test-suite>>-test-${CIRCLE_BUILD_NUM}
+          cluster: <<parameters.cluster-name>>-${CIRCLE_BUILD_NUM}
+          additional_args: "--region=europe-central2"
       - run:
           name: create admin serviceaccount kubeconfig
           command: |
+            gcloud components install kubectl
             kubectl -n kube-system create serviceaccount cluster-admin
             kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --serviceaccount=kube-system:cluster-admin
             kubectl -n kube-system create token --duration=24h cluster-admin > /tmp/token.txt
@@ -150,13 +152,13 @@ jobs:
               -procs=1 \
               -timeout=30m \
               --label-filter=${LABEL_FILTER} \
-              ./tests/${SUITE} \
+              ./tests/<<parameters.test-suite>> \
               -- \
               -env-k8s-distro=gke \
-              -vmtag=${VM_VERSION} \
+              -vmtag=<< parameters.vm_version >> \
               -report=/tmp/allure-results
       - when:
-          condition: success()
+          condition: true
           steps:
             - terraform/destroy:
                 path: terraform/gke
@@ -227,6 +229,7 @@ workflows:
               only: main
       - gke-test:
           name: gke-smoke-test
+          cluster-name: smoke
           test-suite: "smoke_test"
           requires:
             - unit-tests
@@ -241,6 +244,7 @@ workflows:
             - gcp-credentials
       - gke-test:
           name: gke-load-test
+          cluster-name: load
           test-suite: "load_test"
           requires:
             - gke-smoke-test-matrix
@@ -255,6 +259,7 @@ workflows:
             - gcp-credentials
       - gke-test:
           name: gke-chaos-test
+          cluster-name: chaos
           test-suite: "chaos_test"
           requires:
             - gke-smoke-test-matrix

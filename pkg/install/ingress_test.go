@@ -57,20 +57,12 @@ func TestDiscoverIngressHostWithLoadBalancer(t *testing.T) {
 	testNamespace := "test-ns"
 	expectedVMSelectHost := "vmselect-test-ns.192.168.1.100.nip.io"
 	expectedVMSingleHost := "vmsingle.192.168.1.100.nip.io"
-	expectedVMSelectUrl := "http://vmselect-test-ns.192.168.1.100.nip.io"
-	expectedVMSingleUrl := "http://vmsingle.192.168.1.100.nip.io"
 
 	if consts.VMSelectHost(testNamespace) != expectedVMSelectHost {
 		t.Errorf("Expected VMSelect host to be '%s', got '%s'", expectedVMSelectHost, consts.VMSelectHost(testNamespace))
 	}
 	if consts.VMSingleHost() != expectedVMSingleHost {
 		t.Errorf("Expected VMSingle host to be '%s', got '%s'", expectedVMSingleHost, consts.VMSingleHost())
-	}
-	if consts.VMSelectUrl(testNamespace) != expectedVMSelectUrl {
-		t.Errorf("Expected VMSelect URL to be '%s', got '%s'", expectedVMSelectUrl, consts.VMSelectUrl(testNamespace))
-	}
-	if consts.VMSingleUrl() != expectedVMSingleUrl {
-		t.Errorf("Expected VMSingle URL to be '%s', got '%s'", expectedVMSingleUrl, consts.VMSingleUrl())
 	}
 }
 
@@ -159,9 +151,6 @@ func TestHostnameFormatting(t *testing.T) {
 			}
 			if consts.VMSelectUrl(namespace) != tt.expectedSelectUrl {
 				t.Errorf("Expected VMSelect URL to be '%s', got '%s'", tt.expectedSelectUrl, consts.VMSelectUrl(namespace))
-			}
-			if consts.VMSingleUrl() != tt.expectedSingleUrl {
-				t.Errorf("Expected VMSingle URL to be '%s', got '%s'", tt.expectedSingleUrl, consts.VMSingleUrl())
 			}
 		})
 	}

@@ -193,8 +193,14 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+      - terraform/install
       - terraform/destroy:
           path: terraform/gke
+      - gcp-cli/install:
+          components: gke-gcloud-auth-plugin
+      - gcp-cli/setup:
+          gcloud_service_key: GOOGLE_CREDENTIALS
+          google_project_id: GCLOUD_PROJECT_ID
       - run:
           name: Remove unused disks
           command: gcp-cli compute disks delete --quiet $(gcp-cli compute disks list --filter="-users:*" --format "value(name)") --region=${GCP_REGION} || true

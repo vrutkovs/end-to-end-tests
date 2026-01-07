@@ -88,9 +88,9 @@ jobs:
               -- \
               -env-k8s-distro=kind \
               -vmtag=<< parameters.vm_version >> \
-              -report=/tmp/allure-results
+              -report=./allure-results
       - persist_to_workspace:
-          root: /tmp
+          root: .
           paths:
             - allure-results
 
@@ -173,7 +173,7 @@ jobs:
           command: |
             export PATH="$PATH:$(go env GOPATH)/bin"
             export KUBECONFIG=/tmp/kubeconfig.yaml
-            mkdir -p /tmp/allure-results
+            mkdir -p ./allure-results
             ginkgo -v \
               -procs=1 \
               -timeout=30m \
@@ -182,7 +182,7 @@ jobs:
               -- \
               -env-k8s-distro=gke \
               -vmtag=<< parameters.vm_version >> \
-              -report=/tmp/allure-results
+              -report=./allure-results
       - persist_to_workspace:
           root: .
           paths:
@@ -204,17 +204,13 @@ jobs:
       - run:
           name: Remove unused disks
           command: gcp-cli compute disks delete --quiet $(gcp-cli compute disks list --filter="-users:*" --format "value(name)") --region=${GCP_REGION} || true
-      - persist_to_workspace:
-          root: /tmp
-          paths:
-            - allure-results
 
   deploy-report:
     executor: go-executor
     steps:
       - checkout
       - attach_workspace:
-          at: /tmp/
+          at: .
       - run:
           name: Install Allure and gh-pages
           command: |
@@ -222,7 +218,7 @@ jobs:
             npm install -g gh-pages
       - run:
           name: Generate Allure Report
-          command: npx allure generate /tmp/allure-results -o allure-report --clean
+          command: npx allure generate ./allure-results -o allure-report --clean
       - run:
           name: Deploy to GitHub Pages
           command: |

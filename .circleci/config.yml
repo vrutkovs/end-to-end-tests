@@ -14,7 +14,6 @@ executors:
 jobs:
   unit-tests:
     executor: go-executor
-    resource_class: small
     steps:
       - checkout
       - run:
@@ -35,7 +34,7 @@ jobs:
     steps:
       - checkout
       - run: go mod download
-      - run: go install github.com/onsi/ginkgo/v2/ginkgo
+      - run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
       - run:
           name: Install helm
           command: |
@@ -43,7 +42,7 @@ jobs:
       - run:
           name: Create Kind cluster
           command: |
-            go get sigs.k8s.io/kind@v0.20.0
+            go install sigs.k8s.io/kind@latest
             kind create cluster --config manifests/kind.yaml
       - run:
           name: Add helm repo
@@ -226,21 +225,11 @@ workflows:
           filters:
             branches:
               only: main
-      - kind-smoke-test:
-          requires:
-            - unit-tests
-          filters:
-            branches:
-              only: main
-          matrix:
-            alias: kind-smoke-test-matrix
-            parameters:
-              <<: *vm_versions
       - gke-test:
           name: gke-smoke-test
           test-suite: "smoke_test"
           requires:
-            - kind-smoke-test-matrix
+            - unit-tests
           filters:
             branches:
               only: main

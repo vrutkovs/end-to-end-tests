@@ -75,6 +75,7 @@ jobs:
             sudo chmod +x /usr/local/bin/vmexporter
       - run:
           name: Run e2e tests
+          no_output_timeout: 30m
           command: |
             export PATH="$PATH:$(go env GOPATH)/bin"
             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
@@ -175,6 +176,7 @@ jobs:
             helm repo update
       - run:
           name: Run e2e tests
+          no_output_timeout: 30m
           command: |
             export PATH="$PATH:$(go env GOPATH)/bin"
             export KUBECONFIG=/tmp/kubeconfig.yaml

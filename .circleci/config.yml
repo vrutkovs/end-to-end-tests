@@ -79,12 +79,12 @@ jobs:
             export PATH="$PATH:$(go env GOPATH)/bin"
             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
             kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
-            mkdir -p /tmp/allure-results
+            mkdir -p ./allure-results
             ginkgo -v \
               -procs=1 \
               -timeout=30m \
               --label-filter=${LABEL_FILTER} \
-              ./tests/${SUITE_SMOKE} \
+              ./tests/smoke_test \
               -- \
               -env-k8s-distro=kind \
               -vmtag=<< parameters.vm_version >> \
@@ -176,8 +176,8 @@ jobs:
             export KUBECONFIG=/tmp/kubeconfig.yaml
             mkdir -p ./allure-results
             ginkgo -v \
-              -procs=1 \
-              -timeout=30m \
+              -procs=10 \
+              -timeout=90m \
               --label-filter=${LABEL_FILTER} \
               ./tests/<<parameters.test-suite>> \
               -- \

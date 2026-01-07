@@ -256,7 +256,7 @@ workflows:
           cluster-name: smoke
           test-suite: "smoke_test"
           requires:
-            - kind-smoke-test
+            - unit-tests
           filters:
             branches:
               only: main

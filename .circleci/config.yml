@@ -164,9 +164,10 @@ jobs:
             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
             kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
       - run:
-          name: Add helm repo
+          name: Add helm repos
           command: |
             helm repo add vm https://victoriametrics.github.io/helm-charts/
+            helm repo add chaos-mesh https://charts.chaos-mesh.org
             helm repo update
       - run:
           name: Run e2e tests

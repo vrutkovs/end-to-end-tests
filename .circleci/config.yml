@@ -97,11 +97,15 @@ jobs:
   gke-test:
     executor: go-executor
     parameters:
-      cluster-name:
+      cluster_name:
         type: string
-      test-suite:
+      test_suite:
         type: string
       vm_version:
+        type: string
+      procs:
+        type: integer
+      timeout:
         type: string
     environment:
       LABEL_FILTER: gke
@@ -136,13 +140,13 @@ jobs:
           command: echo $TF_VAR_BASE64 | base64 --decode > terraform/gke/terraform.tfvars
       - terraform/apply:
           path: terraform/gke
-          var: "cluster_name=<<parameters.cluster-name>>-${CIRCLE_BUILD_NUM}"
+          var: "cluster_name=<<parameters.cluster_name>>-${CIRCLE_BUILD_NUM}"
       - persist_to_workspace:
           root: .
           paths:
             - .
       - gke/update-kubeconfig-with-credentials:
-          cluster: <<parameters.cluster-name>>-${CIRCLE_BUILD_NUM}
+          cluster: <<parameters.cluster_name>>-${CIRCLE_BUILD_NUM}
           additional_args: "--region=europe-central2"
       - run:
           name: create admin serviceaccount kubeconfig
@@ -176,10 +180,10 @@ jobs:
             export KUBECONFIG=/tmp/kubeconfig.yaml
             mkdir -p ./allure-results
             ginkgo -v \
-              -procs=10 \
-              -timeout=90m \
+              -procs=<<parameters.procs>> \
+              -timeout=<<parameters.timeout>> \
               --label-filter=${LABEL_FILTER} \
-              ./tests/<<parameters.test-suite>> \
+              ./tests/<<parameters.test_suite>> \
               -- \
               -env-k8s-distro=gke \
               -vmtag=<< parameters.vm_version >> \
@@ -275,8 +279,10 @@ workflows:
             - gcp-credentials
       - gke-test:
           name: gke-smoke-test
-          cluster-name: smoke
-          test-suite: "smoke_test"
+          cluster_name: smoke
+          test_suite: "smoke_test"
+          procs: 1
+          timeout: 30m
           requires:
             - unit-tests
           filters:
@@ -290,8 +296,10 @@ workflows:
             - gcp-credentials
       - gke-test:
           name: gke-load-test
-          cluster-name: load
-          test-suite: "load_test"
+          cluster_name: load
+          test_suite: "load_test"
+          procs: 1
+          timeout: 30m
           requires:
             - gke-smoke-test-matrix
           filters:
@@ -305,8 +313,10 @@ workflows:
             - gcp-credentials
       - gke-test:
           name: gke-chaos-test
-          cluster-name: chaos
-          test-suite: "chaos_test"
+          cluster_name: chaos
+          test_suite: "chaos_test"
+          procs: 10
+          timeout: 180m
           requires:
             - gke-smoke-test-matrix
           filters:

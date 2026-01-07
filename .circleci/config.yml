@@ -330,8 +330,14 @@ workflows:
             - gcp-credentials
       - deploy-report:
           requires:
-            - gke-chaos-test-matrix
-            - gke-load-test-matrix
+            - gke-chaos-test-matrix:
+              - success
+              - failed
+              - canceled
+            - gke-load-test-matrix:
+              - success
+              - failed
+              - canceled
           filters:
             branches:
               only: main

@@ -39,6 +39,13 @@ jobs:
       - run: go mod download
       - run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
       - run:
+          name: Install kubectl
+          command: |
+              curl -LO "https://dl.k8s.io/release/stable.txt"
+              curl -LO "https://dl.k8s.io/release/$(cat stable.txt)/bin/linux/amd64/kubectl"
+              chmod +x kubectl
+              sudo mv kubectl /usr/local/bin/kubectl
+      - run:
           name: Install helm
           command: |
             curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
@@ -156,6 +163,11 @@ jobs:
           command: |
             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
             kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
+      - run:
+          name: Add helm repo
+          command: |
+            helm repo add vm https://victoriametrics.github.io/helm-charts/
+            helm repo update
       - run:
           name: Run e2e tests
           command: |

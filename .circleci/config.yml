@@ -1,0 +1,287 @@
+version: 2.1
+
+orbs:
+  go: circleci/go@3.0.3
+  gke: circleci/gcp-gke@2.3.0
+  gcp-cli: circleci/gcp-cli@3.3.2
+  terraform: circleci/terraform@3.7.0
+
+executors:
+  go-executor:
+    docker:
+      - image: cimg/go:1.25
+
+jobs:
+  unit-tests:
+    executor: go-executor
+    steps:
+      - checkout
+      - run:
+          name: Download go packages
+          command: go mod download
+      - run:
+          name: Run unit tests
+          command: go test -race -v ./pkg/...
+
+  kind-smoke-test:
+    executor: go-executor
+    parameters:
+      vm_version:
+        type: string
+    environment:
+      LABEL_FILTER: kind
+      VM_VERSION: << parameters.vm_version >>
+    steps:
+      - checkout
+      - run: go mod download
+      - run: go install github.com/onsi/ginkgo/v2/ginkgo
+      - run:
+          name: Install helm
+          command: |
+            curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      - run:
+          name: Create Kind cluster
+          command: |
+            go get sigs.k8s.io/kind@v0.20.0
+            kind create cluster --config manifests/kind.yaml
+      - run:
+          name: Add helm repo
+          command: |
+            helm repo add vm https://victoriametrics.github.io/helm-charts/
+            helm repo update
+      - run:
+          name: Install crust-gather
+          command: |
+            wget https://github.com/crust-gather/crust-gather/releases/download/v0.3.0/crust-gather_0.3.0_linux_amd64.tar.gz
+            tar -xvf crust-gather_0.3.0_linux_amd64.tar.gz
+            sudo mv crust-gather /usr/local/bin/
+      - run:
+          name: Install VMExporter
+          command: |
+            wget https://github.com/VictoriaMetrics/support/releases/download/v0.3.0/vmexporter-linux-amd64
+            mv vmexporter-linux-amd64 vmexporter
+            chmod +x vmexporter
+            sudo mv vmexporter /usr/local/bin/
+      - run:
+          name: Run e2e tests
+          command: |
+            export PATH="$PATH:$(go env GOPATH)/bin"
+            kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+            kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
+            mkdir -p /tmp/allure-results
+            ginkgo -v \
+              -procs=1 \
+              -timeout=30m \
+              --label-filter=${LABEL_FILTER} \
+              ./tests/${SUITE_SMOKE} \
+              -- \
+              -env-k8s-distro=kind \
+              -vmtag=${VM_VERSION} \
+              -report=/tmp/allure-results
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - allure-results
+
+  gke-test:
+    executor: go-executor
+    parameters:
+      test-suite:
+        type: string
+      vm_version:
+        type: string
+    environment:
+      LABEL_FILTER: gke
+      VM_VERSION: << parameters.vm_version >>
+      SUITE: << parameters.test-suite >>
+    steps:
+      - checkout
+      - run: go mod download
+      - run: go install github.com/onsi/ginkgo/v2/ginkgo
+      - run:
+          name: Install helm
+          command: |
+            curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      - run:
+          name: Install crust-gather
+          command: |
+            wget https://github.com/crust-gather/crust-gather/releases/download/v0.3.0/crust-gather_0.3.0_linux_amd64.tar.gz
+            tar -xvf crust-gather_0.3.0_linux_amd64.tar.gz
+            sudo mv crust-gather /usr/local/bin/
+      - run:
+          name: Install VMExporter
+          command: |
+            wget https://github.com/VictoriaMetrics/support/releases/download/v0.3.0/vmexporter-linux-amd64
+            mv vmexporter-linux-amd64 vmexporter
+            chmod +x vmexporter
+            sudo mv vmexporter /usr/local/bin/
+      - gcp-cli/setup:
+          gcloud_service_key: GCLOUD_SERVICE_KEY
+      - terraform/install
+      - run:
+          name: Retrieve terraform variables
+          command: echo $TF_VAR_BASE64 | base64 --decode > terraform/gke/terraform.tfvars
+      - terraform/apply:
+          path: terraform/gke
+          var: "cluster_name=<<parameters.test-suite>>-test-${CIRCLE_BUILD_NUM}"
+      - gke/update-kubeconfig-with-credentials:
+          cluster: <<parameters.test-suite>>-test-${CIRCLE_BUILD_NUM}
+      - run:
+          name: create admin serviceaccount kubeconfig
+          command: |
+            kubectl -n kube-system create serviceaccount cluster-admin
+            kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --serviceaccount=kube-system:cluster-admin
+            kubectl -n kube-system create token --duration=24h cluster-admin > /tmp/token.txt
+            kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' | base64 -d > /tmp/ca.txt
+            kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}' > /tmp/server.txt
+            export KUBECONFIG=/tmp/kubeconfig.yaml
+            kubectl config set-cluster gke --server=$(cat /tmp/server.txt) --certificate-authority=/tmp/ca.txt --embed-certs=true
+            kubectl config set-credentials cluster-admin --token=$(cat /tmp/token.txt)
+            kubectl config set-context production --cluster gke --user cluster-admin
+            kubectl config use-context production
+      - run:
+          name: Run e2e tests
+          command: |
+            export PATH="$PATH:$(go env GOPATH)/bin"
+            export KUBECONFIG=/tmp/kubeconfig.yaml
+            mkdir -p /tmp/allure-results
+            ginkgo -v \
+              -procs=1 \
+              -timeout=30m \
+              --label-filter=${LABEL_FILTER} \
+              ./tests/${SUITE} \
+              -- \
+              -env-k8s-distro=gke \
+              -vmtag=${VM_VERSION} \
+              -report=/tmp/allure-results
+      - when:
+          condition: success()
+          steps:
+            - terraform/destroy:
+                path: terraform/gke
+            - run:
+                name: Remove unused disks
+                command: gcp-cli compute disks delete --quiet $(gcp-cli compute disks list --filter="-users:*" --format "value(name)") --region=${GCP_REGION} || true
+            - persist_to_workspace:
+                root: /tmp
+                paths:
+                  - allure-results
+
+  deploy-report:
+    executor: go-executor
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/
+      - run:
+          name: Install Allure and gh-pages
+          command: |
+            npm install -g allure-commandline
+            npm install -g gh-pages
+      - run:
+          name: Generate Allure Report
+          command: npx allure generate /tmp/allure-results -o allure-report --clean
+      - run:
+          name: Deploy to GitHub Pages
+          command: |
+            git config --global user.email "ci@circleci.com"
+            git config --global user.name "CircleCI"
+            gh-pages -d allure-report -t true -m "Deploy Allure report [skip ci]" --user "token:${GITHUB_TOKEN}"
+
+
+parameters:
+  default_vm_version:
+    type: string
+    default: "v1.133.0"
+
+x-vm-versions: &vm_versions
+  vm_version:
+    - "<< pipeline.parameters.default_vm_version >>"
+    # - "v1.133.0-enterprise"
+    # - "v1.122.10-enterprise"
+    # - "v1.110.25-enterprise"
+
+workflows:
+  version: 2
+  pr-smoke-tests:
+    jobs:
+      - unit-tests:
+          filters:
+            branches:
+              ignore: main
+      - kind-smoke-test:
+          name: kind-pr-test
+          vm_version: << pipeline.parameters.default_vm_version >>
+          requires:
+            - unit-tests
+          filters:
+            branches:
+              ignore: main
+
+  main-branch-tests:
+    jobs:
+      - unit-tests:
+          filters:
+            branches:
+              only: main
+      - kind-smoke-test:
+          requires:
+            - unit-tests
+          filters:
+            branches:
+              only: main
+          matrix:
+            alias: kind-smoke-test-matrix
+            parameters:
+              <<: *vm_versions
+      - gke-test:
+          name: gke-smoke-test
+          test-suite: "smoke_test"
+          requires:
+            - kind-smoke-test-matrix
+          filters:
+            branches:
+              only: main
+          matrix:
+            alias: gke-smoke-test-matrix
+            parameters:
+              <<: *vm_versions
+          context:
+            - gcp-credentials
+      - gke-test:
+          name: gke-load-test
+          test-suite: "load_test"
+          requires:
+            - gke-smoke-test-matrix
+          filters:
+            branches:
+              only: main
+          matrix:
+            alias: gke-load-test-matrix
+            parameters:
+              <<: *vm_versions
+          context:
+            - gcp-credentials
+      - gke-test:
+          name: gke-chaos-test
+          test-suite: "chaos_test"
+          requires:
+            - gke-smoke-test-matrix
+          filters:
+            branches:
+              only: main
+          matrix:
+            alias: gke-chaos-test-matrix
+            parameters:
+              <<: *vm_versions
+          context:
+            - gcp-credentials
+      - deploy-report:
+          requires:
+            - gke-chaos-test-matrix
+            - gke-load-test-matrix
+          filters:
+            branches:
+              only: main
+          context:
+            - github

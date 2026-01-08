@@ -80,7 +80,8 @@ jobs:
             export PATH="$PATH:$(go env GOPATH)/bin"
             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
             kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
-            mkdir -p ./allure-results
+            REPORT_DIR="./allure-results/kind-smoke-test-<<parameters.vm_version>>"
+            mkdir -p "${REPORT_DIR}"
             ginkgo -v \
               -procs=1 \
               -timeout=30m \
@@ -89,11 +90,14 @@ jobs:
               -- \
               -env-k8s-distro=kind \
               -vmtag=<< parameters.vm_version >> \
-              -report=./allure-results
-      - persist_to_workspace:
-          root: .
-          paths:
-            - allure-results
+              -report="${REPORT_DIR}"
+      - when:
+          condition: on_fail
+          steps:
+          - persist_to_workspace:
+              root: .
+              paths:
+                - allure-results
 
   gke-test:
     executor: go-executor
@@ -180,7 +184,8 @@ jobs:
           command: |
             export PATH="$PATH:$(go env GOPATH)/bin"
             export KUBECONFIG=/tmp/kubeconfig.yaml
-            mkdir -p ./allure-results
+            REPORT_DIR="./allure-results/<<parameters.test_suite>>-<<parameters.vm_version>>"
+            mkdir -p "${REPORT_DIR}"
             ginkgo -v \
               -procs=<<parameters.procs>> \
               -timeout=<<parameters.timeout>> \
@@ -189,11 +194,14 @@ jobs:
               -- \
               -env-k8s-distro=gke \
               -vmtag=<< parameters.vm_version >> \
-              -report=./allure-results
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
+              -report="${REPORT_DIR}"
+      - when:
+          condition: on_fail
+          steps:
+          - persist_to_workspace:
+              root: .
+              paths:
+                - allure-results
 
   cleanup:
     executor: go-executor
@@ -225,7 +233,19 @@ jobs:
             npm install -g gh-pages
       - run:
           name: Generate Allure Report
-          command: npx allure generate ./allure-results -o allure-report --clean
+          command: |
+            mkdir -p allure-results-merged
+            if [ -d "allure-results" ]; then
+              # Each test suite produces a unique subdirectory in allure-results.
+              # We merge their contents into allure-results-merged.
+              for suite_results in allure-results/*; do
+                [ -e "$suite_results" ] || continue
+                if [ -d "$suite_results" ]; then
+                  cp -r "$suite_results"/. allure-results-merged/
+                fi
+              done
+            fi
+            npx allure generate allure-results-merged -o allure-report --clean
       - run:
           name: Deploy to GitHub Pages
           command: |
@@ -332,6 +352,14 @@ workflows:
             - gcp-credentials
       - deploy-report:
           requires:
+            - kind-smoke-test:
+              - success
+              - failed
+              - canceled
+            - gke-smoke-test-matrix:
+              - success
+              - failed
+              - canceled
             - gke-chaos-test-matrix:
               - success
               - failed

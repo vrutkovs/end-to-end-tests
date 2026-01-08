@@ -52,7 +52,7 @@ var _ = ReportAfterSuite("allure report", func(report types.Report) {
 	if len(errs) > 0 {
 		panic(errs)
 	}
-	GinkgoLogr.Info("Allure report generated at %s", reportPath)
+	GinkgoLogr.Info("Allure report generated", "path", reportPath)
 })
 
 func writeEnvironmentProperties(reportPath string) error {
@@ -67,7 +67,7 @@ func writeEnvironmentProperties(reportPath string) error {
 		"operator-version": consts.OperatorVersion(),
 		"vm-version":       consts.VMVersion(),
 	}
-	GinkgoLogr.Info("Writing environment properties to %s: %#v", envFilePath, props)
+	GinkgoLogr.Info("Writing environment properties", "to", envFilePath, "properties", props)
 
 	return os.WriteFile(envFilePath, environmentPropertiesContent(props), 0644)
 }

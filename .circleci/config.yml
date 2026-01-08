@@ -5,6 +5,7 @@ orbs:
   gke: circleci/gcp-gke@2.3.0
   gcp-cli: circleci/gcp-cli@3.3.2
   terraform: circleci/terraform@3.7.0
+  node: circleci/node@5.0.2
 
 executors:
   go-executor:
@@ -221,7 +222,7 @@ jobs:
           command: gcp-cli compute disks delete --quiet $(gcp-cli compute disks list --filter="-users:*" --format "value(name)") --region=${GCP_REGION} || true
 
   deploy-report:
-    executor: go-executor
+    executor: node/default
     steps:
       - checkout
       - attach_workspace:

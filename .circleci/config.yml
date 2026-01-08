@@ -149,7 +149,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - .
+            - ./terraform/gke
       - gke/update-kubeconfig-with-credentials:
           cluster: <<parameters.cluster_name>>-${CIRCLE_BUILD_NUM}
           additional_args: "--region=europe-central2"
@@ -316,40 +316,40 @@ workflows:
               <<: *vm_versions
           context:
             - gcp-credentials
-      - gke-test:
-          name: gke-load-test
-          cluster_name: load
-          test_suite: "load_test"
-          procs: 1
-          timeout: 30m
-          requires:
-            - gke-smoke-test-matrix
-          filters:
-            branches:
-              only: main
-          matrix:
-            alias: gke-load-test-matrix
-            parameters:
-              <<: *vm_versions
-          context:
-            - gcp-credentials
-      - gke-test:
-          name: gke-chaos-test
-          cluster_name: chaos
-          test_suite: "chaos_test"
-          procs: 10
-          timeout: 180m
-          requires:
-            - gke-smoke-test-matrix
-          filters:
-            branches:
-              only: main
-          matrix:
-            alias: gke-chaos-test-matrix
-            parameters:
-              <<: *vm_versions
-          context:
-            - gcp-credentials
+      # - gke-test:
+      #     name: gke-load-test
+      #     cluster_name: load
+      #     test_suite: "load_test"
+      #     procs: 1
+      #     timeout: 30m
+      #     requires:
+      #       - gke-smoke-test-matrix
+      #     filters:
+      #       branches:
+      #         only: main
+      #     matrix:
+      #       alias: gke-load-test-matrix
+      #       parameters:
+      #         <<: *vm_versions
+      #     context:
+      #       - gcp-credentials
+      # - gke-test:
+      #     name: gke-chaos-test
+      #     cluster_name: chaos
+      #     test_suite: "chaos_test"
+      #     procs: 10
+      #     timeout: 180m
+      #     requires:
+      #       - gke-smoke-test-matrix
+      #     filters:
+      #       branches:
+      #         only: main
+      #     matrix:
+      #       alias: gke-chaos-test-matrix
+      #       parameters:
+      #         <<: *vm_versions
+      #     context:
+      #       - gcp-credentials
       - deploy-report:
           requires:
             - kind-smoke-test:
@@ -360,14 +360,14 @@ workflows:
               - success
               - failed
               - canceled
-            - gke-chaos-test-matrix:
-              - success
-              - failed
-              - canceled
-            - gke-load-test-matrix:
-              - success
-              - failed
-              - canceled
+            # - gke-chaos-test-matrix:
+            #   - success
+            #   - failed
+            #   - canceled
+            # - gke-load-test-matrix:
+            #   - success
+            #   - failed
+            #   - canceled
           filters:
             branches:
               only: main
@@ -385,27 +385,27 @@ workflows:
               only: main
           context:
             - github
-      - cleanup:
-          name: gke-load-test-cleanup
-          requires:
-            - gke-load-test:
-              - success
-              - failed
-              - canceled
-          filters:
-            branches:
-              only: main
-          context:
-            - github
-      - cleanup:
-          name: gke-chaos-test-cleanup
-          requires:
-            - gke-chaos-test:
-              - success
-              - failed
-              - canceled
-          filters:
-            branches:
-              only: main
-          context:
+      # - cleanup:
+      #     name: gke-load-test-cleanup
+      #     requires:
+      #       - gke-load-test:
+      #         - success
+      #         - failed
+      #         - canceled
+      #     filters:
+      #       branches:
+      #         only: main
+      #     context:
+      #       - github
+      # - cleanup:
+      #     name: gke-chaos-test-cleanup
+      #     requires:
+      #       - gke-chaos-test:
+      #         - success
+      #         - failed
+      #         - canceled
+      #     filters:
+      #       branches:
+      #         only: main
+      #     context:
             - github

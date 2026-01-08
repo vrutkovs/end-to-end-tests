@@ -227,33 +227,25 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
-      - run:
-          name: Install Allure and gh-pages
-          command: |
-            npm install -g allure-commandline
-            npm install -g gh-pages
+      - store_artifacts:
+          path: allure-results
       - run:
           name: Generate Allure Report
           command: |
-            mkdir -p allure-results-merged
+            mkdir -p /tmp/allure-results-merged
             if [ -d "allure-results" ]; then
               # Each test suite produces a unique subdirectory in allure-results.
               # We merge their contents into allure-results-merged.
               for suite_results in allure-results/*; do
                 [ -e "$suite_results" ] || continue
                 if [ -d "$suite_results" ]; then
-                  cp -r "$suite_results"/. allure-results-merged/
+                  cp -r "$suite_results"/. /tmp/allure-results-merged/
                 fi
               done
             fi
-            npx allure generate allure-results-merged -o allure-report --clean
-      - run:
-          name: Deploy to GitHub Pages
-          command: |
-            git config --global user.email "ci@circleci.com"
-            git config --global user.name "CircleCI"
-            gh-pages -d allure-report -t true -m "Deploy Allure report [skip ci]" --user "token:${GITHUB_TOKEN}"
-
+            npx allure awesome --single-file -o /tmp/allure-report /tmp/allure-results-merged
+      - store_artifacts:
+          path: /tmp/allure-report
 
 parameters:
   default_vm_version:

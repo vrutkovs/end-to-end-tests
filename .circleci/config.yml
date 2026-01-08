@@ -185,7 +185,7 @@ jobs:
           command: |
             export PATH="$PATH:$(go env GOPATH)/bin"
             export KUBECONFIG=/tmp/kubeconfig.yaml
-            REPORT_DIR="./allure-results/<<parameters.test_suite>>-<<parameters.vm_version>>"
+            REPORT_DIR="/tmp/allure-results/<<parameters.test_suite>>-<<parameters.vm_version>>"
             mkdir -p "${REPORT_DIR}"
             ginkgo -v \
               -procs=<<parameters.procs>> \
@@ -200,7 +200,7 @@ jobs:
           condition: on_fail
           steps:
           - persist_to_workspace:
-              root: .
+              root: /tmp
               paths:
                 - allure-results
 
@@ -225,14 +225,14 @@ jobs:
     executor: node/default
     steps:
       - attach_workspace:
-          at: .
+          at: /tmp
       - store_artifacts:
-          path: allure-results
+          path: /tmp/allure-results
       - run:
           name: Generate Allure Report
           command: |
-            ls -la ./allure-results
-            npx allure awesome --single-file -o /tmp/allure-report ./allure-results
+            ls -la /tmp/allure-results
+            npx allure awesome --single-file -o /tmp/allure-report /tmp/allure-results
       - store_artifacts:
           path: /tmp/allure-report
 

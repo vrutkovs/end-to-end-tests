@@ -38,7 +38,7 @@ jobs:
     steps:
       - checkout
       - run: go mod download
-      - run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
+      - run: go install github.com/onsi/ginkgo/v2/ginkgo
       - run:
           name: Install kubectl
           command: |

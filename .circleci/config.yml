@@ -81,7 +81,7 @@ jobs:
             export PATH="$PATH:$(go env GOPATH)/bin"
             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
             kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
-            REPORT_DIR="./allure-results/kind-smoke-test-<<parameters.vm_version>>"
+            REPORT_DIR="/tmp/allure-results/kind-smoke-test-<<parameters.vm_version>>"
             mkdir -p "${REPORT_DIR}"
             ginkgo -v \
               -procs=1 \
@@ -93,14 +93,13 @@ jobs:
               -vmtag=<< parameters.vm_version >> \
               -report="${REPORT_DIR}"
             ls -la ${REPORT_DIR}
-            tree ${REPORT_DIR}
       - when:
           condition: on_fail
           steps:
           - persist_to_workspace:
-              root: .
+              root: /tmp/allure-results
               paths:
-                - allure-results
+                - .
 
   gke-test:
     executor: go-executor
@@ -233,7 +232,7 @@ jobs:
       - run:
           name: Generate Allure Report
           command: |
-            tree ./allure-results
+            ls -la ./allure-results
             npx allure awesome --single-file -o /tmp/allure-report ./allure-results
       - store_artifacts:
           path: /tmp/allure-report

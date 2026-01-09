@@ -226,15 +226,13 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp
-      - store_artifacts:
-          path: /tmp/allure-results
       - run:
           name: Generate Allure Report
           command: |
-            ls -la /tmp/allure-results
-            npx allure awesome --single-file -o /tmp/allure-report /tmp/allure-results
+            mv /tmp/allure-results/*/* /tmp/allure-results
+            npx allure awesome --single-file /tmp/allure-results
       - store_artifacts:
-          path: /tmp/allure-report
+          path: /tmp/allure-results
 
 parameters:
   default_vm_version:

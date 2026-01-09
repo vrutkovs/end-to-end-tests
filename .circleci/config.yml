@@ -332,19 +332,15 @@ workflows:
             - gcp-credentials
       - deploy-report:
           requires:
-            - kind-smoke-test:
+            - gke-smoke-test-cleanup:
               - success
               - failed
               - canceled
-            - gke-smoke-test-matrix:
+            - gke-chaos-test-cleanup:
               - success
               - failed
               - canceled
-            - gke-chaos-test-matrix:
-              - success
-              - failed
-              - canceled
-            - gke-load-test-matrix:
+            - gke-load-test-cleanup:
               - success
               - failed
               - canceled

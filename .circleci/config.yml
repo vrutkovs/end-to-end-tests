@@ -230,7 +230,7 @@ jobs:
           name: Generate Allure Report
           command: |
             mv /tmp/allure-results/*/* /tmp/allure-results
-            npx allure awesome --single-file /tmp/allure-results
+            npx allure awesome --single-file -o /tmp/allure-results /tmp/allure-results
       - store_artifacts:
           path: /tmp/allure-results
 

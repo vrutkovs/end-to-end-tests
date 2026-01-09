@@ -91,7 +91,6 @@ jobs:
               -env-k8s-distro=kind \
               -vmtag=<< parameters.vm_version >> \
               -report="${REPORT_DIR}"
-            ls -la ${REPORT_DIR}
       - when:
           condition: on_fail
           steps:
@@ -229,9 +228,8 @@ jobs:
       - run:
           name: Generate Allure Report
           command: |
-            for dir in /tmp/allure-results/*/; do
-              cd "/tmp/allure-results/$dir"
-              npx allure awesome --single-file -o . .
+            for dir in $(find /tmp/allure-results -type d -maxdepth 1); do
+              npx allure awesome --single-file -o $dir/allure-report $dir
             done
       - store_artifacts:
           path: /tmp/allure-results

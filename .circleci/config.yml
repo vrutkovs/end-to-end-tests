@@ -141,15 +141,19 @@ jobs:
           google_project_id: GCLOUD_PROJECT_ID
       - terraform/install
       - run:
+          name: Make a copy of terraform resources
+          command: |
+            cp -r terraform/gke terraform/gke_<<parameters.cluster_name>>
+      - run:
           name: Retrieve terraform variables
-          command: echo $TF_VAR_BASE64 | base64 --decode > terraform/gke/terraform.tfvars
+          command: echo $TF_VAR_BASE64 | base64 --decode > terraform/gke_<<parameters.cluster_name>>/terraform.tfvars
       - terraform/apply:
-          path: terraform/gke
+          path: terraform/gke_<<parameters.cluster_name>>
           var: "cluster_name=<<parameters.cluster_name>>-${CIRCLE_BUILD_NUM}"
       - persist_to_workspace:
           root: .
           paths:
-            - ./terraform/gke
+            - ./terraform/gke_<<parameters.cluster_name>>
       - gke/update-kubeconfig-with-credentials:
           cluster: <<parameters.cluster_name>>-${CIRCLE_BUILD_NUM}
           additional_args: "--region=europe-central2"
@@ -205,12 +209,15 @@ jobs:
 
   cleanup:
     executor: go-executor
+    parameters:
+      cluster_name:
+        type: string
     steps:
       - attach_workspace:
           at: .
       - terraform/install
       - terraform/destroy:
-          path: terraform/gke
+          path: terraform/gke_<<parameters.cluster_name>>
       - gcp-cli/install:
           components: gke-gcloud-auth-plugin
       - gcp-cli/setup:
@@ -351,6 +358,7 @@ workflows:
             - github
       - cleanup:
           name: gke-smoke-test-cleanup
+          cluster_name: smoke
           requires:
             - gke-smoke-test:
               - success
@@ -363,6 +371,7 @@ workflows:
             - github
       - cleanup:
           name: gke-load-test-cleanup
+          cluster_name: load
           requires:
             - gke-load-test:
               - success
@@ -375,6 +384,7 @@ workflows:
             - github
       - cleanup:
           name: gke-chaos-test-cleanup
+          cluster_name: chaos
           requires:
             - gke-chaos-test:
               - success

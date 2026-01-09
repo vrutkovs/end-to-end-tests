@@ -279,23 +279,23 @@ workflows:
               only: main
           context:
             - gcp-credentials
-      # - gke-test:
-      #     name: gke-smoke-test
-      #     cluster_name: smoke
-      #     test_suite: "smoke_test"
-      #     procs: 1
-      #     timeout: 30m
-      #     requires:
-      #       - kind-smoke-test
-      #     filters:
-      #       branches:
-      #         only: main
-      #     matrix:
-      #       alias: gke-smoke-test-matrix
-      #       parameters:
-      #         <<: *vm_versions
-      #     context:
-      #       - gcp-credentials
+      - gke-test:
+          name: gke-smoke-test
+          cluster_name: smoke
+          test_suite: "smoke_test"
+          procs: 1
+          timeout: 30m
+          requires:
+            - kind-smoke-test
+          filters:
+            branches:
+              only: main
+          matrix:
+            alias: gke-smoke-test-matrix
+            parameters:
+              <<: *vm_versions
+          context:
+            - gcp-credentials
       # - gke-test:
       #     name: gke-load-test
       #     cluster_name: load
@@ -336,10 +336,10 @@ workflows:
               - success
               - failed
               - canceled
-            # - gke-smoke-test-matrix:
-            #   - success
-            #   - failed
-            #   - canceled
+            - gke-smoke-test-matrix:
+              - success
+              - failed
+              - canceled
             # - gke-chaos-test-matrix:
             #   - success
             #   - failed

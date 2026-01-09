@@ -229,8 +229,10 @@ jobs:
       - run:
           name: Generate Allure Report
           command: |
-            mv /tmp/allure-results/*/* /tmp/allure-results
-            npx allure awesome --single-file -o /tmp/allure-results /tmp/allure-results
+            for dir in /tmp/allure-results/*/; do
+              cd "/tmp/allure-results/$dir"
+              npx allure awesome --single-file -o . .
+            done
       - store_artifacts:
           path: /tmp/allure-results
 
@@ -353,18 +355,18 @@ workflows:
               only: main
           context:
             - github
-      # - cleanup:
-      #     name: gke-smoke-test-cleanup
-      #     requires:
-      #       - gke-smoke-test:
-      #         - success
-      #         - failed
-      #         - canceled
-      #     filters:
-      #       branches:
-      #         only: main
-      #     context:
-      #       - github
+      - cleanup:
+          name: gke-smoke-test-cleanup
+          requires:
+            - gke-smoke-test:
+              - success
+              - failed
+              - canceled
+          filters:
+            branches:
+              only: main
+          context:
+            - github
       # - cleanup:
       #     name: gke-load-test-cleanup
       #     requires:

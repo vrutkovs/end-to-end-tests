@@ -198,14 +198,12 @@ jobs:
               -- \
               -env-k8s-distro=gke \
               -vmtag=<< parameters.vm_version >> \
-              -report="${REPORT_DIR}"
-      - when:
-          condition: on_fail
-          steps:
-          - persist_to_workspace:
-              root: /tmp
-              paths:
-                - allure-results
+              -report="${REPORT_DIR}" || true
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - allure-results
+          when: always
 
   cleanup:
     executor: go-executor

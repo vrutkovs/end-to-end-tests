@@ -102,8 +102,6 @@ jobs:
   gke-test:
     executor: go-executor
     parameters:
-      cluster_name:
-        type: string
       test_suite:
         type: string
       vm_version:
@@ -143,19 +141,19 @@ jobs:
       - run:
           name: Make a copy of terraform resources
           command: |
-            cp -r terraform/gke terraform/gke_<<parameters.cluster_name>>
+            cp -r terraform/gke terraform/gke_<<parameters.test_suite>>_<<parameters.vm_version>>
       - run:
           name: Retrieve terraform variables
-          command: echo $TF_VAR_BASE64 | base64 --decode > terraform/gke_<<parameters.cluster_name>>/terraform.tfvars
+          command: echo $TF_VAR_BASE64 | base64 --decode > terraform/gke_<<parameters.test_suite>>_<<parameters.vm_version>>/terraform.tfvars
       - terraform/apply:
-          path: terraform/gke_<<parameters.cluster_name>>
-          var: "cluster_name=<<parameters.cluster_name>>-${CIRCLE_BUILD_NUM}"
+          path: terraform/gke_<<parameters.test_suite>>_<<parameters.vm_version>>
+          var: "cluster_name=<<parameters.test_suite>>-${CIRCLE_BUILD_NUM}"
       - persist_to_workspace:
           root: .
           paths:
-            - ./terraform/gke_<<parameters.cluster_name>>
+            - ./terraform/gke_<<parameters.test_suite>>_<<parameters.vm_version>>
       - gke/update-kubeconfig-with-credentials:
-          cluster: <<parameters.cluster_name>>-${CIRCLE_BUILD_NUM}
+          cluster: <<parameters.test_suite>>-${CIRCLE_BUILD_NUM}
           additional_args: "--region=europe-central2"
       - run:
           name: create admin serviceaccount kubeconfig
@@ -198,7 +196,7 @@ jobs:
               -- \
               -env-k8s-distro=gke \
               -vmtag=<< parameters.vm_version >> \
-              -report="${REPORT_DIR}" || true
+              -report="${REPORT_DIR}"
       - persist_to_workspace:
           root: /tmp
           paths:
@@ -207,14 +205,16 @@ jobs:
   cleanup:
     executor: go-executor
     parameters:
-      cluster_name:
+      test_suite:
+        type: string
+      vm_version:
         type: string
     steps:
       - attach_workspace:
           at: .
       - terraform/install
       - terraform/destroy:
-          path: terraform/gke_<<parameters.cluster_name>>
+          path: terraform/gke_<<parameters.test_suite>>_<<parameters.vm_version>>
       - gcp-cli/install:
           components: gke-gcloud-auth-plugin
       - gcp-cli/setup:
@@ -238,17 +238,32 @@ jobs:
       - store_artifacts:
           path: /tmp/allure-results
 
+  waiter:
+    docker:
+      - image: cimg/node:current
+    steps:
+      - run: |
+          while [[ $(curl --location --request GET "https://circleci.com/api/v2/workflow/$CIRCLE_WORKFLOW_ID/job" --header "Circle-Token: $CCI_TOKEN"| jq -r '.items[]|select(.name != "waiter")|.status' | grep -c "running") -gt 0 ]]
+            do
+              sleep 5
+            done
+      - run: echo "All required jobs have now completed"
+
 parameters:
   default_vm_version:
     type: string
     default: "v1.133.0"
 
-x-vm-versions: &vm_versions
+x-test-matrix: &test_matrix
   vm_version:
     - "<< pipeline.parameters.default_vm_version >>"
     - "v1.133.0-enterprise"
     - "v1.122.10-enterprise"
     - "v1.110.25-enterprise"
+  test_suite:
+    - "smoke_test"
+    - "load_test"
+    - "chaos_test"
 
 workflows:
   version: 2
@@ -259,7 +274,7 @@ workflows:
             branches:
               ignore: main
       - kind-smoke-test:
-          name: kind-pr-test
+          name: smoke-test
           vm_version: << pipeline.parameters.default_vm_version >>
           requires:
             - unit-tests
@@ -274,7 +289,7 @@ workflows:
             branches:
               only: main
       - kind-smoke-test:
-          name: kind-smoke-test
+          name: smoke-test
           vm_version: << pipeline.parameters.default_vm_version >>
           requires:
             - unit-tests
@@ -284,109 +299,38 @@ workflows:
           context:
             - gcp-credentials
       - gke-test:
-          name: gke-smoke-test
-          cluster_name: smoke
-          test_suite: "smoke_test"
+          name: gke-<< matrix.test_suite >>-<< matrix.vm_version >>
           procs: 1
           timeout: 30m
           requires:
-            - kind-smoke-test
+            - smoke-test
           filters:
             branches:
               only: main
           matrix:
-            alias: gke-smoke-test-matrix
             parameters:
-              <<: *vm_versions
+              <<: *test_matrix
           context:
             - gcp-credentials
-      - gke-test:
-          name: gke-load-test
-          cluster_name: load
-          test_suite: "load_test"
-          procs: 1
-          timeout: 30m
+      - cleanup:
+          name: "gke-<< matrix.test_suite >>-<< matrix.vm_version >>-cleanup"
           requires:
-            - gke-smoke-test-matrix
+            - "gke-<< matrix.test_suite >>-<< matrix.vm_version >>":
+              - success
+              - failed
+              - canceled
           filters:
             branches:
               only: main
           matrix:
-            alias: gke-load-test-matrix
             parameters:
-              <<: *vm_versions
+              <<: *test_matrix
           context:
-            - gcp-credentials
-      - gke-test:
-          name: gke-chaos-test
-          cluster_name: chaos
-          test_suite: "chaos_test"
-          procs: 10
-          timeout: 180m
-          requires:
-            - gke-smoke-test-matrix
-          filters:
-            branches:
-              only: main
-          matrix:
-            alias: gke-chaos-test-matrix
-            parameters:
-              <<: *vm_versions
-          context:
-            - gcp-credentials
+            - github
+      - waiter
       - deploy-report:
           requires:
-            - gke-smoke-test-cleanup:
-              - success
-              - failed
-              - canceled
-            - gke-chaos-test-cleanup:
-              - success
-              - failed
-              - canceled
-            - gke-load-test-cleanup:
-              - success
-              - failed
-              - canceled
-          filters:
-            branches:
-              only: main
-          context:
-            - github
-      - cleanup:
-          name: gke-smoke-test-cleanup
-          cluster_name: smoke
-          requires:
-            - gke-smoke-test:
-              - success
-              - failed
-              - canceled
-          filters:
-            branches:
-              only: main
-          context:
-            - github
-      - cleanup:
-          name: gke-load-test-cleanup
-          cluster_name: load
-          requires:
-            - gke-load-test:
-              - success
-              - failed
-              - canceled
-          filters:
-            branches:
-              only: main
-          context:
-            - github
-      - cleanup:
-          name: gke-chaos-test-cleanup
-          cluster_name: chaos
-          requires:
-            - gke-chaos-test:
-              - success
-              - failed
-              - canceled
+            - waiter
           filters:
             branches:
               only: main

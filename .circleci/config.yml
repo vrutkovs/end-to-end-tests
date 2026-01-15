@@ -273,9 +273,10 @@ workflows:
           filters:
             branches:
               ignore: main
-      - kind-smoke-test:
-          name: smoke-test
+      - gke-test:
+          name: test
           vm_version: << pipeline.parameters.default_vm_version >>
+          test_suite: load_test
           requires:
             - unit-tests
           filters:

@@ -273,14 +273,40 @@ workflows:
           filters:
             branches:
               ignore: main
-      - kind-smoke-test:
-          name: smoke-test
+      - gke-test:
+          name: load-test
           vm_version: << pipeline.parameters.default_vm_version >>
+          test_suite: load
+          procs: 1
+          timeout: 90m
           requires:
             - unit-tests
           filters:
             branches:
               ignore: main
+      - cleanup:
+          name: "cleanup"
+          vm_version: << pipeline.parameters.default_vm_version >>
+          test_suite: load
+          requires:
+            - load-test:
+              - success
+              - failed
+              - canceled
+          filters:
+            branches:
+              ignore: main
+          context:
+            - github
+      - waiter
+      - deploy-report:
+          requires:
+            - waiter
+          filters:
+            branches:
+              ignore: main
+          context:
+            - github
 
   main-branch-tests:
     jobs:

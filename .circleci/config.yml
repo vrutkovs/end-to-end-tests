@@ -147,13 +147,13 @@ jobs:
           command: echo $TF_VAR_BASE64 | base64 --decode > terraform/gke_<<parameters.test_suite>>_<<parameters.vm_version>>/terraform.tfvars
       - terraform/apply:
           path: terraform/gke_<<parameters.test_suite>>_<<parameters.vm_version>>
-          var: "cluster_name=<<parameters.test_suite>>-${CIRCLE_WORKFLOW_ID}"
+          var: "cluster_name=<<parameters.test_suite>>-${CIRCLE_BUILD_NUM}"
       - persist_to_workspace:
           root: .
           paths:
             - ./terraform/gke_<<parameters.test_suite>>_<<parameters.vm_version>>
       - gke/update-kubeconfig-with-credentials:
-          cluster: <<parameters.test_suite>>-${CIRCLE_WORKFLOW_ID}
+          cluster: <<parameters.test_suite>>-${CIRCLE_BUILD_NUM}
           additional_args: "--region=europe-central2"
       - run:
           name: create admin serviceaccount kubeconfig
@@ -273,12 +273,9 @@ workflows:
           filters:
             branches:
               ignore: main
-      - gke-test:
-          name: test
+      - kind-smoke-test:
+          name: smoke-test
           vm_version: << pipeline.parameters.default_vm_version >>
-          test_suite: load_test
-          procs: 1
-          timeout: 30m
           requires:
             - unit-tests
           filters:

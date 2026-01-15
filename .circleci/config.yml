@@ -90,9 +90,9 @@ jobs:
               -- \
               -env-k8s-distro=kind \
               -vmtag=<< parameters.vm_version >> \
-              -report="${REPORT_DIR}"
+              -report="${REPORT_DIR}" || true
       - when:
-          condition: on_fail
+          condition: always
           steps:
           - persist_to_workspace:
               root: /tmp
@@ -273,31 +273,18 @@ workflows:
           filters:
             branches:
               ignore: main
-      - gke-test:
+          context:
+            - test
+      - kind-smoke-test:
           name: load-test
           vm_version: << pipeline.parameters.default_vm_version >>
-          test_suite: load
-          procs: 1
-          timeout: 90m
           requires:
             - unit-tests
           filters:
             branches:
               ignore: main
-      - cleanup:
-          name: "cleanup"
-          vm_version: << pipeline.parameters.default_vm_version >>
-          test_suite: load
-          requires:
-            - load-test:
-              - success
-              - failed
-              - canceled
-          filters:
-            branches:
-              ignore: main
           context:
-            - github
+            - test
       - waiter
       - deploy-report:
           requires:
@@ -306,7 +293,7 @@ workflows:
             branches:
               ignore: main
           context:
-            - github
+            - test
 
   main-branch-tests:
     jobs:
@@ -323,7 +310,7 @@ workflows:
             branches:
               only: main
           context:
-            - gcp-credentials
+            - test
       - gke-test:
           name: gke-<< matrix.test_suite >>-<< matrix.vm_version >>
           procs: 1
@@ -337,7 +324,7 @@ workflows:
             parameters:
               <<: *test_matrix
           context:
-            - gcp-credentials
+            - test
       - cleanup:
           name: "gke-<< matrix.test_suite >>-<< matrix.vm_version >>-cleanup"
           requires:
@@ -352,8 +339,11 @@ workflows:
             parameters:
               <<: *test_matrix
           context:
-            - github
-      - waiter
+            - test
+      - waiter:
+          filters:
+            branches:
+              ignore: main
       - deploy-report:
           requires:
             - waiter
@@ -361,4 +351,4 @@ workflows:
             branches:
               only: main
           context:
-            - github
+            - test

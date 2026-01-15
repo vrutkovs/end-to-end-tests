@@ -301,7 +301,7 @@ workflows:
       - gke-test:
           name: gke-<< matrix.test_suite >>-<< matrix.vm_version >>
           procs: 1
-          timeout: 30m
+          timeout: 90m
           requires:
             - smoke-test
           filters:

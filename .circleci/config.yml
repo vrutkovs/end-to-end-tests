@@ -277,6 +277,8 @@ workflows:
           name: test
           vm_version: << pipeline.parameters.default_vm_version >>
           test_suite: load_test
+          procs: 1
+          timeout: 30m
           requires:
             - unit-tests
           filters:

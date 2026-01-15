@@ -220,7 +220,10 @@ jobs:
           google_project_id: GCLOUD_PROJECT_ID
       - run:
           name: Remove unused disks
-          command: gcp-cli compute disks delete --quiet $(gcp-cli compute disks list --filter="-users:*" --format "value(name)") --region=${GCP_REGION} || true
+          command: |
+            gcp-cli compute disks delete --quiet $(gcp-cli compute disks list --filter="-users:*" --format "value(name)") --zone=${GCP_REGION}a || true
+            gcp-cli compute disks delete --quiet $(gcp-cli compute disks list --filter="-users:*" --format "value(name)") --zone=${GCP_REGION}b || true
+            gcp-cli compute disks delete --quiet $(gcp-cli compute disks list --filter="-users:*" --format "value(name)") --zone=${GCP_REGION}c || true
 
   deploy-report:
     executor: node/default

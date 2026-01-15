@@ -192,7 +192,7 @@ jobs:
               -procs=<<parameters.procs>> \
               -timeout=<<parameters.timeout>> \
               --label-filter=${LABEL_FILTER} \
-              ./tests/<<parameters.test_suite>> \
+              ./tests/<<parameters.test_suite>>_test \
               -- \
               -env-k8s-distro=gke \
               -vmtag=<< parameters.vm_version >> \
@@ -261,9 +261,9 @@ x-test-matrix: &test_matrix
   vm_version:
     - "<< pipeline.parameters.default_vm_version >>"
   test_suite:
-    - "smoke_test"
-    - "load_test"
-    - "chaos_test"
+    - "smoke"
+    - "load"
+    - "chaos"
 
 workflows:
   version: 2

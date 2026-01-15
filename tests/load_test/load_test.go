@@ -35,6 +35,7 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 		k6TestsNamespace    = "k6-tests"
 		releaseName         = "vmks"
 		helmChart           = "vm/victoria-metrics-k8s-stack"
+		benchmarkNamespace  = "vm-benchmark"
 		valuesFile          = "../../manifests/smoke.yaml"
 	)
 
@@ -59,6 +60,15 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 
 		// Install k6 operator
 		install.InstallK6(ctx, t, k6OperatorNamespace)
+
+		// Install prometheus benchmark
+		prombenchChartValues := map[string]string{
+			"disableMonitoring":          "true",
+			"targetsCount":               "500",
+			"remoteStorages.vm.writeURL": fmt.Sprintf("http://vminsert-%s.%s.svc.cluster.local:8480/insert/0/prometheus/api/v1/write", releaseName, vmNamespace),
+			"remoteStorages.vm.readURL":  fmt.Sprintf("http://vmselect-%s.%s.svc.cluster.local:8481/select/0/prometheus", releaseName, vmNamespace),
+		}
+		install.InstallPrometheusBenchmark(ctx, t, benchmarkNamespace, prombenchChartValues)
 
 		// Prepare namespace for k6 tests
 		kubeOpts := k8s.NewKubectlOptions("", "", k6TestsNamespace)

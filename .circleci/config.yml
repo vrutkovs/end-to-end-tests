@@ -285,10 +285,9 @@ workflows:
               ignore: main
           context:
             - test
-      - waiter
       - deploy-report:
           requires:
-            - waiter
+            - load-test
           filters:
             branches:
               ignore: main

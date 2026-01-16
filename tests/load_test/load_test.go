@@ -97,11 +97,29 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, vmNamespace, nil)
 
-			// Expect to make at least 40k requests
-			By("At least 9k requests were made")
-			value, err := overwatch.VectorValue(ctx, "sum(vm_requests_total)")
+			By("At least 50m rows were inserted")
+			value, err := overwatch.VectorValue(ctx, "sum (vm_rows_inserted_total)")
 			require.NoError(t, err)
-			require.GreaterOrEqual(t, value, float64(9000))
+			require.GreaterOrEqual(t, value, float64(50_000_000))
+
+			By("At least 400k merges were made")
+			value, err = overwatch.VectorValue(ctx, "sum(vm_rows_merged_total)")
+			require.NoError(t, err)
+			require.GreaterOrEqual(t, value, float64(400_000))
+
+			By("No rows were ignored")
+			value, err = overwatch.VectorValue(ctx, "sum (vm_rows_ignored_total)")
+			require.NoError(t, err)
+			require.Equal(t, value, float64(0))
+
+			value, err = overwatch.VectorValue(ctx, "sum (vm_rows_invalid_total)")
+			require.NoError(t, err)
+			require.Equal(t, value, float64(0))
+
+			By("At least 100k requests were made")
+			value, err = overwatch.VectorValue(ctx, "sum(vm_requests_total)")
+			require.NoError(t, err)
+			require.GreaterOrEqual(t, value, float64(100_000))
 		})
 	})
 })

@@ -141,17 +141,17 @@ jobs:
       - run:
           name: Make a copy of terraform resources
           command: |
-            cp -r terraform/gke terraform/gke_<<parameters.test_suite>>_<<parameters.vm_version>>
+            cp -r terraform/gke terraform/gke_<<parameters.test_suite>>
       - run:
           name: Retrieve terraform variables
-          command: echo $TF_VAR_BASE64 | base64 --decode > terraform/gke_<<parameters.test_suite>>_<<parameters.vm_version>>/terraform.tfvars
+          command: echo $TF_VAR_BASE64 | base64 --decode > terraform/gke_<<parameters.test_suite>>/terraform.tfvars
       - terraform/apply:
-          path: terraform/gke_<<parameters.test_suite>>_<<parameters.vm_version>>
+          path: terraform/gke_<<parameters.test_suite>>
           var: "cluster_name=<<parameters.test_suite>>-${CIRCLE_BUILD_NUM}"
       - persist_to_workspace:
           root: .
           paths:
-            - ./terraform/gke_<<parameters.test_suite>>_<<parameters.vm_version>>
+            - ./terraform/gke_<<parameters.test_suite>>
       - gke/update-kubeconfig-with-credentials:
           cluster: <<parameters.test_suite>>-${CIRCLE_BUILD_NUM}
           additional_args: "--region=europe-central2"
@@ -208,14 +208,12 @@ jobs:
     parameters:
       test_suite:
         type: string
-      vm_version:
-        type: string
     steps:
       - attach_workspace:
           at: .
       - terraform/install
       - terraform/destroy:
-          path: terraform/gke_<<parameters.test_suite>>_<<parameters.vm_version>>
+          path: terraform/gke_<<parameters.test_suite>>
       - gcp-cli/install:
           components: gke-gcloud-auth-plugin
       - gcp-cli/setup:
@@ -223,7 +221,10 @@ jobs:
           google_project_id: GCLOUD_PROJECT_ID
       - run:
           name: Remove unused disks
-          command: gcp-cli compute disks delete --quiet $(gcp-cli compute disks list --filter="-users:*" --format "value(name)") --region=${GCP_REGION} || true
+          command: |
+            gcp-cli compute disks delete --quiet $(gcp-cli compute disks list --filter="-users:*" --format "value(name)") --zone=${GCP_REGION}a || true
+            gcp-cli compute disks delete --quiet $(gcp-cli compute disks list --filter="-users:*" --format "value(name)") --zone=${GCP_REGION}b || true
+            gcp-cli compute disks delete --quiet $(gcp-cli compute disks list --filter="-users:*" --format "value(name)") --zone=${GCP_REGION}c || true
 
   deploy-report:
     executor: node/default
@@ -259,97 +260,91 @@ parameters:
     #default: "v1.122.10-enterprise"
     #default: "v1.110.25-enterprise"
 
-x-test-matrix: &test_matrix
-  vm_version:
-    - "<< pipeline.parameters.default_vm_version >>"
-  test_suite:
-    - "smoke"
-    - "load"
-    - "chaos"
-
 workflows:
   version: 2
   pr-smoke-tests:
+    when:
+      not:
+        pipeline.git.branch == "main"
     jobs:
-      - unit-tests:
-          filters:
-            branches:
-              ignore: main
-          context:
-            - test
+      - unit-tests
       - kind-smoke-test:
           name: load-test
           vm_version: << pipeline.parameters.default_vm_version >>
           requires:
             - unit-tests
-          filters:
-            branches:
-              ignore: main
-          context:
-            - test
       - deploy-report:
           requires:
             - load-test
-          filters:
-            branches:
-              ignore: main
-          context:
-            - test
 
   main-branch-tests:
+    when: pipeline.git.branch == "main"
     jobs:
-      - unit-tests:
-          filters:
-            branches:
-              only: main
+      - unit-tests
       - kind-smoke-test:
-          name: smoke-test
+          name: kind-smoke-test
           vm_version: << pipeline.parameters.default_vm_version >>
           requires:
             - unit-tests
-          filters:
-            branches:
-              only: main
-          context:
-            - test
       - gke-test:
-          name: gke-<< matrix.test_suite >>-<< matrix.vm_version >>
+          name: gke-smoke
+          test_suite: smoke
           procs: 1
           timeout: 90m
+          vm_version: << pipeline.parameters.default_vm_version >>
           requires:
-            - smoke-test
-          filters:
-            branches:
-              only: main
-          matrix:
-            parameters:
-              <<: *test_matrix
-          context:
-            - test
+            - kind-smoke-test
       - cleanup:
-          name: "gke-<< matrix.test_suite >>-<< matrix.vm_version >>-cleanup"
+          name: gke-smoke-cleanup
+          test_suite: smoke
           requires:
-            - "gke-<< matrix.test_suite >>-<< matrix.vm_version >>":
+            - gke-smoke:
               - success
               - failed
               - canceled
-          filters:
-            branches:
-              only: main
-          matrix:
-            parameters:
-              <<: *test_matrix
-          context:
-            - test
-      - waiter:
-          filters:
-            branches:
-              ignore: main
+      - gke-test:
+          name: gke-load
+          test_suite: load
+          procs: 1
+          timeout: 90m
+          vm_version: << pipeline.parameters.default_vm_version >>
+          requires:
+            - kind-smoke-test
+      - cleanup:
+          name: gke-load-cleanup
+          test_suite: load
+          requires:
+            - gke-load:
+              - success
+              - failed
+              - canceled
+      - gke-test:
+          name: gke-chaos
+          test_suite: chaos
+          procs: 10
+          timeout: 90m
+          vm_version: << pipeline.parameters.default_vm_version >>
+          requires:
+            - kind-smoke-test
+      - cleanup:
+          name: gke-chaos-cleanup
+          test_suite: chaos
+          requires:
+            - gke-chaos:
+              - success
+              - failed
+              - canceled
       - deploy-report:
           requires:
-            - waiter
-          filters:
-            branches:
-              only: main
-          context:
-            - test
+            - gke-smoke-cleanup:
+              - success
+              - failed
+              - canceled
+            - gke-load-cleanup:
+              - success
+              - failed
+              - canceled
+            - gke-chaos-cleanup:
+              - success
+              - failed
+              - canceled

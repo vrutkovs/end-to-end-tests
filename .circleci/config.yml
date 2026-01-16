@@ -204,6 +204,7 @@ jobs:
 
   cleanup:
     executor: go-executor
+    resource_class: small
     parameters:
       test_suite:
         type: string
@@ -227,6 +228,7 @@ jobs:
 
   deploy-report:
     executor: node/default
+    resource_class: small
     steps:
       - attach_workspace:
           at: /tmp

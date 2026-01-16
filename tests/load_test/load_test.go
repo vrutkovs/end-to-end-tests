@@ -81,7 +81,7 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 		}()
 
 		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
-		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, vmNamespace)
+		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, releaseName)
 	})
 
 	Describe("Inner", func() {

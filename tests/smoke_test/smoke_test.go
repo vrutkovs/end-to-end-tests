@@ -54,7 +54,7 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 	})
 	AfterEach(func() {
 		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
-		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, vmNamespace)
+		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, releaseName)
 	})
 
 	Describe("Inner", func() {

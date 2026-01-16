@@ -94,7 +94,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		k8s.RunKubectl(t, kubeOpts, "delete", "namespace", namespace, "--ignore-not-found=true")
 
 		if CurrentSpecReport().Failed() {
-			gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, namespace)
+			gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, releaseName)
 			gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
 		}
 	})

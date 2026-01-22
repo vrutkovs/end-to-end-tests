@@ -266,14 +266,25 @@ workflows:
     when: pipeline.git.branch != "main"
     jobs:
       - unit-tests
-      - kind-smoke-test:
-          name: load-test
+      - gke-test:
+          name: gke-vmcluster
+          test_suite: vmcluster
+          procs: 1
+          timeout: 90m
           vm_version: << pipeline.parameters.default_vm_version >>
           requires:
             - unit-tests
+      - cleanup:
+          name: gke-vmcluster-cleanup
+          test_suite: vmcluster
+          requires:
+            - gke-vmcluster:
+              - success
+              - failed
+              - canceled
       - deploy-report:
           requires:
-            - load-test
+            - gke-vmcluster-cleanup
 
   main-branch-tests:
     when: pipeline.git.branch == "main"

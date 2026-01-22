@@ -263,9 +263,7 @@ parameters:
 workflows:
   version: 2
   pr-smoke-tests:
-    when:
-      not:
-        pipeline.git.branch == "main"
+    when: pipeline.git.branch != "main"
     jobs:
       - unit-tests
       - kind-smoke-test:

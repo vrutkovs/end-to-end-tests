@@ -1,12 +1,14 @@
 module github.com/VictoriaMetrics/end-to-end-tests
 
-go 1.25.3
+go 1.25.6
 
 require (
 	github.com/Moon1706/ginkgo2allure v0.3.0
+	github.com/VictoriaMetrics/VictoriaMetrics v1.134.0
 	github.com/VictoriaMetrics/operator/api v0.65.0
 	github.com/grafana/k6-operator v1.1.0
 	github.com/gruntwork-io/terratest v0.53.0
+	github.com/klauspost/compress v1.18.3
 	github.com/onsi/ginkgo/v2 v2.27.4
 	github.com/onsi/gomega v1.38.2
 	github.com/prometheus/client_golang v1.23.2
@@ -23,8 +25,7 @@ require (
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/VictoriaMetrics/VictoriaLogs v1.36.2-0.20251008164716-21c0fb3de84d // indirect
-	github.com/VictoriaMetrics/VictoriaMetrics v1.129.1 // indirect
-	github.com/VictoriaMetrics/easyproto v0.1.4 // indirect
+	github.com/VictoriaMetrics/easyproto v1.1.3 // indirect
 	github.com/VictoriaMetrics/metrics v1.40.2 // indirect
 	github.com/VictoriaMetrics/metricsql v0.84.8 // indirect
 	github.com/aws/aws-sdk-go v1.55.6 // indirect
@@ -119,7 +120,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattn/go-ciede2000 v0.0.0-20170301095244-782e8c62fec3 // indirect
@@ -154,10 +154,10 @@ require (
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
 	github.com/urfave/cli v1.22.16 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fastjson v1.6.4 // indirect
+	github.com/valyala/fastjson v1.6.7 // indirect
 	github.com/valyala/fastrand v1.1.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	github.com/valyala/gozstd v1.23.2 // indirect
+	github.com/valyala/gozstd v1.24.0 // indirect
 	github.com/valyala/histogram v1.2.0 // indirect
 	github.com/valyala/quicktemplate v1.8.0 // indirect
 	github.com/virtuald/go-ordered-json v0.0.0-20170621173500-b18e6e673d74 // indirect

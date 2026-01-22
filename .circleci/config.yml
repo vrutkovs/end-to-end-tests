@@ -317,6 +317,22 @@ workflows:
               - failed
               - canceled
       - gke-test:
+          name: gke-vmcluster
+          test_suite: vmcluster
+          procs: 1
+          timeout: 90m
+          vm_version: << pipeline.parameters.default_vm_version >>
+          requires:
+            - kind-smoke-test
+      - cleanup:
+          name: gke-vmcluster-cleanup
+          test_suite: vmcluster
+          requires:
+            - gke-vmcluster:
+              - success
+              - failed
+              - canceled
+      - gke-test:
           name: gke-chaos
           test_suite: chaos
           procs: 10
@@ -343,6 +359,10 @@ workflows:
               - failed
               - canceled
             - gke-chaos-cleanup:
+              - success
+              - failed
+              - canceled
+            - gke-vmcluster-cleanup:
               - success
               - failed
               - canceled

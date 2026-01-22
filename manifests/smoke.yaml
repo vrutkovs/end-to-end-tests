@@ -508,7 +508,7 @@ vmcluster:
       #      - vmselect.domain.com
     insert:
       # -- Enable deployment of ingress for server component
-      enabled: false
+      enabled: true
 
       # -- Ingress annotations
       annotations:
@@ -520,7 +520,7 @@ vmcluster:
       labels: {}
 
       # -- Ingress controller class name
-      ingressClassName: ""
+      ingressClassName: "nginx"
 
       # -- Ingress path type
       pathType: Prefix
@@ -529,7 +529,9 @@ vmcluster:
       path: '{{ dig "extraArgs" "http.pathPrefix" "/" .Values.vmcluster.spec.vminsert }}'
 
       # -- Array of host objects
-      hosts: []
+      hosts: [
+        vminsert.127.0.0.1.nip.io
+      ]
       #  - vminsert.domain.com
       # -- Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
       extraPaths: []

@@ -128,6 +128,19 @@ func VMSelectHost(namespace string) string {
 	return fmt.Sprintf("vmselect-%s.%s.nip.io", namespace, host)
 }
 
+func VMInsertHost(namespace string) string {
+	mu.Lock()
+	host := nginxHost
+	mu.Unlock()
+	if host == "" {
+		return ""
+	}
+	if namespace == "" {
+		return fmt.Sprintf("vminsert.%s.nip.io", host)
+	}
+	return fmt.Sprintf("vminsert-%s.%s.nip.io", namespace, host)
+}
+
 func VMGatherHost() string {
 	mu.Lock()
 	host := nginxHost

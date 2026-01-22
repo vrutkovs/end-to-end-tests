@@ -23,6 +23,7 @@ import (
 func buildVMTagSetValues(namespace string) map[string]string {
 	setValues := map[string]string{
 		"vmcluster.ingress.select.hosts[0]": consts.VMSelectHost(namespace),
+		"vmcluster.ingress.insert.hosts[0]": consts.VMInsertHost(namespace),
 	}
 
 	// Add VM tag if provided

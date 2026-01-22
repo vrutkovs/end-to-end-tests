@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/logger"
+	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -65,16 +66,18 @@ var _ = Describe("VMCluster test", Ordered, ContinueOnFailure, Label("vmcluster"
 	Describe("Multitenancy", func() {
 		It("not mix data sent to different tenants", Label("kind", "gke", "id=66618081-b150-4b48-8180-ae1f53512117"), func() {
 			By("Inserting data into tenant 0")
-			tenantOneInsertURL := fmt.Sprintf("http://%s/insert/0/prometheus/api/v1/write", consts.GetVMInsertSvc(vmNamespace))
+			tenantOneInsertURL := fmt.Sprintf("http://%s/insert/0/prometheus/api/v1/write", consts.VMInsertHost(vmNamespace))
 			ts := remotewrite.GenTimeSeries("foo", 10, 1)
 			err := remotewrite.RemoteWrite(c, ts, tenantOneInsertURL)
 			require.NoError(t, err)
 
 			By("Inserting data into tenant 1")
-			tenantTwoInsertURL := fmt.Sprintf("http://%s/insert/1/prometheus/api/v1/write", consts.GetVMInsertSvc(vmNamespace))
+			tenantTwoInsertURL := fmt.Sprintf("http://%s/insert/1/prometheus/api/v1/write", consts.VMInsertHost(vmNamespace))
 			ts = remotewrite.GenTimeSeries("bar", 10, 5)
 			err = remotewrite.RemoteWrite(c, ts, tenantTwoInsertURL)
 			require.NoError(t, err)
+
+			time.Sleep(30 * time.Second)
 
 			By("Verifying data is not mixed")
 			tenantOneSelectURL := fmt.Sprintf("%s/select/0/prometheus", consts.VMSelectUrl(vmNamespace))
@@ -83,21 +86,21 @@ var _ = Describe("VMCluster test", Ordered, ContinueOnFailure, Label("vmcluster"
 			require.NoError(t, err)
 			value, err := tenantOneProm.VectorValue(ctx, "foo_2")
 			require.NoError(t, err)
-			require.GreaterOrEqual(t, value, float64(1))
+			require.Equal(t, value, model.SampleValue(1))
 			value, err = tenantOneProm.VectorValue(ctx, "bar_2")
-			require.NoError(t, err)
-			require.GreaterOrEqual(t, value, float64(1))
+			require.EqualError(t, err, "no data returned")
+			require.Equal(t, value, model.SampleValue(0))
 
-			tenantTwoSelectURL := fmt.Sprintf("%s/select/0/prometheus", consts.VMSelectUrl(vmNamespace))
+			tenantTwoSelectURL := fmt.Sprintf("%s/select/1/prometheus", consts.VMSelectUrl(vmNamespace))
 			tenantTwoProm, err := promquery.NewPrometheusClient(tenantTwoSelectURL)
 			tenantTwoProm.Start = overwatch.Start
 			require.NoError(t, err)
 			value, err = tenantTwoProm.VectorValue(ctx, "bar_2")
 			require.NoError(t, err)
-			require.GreaterOrEqual(t, value, float64(5))
+			require.Equal(t, value, model.SampleValue(5))
 			value, err = tenantTwoProm.VectorValue(ctx, "foo_2")
-			require.NoError(t, err)
-			require.GreaterOrEqual(t, value, float64(1))
+			require.EqualError(t, err, "no data returned")
+			require.Equal(t, value, model.SampleValue(0))
 		})
 	})
 })

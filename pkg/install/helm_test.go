@@ -155,7 +155,7 @@ func TestBuildVMTagSetValues(t *testing.T) {
 			if tt.shouldHaveTags {
 				assert.Len(t, setValues, len(tt.expectedTags), "SetValues should contain exactly %d entries", len(tt.expectedTags))
 			} else {
-				assert.Len(t, setValues, 1, "SetValues should contain only ingress host when no VM tag is set")
+				assert.Len(t, setValues, 2, "SetValues should contain only ingress hosts when no VM tag is set")
 			}
 		})
 	}
@@ -245,6 +245,10 @@ func TestBuildVMTagSetValuesLatestSpecialCase(t *testing.T) {
 	ingressHost, exists := setValues["vmcluster.ingress.select.hosts[0]"]
 	assert.True(t, exists, "Ingress host should be set")
 	assert.Equal(t, "vmselect-vm.172.17.0.100.nip.io", ingressHost)
+
+	insertHost, exists := setValues["vmcluster.ingress.insert.hosts[0]"]
+	assert.True(t, exists, "Insert ingress host should be set")
+	assert.Equal(t, "vminsert-vm.172.17.0.100.nip.io", insertHost)
 }
 
 func TestInstallWithHelmUsesVMTagFunction(t *testing.T) {
@@ -327,6 +331,10 @@ func TestBuildVMTagSetValuesWithEmptyNginxHost(t *testing.T) {
 	ingressHost, exists := setValues["vmcluster.ingress.select.hosts[0]"]
 	assert.True(t, exists, "Ingress host key should exist")
 	assert.Equal(t, "", ingressHost, "Ingress host should be empty string")
+
+	insertHost, exists := setValues["vmcluster.ingress.insert.hosts[0]"]
+	assert.True(t, exists, "Insert ingress host key should exist")
+	assert.Equal(t, "", insertHost, "Insert ingress host should be empty string")
 
 	// Verify VM tags are still set correctly
 	assert.Equal(t, "v1.131.0", setValues["vmsingle.spec.image.tag"])

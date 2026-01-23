@@ -57,6 +57,7 @@ func TestBuildVMTagSetValues(t *testing.T) {
 			nginxHost: "192.168.1.100",
 			expectedTags: map[string]string{
 				"vmcluster.ingress.select.hosts[0]":  "vmselect-vm.192.168.1.100.nip.io",
+				"vmcluster.ingress.insert.hosts[0]":  "vminsert-vm.192.168.1.100.nip.io",
 				"vmsingle.spec.image.tag":            "v1.131.0",
 				"vmcluster.spec.vmstorage.image.tag": "v1.131.0-cluster",
 				"vmcluster.spec.vmselect.image.tag":  "v1.131.0-cluster",
@@ -74,6 +75,7 @@ func TestBuildVMTagSetValues(t *testing.T) {
 			nginxHost: "127.0.0.1",
 			expectedTags: map[string]string{
 				"vmcluster.ingress.select.hosts[0]":  "vmselect.127.0.0.1.nip.io",
+				"vmcluster.ingress.insert.hosts[0]":  "vminsert.127.0.0.1.nip.io",
 				"vmsingle.spec.image.tag":            "v1.130.0",
 				"vmcluster.spec.vmstorage.image.tag": "v1.130.0-cluster",
 				"vmcluster.spec.vmselect.image.tag":  "v1.130.0-cluster",
@@ -91,6 +93,7 @@ func TestBuildVMTagSetValues(t *testing.T) {
 			nginxHost: "10.0.0.1",
 			expectedTags: map[string]string{
 				"vmcluster.ingress.select.hosts[0]": "vmselect-test.10.0.0.1.nip.io",
+				"vmcluster.ingress.insert.hosts[0]": "vminsert-test.10.0.0.1.nip.io",
 			},
 			shouldHaveTags: false,
 		},
@@ -101,6 +104,7 @@ func TestBuildVMTagSetValues(t *testing.T) {
 			nginxHost: "172.16.1.50",
 			expectedTags: map[string]string{
 				"vmcluster.ingress.select.hosts[0]":  "vmselect-production.172.16.1.50.nip.io",
+				"vmcluster.ingress.insert.hosts[0]":  "vminsert-production.172.16.1.50.nip.io",
 				"vmsingle.spec.image.tag":            "latest",
 				"vmcluster.spec.vmstorage.image.tag": "latest",
 				"vmcluster.spec.vmselect.image.tag":  "latest",
@@ -118,6 +122,7 @@ func TestBuildVMTagSetValues(t *testing.T) {
 			nginxHost: "203.0.113.10",
 			expectedTags: map[string]string{
 				"vmcluster.ingress.select.hosts[0]":  "vmselect-staging.203.0.113.10.nip.io",
+				"vmcluster.ingress.insert.hosts[0]":  "vminsert-staging.203.0.113.10.nip.io",
 				"vmsingle.spec.image.tag":            "nightly",
 				"vmcluster.spec.vmstorage.image.tag": "nightly-cluster",
 				"vmcluster.spec.vmselect.image.tag":  "nightly-cluster",
@@ -285,6 +290,7 @@ func TestInstallWithHelmUsesVMTagFunction(t *testing.T) {
 	// Verify VM tag values are correctly set
 	expectedSetValues := map[string]string{
 		"vmcluster.ingress.select.hosts[0]":  "vmselect-vm.10.10.10.10.nip.io",
+		"vmcluster.ingress.insert.hosts[0]":  "vminsert-vm.10.10.10.10.nip.io",
 		"vmsingle.spec.image.tag":            "v1.131.0",
 		"vmcluster.spec.vmstorage.image.tag": "v1.131.0-cluster",
 		"vmcluster.spec.vmselect.image.tag":  "v1.131.0-cluster",

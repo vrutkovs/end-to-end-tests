@@ -8,6 +8,7 @@ import (
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/gruntwork-io/terratest/modules/logger"
+	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 
 	. "github.com/onsi/ginkgo/v2"

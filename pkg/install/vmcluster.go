@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	terratesting "github.com/gruntwork-io/terratest/modules/testing"
@@ -42,33 +41,23 @@ func InstallVMCluster(ctx context.Context, t terratesting.TestingT, kubeOpts *k8
 		k8s.CreateNamespace(t, kubeOpts, namespace)
 	}
 
-	// Read the VMCluster template
+	// Read VMCluster and patch it
 	vmclusterYamlPath := "../../manifests/overwatch/vmcluster.yaml"
 	vmclusterYaml, err := os.ReadFile(vmclusterYamlPath)
-	require.NoError(t, err)
-
-	// Create a temporary file with namespace-specific modifications
-	tempFile, err := os.CreateTemp("", "vmcluster-*.yaml")
-	require.NoError(t, err)
-	defer func() {
-		err := os.Remove(tempFile.Name())
-		require.NoError(t, err)
-	}()
-
-	// Replace the name to include namespace if not "vm"
-	updatedVMClusterYaml := string(vmclusterYaml)
-	updatedVMClusterYaml = strings.ReplaceAll(updatedVMClusterYaml, "name: vm", fmt.Sprintf("name: %s", namespace))
-
-	// Write the updated content to the temporary file
-	_, err = tempFile.Write([]byte(updatedVMClusterYaml))
-	require.NoError(t, err)
+	require.NoError(t, err, "failed to read VMCluster YAML")
 
 	// Apply the VMCluster manifest
 	fmt.Printf("Installing VMCluster in namespace %s\n", namespace)
-	k8s.KubectlApply(t, kubeOpts, tempFile.Name())
+	k8s.KubectlApplyFromString(t, kubeOpts, string(vmclusterYaml))
 
 	// Wait for VMCluster to become operational
 	WaitForVMClusterToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
+
+	// Expose VMSelect as ingress
+	ExposeVMSelectAsIngress(ctx, t, kubeOpts, namespace)
+
+	// Expose VMInsert as ingress
+	ExposeVMInsertAsIngress(ctx, t, kubeOpts, namespace)
 }
 
 // EnsureVMClusterComponents validates that the given VMCluster resource is properly configured
@@ -187,30 +176,6 @@ func GetVMClient(t terratesting.TestingT, kubeOpts *k8s.KubectlOptions) *vmclien
 	return vmclient
 }
 
-// WaitForVMSingleToBeOperational watches a VMSingle custom resource until it reports an operational status.
-//
-// The function sets up a watch for VMSingle objects in the provided namespace and
-// blocks until the VMSingle's Status.UpdateStatus becomes UpdateStatusOperational or
-// the wait times out. It uses consts.ResourceWaitTimeout to bound the wait.
-func WaitForVMSingleToBeOperational(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient vmclient.Interface) {
-	watchInterface, err := vmclient.OperatorV1beta1().VMSingles(namespace).Watch(ctx, metav1.ListOptions{})
-	require.NoError(t, err)
-	defer watchInterface.Stop()
-
-	timeBoundContext, cancel := context.WithTimeout(ctx, consts.ResourceWaitTimeout)
-	defer cancel()
-
-	_, err = watchtools.UntilWithoutRetry(timeBoundContext, watchInterface, func(event watch.Event) (bool, error) {
-		obj := event.Object
-		vmSingle := obj.(*vmv1beta1.VMSingle)
-		if vmSingle.Status.UpdateStatus == vmv1beta1.UpdateStatusOperational {
-			return true, nil
-		}
-		return false, nil
-	})
-	require.NoError(t, err)
-}
-
 // WaitForVMClusterToBeOperational watches a VMCluster custom resource until it reports an operational status.
 //
 // This helper uses a watch on VMCluster objects and returns when the cluster's
@@ -233,4 +198,43 @@ func WaitForVMClusterToBeOperational(ctx context.Context, t terratesting.Testing
 		return false, nil
 	})
 	require.NoError(t, err)
+}
+
+const (
+	ingressTemplate = `
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: %s
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: %s-%s.%s.nip.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: %s-vm
+            port:
+              number: %d
+`
+)
+
+func exposeServiceAsIngress(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace, serviceName string, servicePort int32) {
+	ingressName := fmt.Sprintf("%s-%s", serviceName, namespace)
+
+	ingress := fmt.Sprintf(ingressTemplate, ingressName, serviceName, namespace, consts.NginxHost(), serviceName, servicePort)
+	k8s.KubectlApplyFromString(t, kubeOpts, ingress)
+
+	k8s.WaitUntilIngressAvailable(t, kubeOpts, ingressName, consts.Retries, consts.PollingInterval)
+}
+
+func ExposeVMInsertAsIngress(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string) {
+	exposeServiceAsIngress(ctx, t, kubeOpts, namespace, "vminsert", 8480)
+}
+
+func ExposeVMSelectAsIngress(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string) {
+	exposeServiceAsIngress(ctx, t, kubeOpts, namespace, "vmselect", 8481)
 }

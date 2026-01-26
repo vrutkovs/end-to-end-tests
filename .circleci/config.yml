@@ -359,6 +359,22 @@ workflows:
               - success
               - failed
               - canceled
+      - gke-test:
+          name: gke-distributed
+          test_suite: distributed
+          procs: 10
+          timeout: 90m
+          vm_version: << pipeline.parameters.default_vm_version >>
+          requires:
+            - kind-smoke-test
+      - cleanup:
+          name: gke-distributed-cleanup
+          test_suite: distributed
+          requires:
+            - gke-distributed:
+              - success
+              - failed
+              - canceled
       - deploy-report:
           requires:
             - gke-smoke-cleanup:
@@ -374,6 +390,10 @@ workflows:
               - failed
               - canceled
             - gke-vmcluster-cleanup:
+              - success
+              - failed
+              - canceled
+            - gke-distributed-cleanup:
               - success
               - failed
               - canceled

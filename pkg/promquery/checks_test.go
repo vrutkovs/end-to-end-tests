@@ -119,7 +119,7 @@ func TestCheckNoAlertsFiring_NoAlerts(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{
+		_, _ = fmt.Fprint(w, `{
 			"status": "success",
 			"data": {
 				"resultType": "vector",
@@ -158,7 +158,7 @@ func TestCheckNoAlertsFiring_WithCustomExceptions(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{
+		_, _ = fmt.Fprint(w, `{
 			"status": "success",
 			"data": {
 				"resultType": "vector",
@@ -184,7 +184,7 @@ func TestCheckNoAlertsFiring_WithFiringAlerts(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{
+		_, _ = fmt.Fprint(w, `{
 			"status": "success",
 			"data": {
 				"resultType": "vector",
@@ -234,7 +234,7 @@ func TestCheckNoAlertsFiring_WrongResultType(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{
+		_, _ = fmt.Fprint(w, `{
 			"status": "success",
 			"data": {
 				"resultType": "matrix",
@@ -260,7 +260,7 @@ func TestCheckAlertIsFiring_AlertFiring(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{
+		_, _ = fmt.Fprint(w, `{
 			"status": "success",
 			"data": {
 				"resultType": "vector",
@@ -291,7 +291,7 @@ func TestCheckAlertIsFiring_AlertNotFiring(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{
+		_, _ = fmt.Fprint(w, `{
 			"status": "success",
 			"data": {
 				"resultType": "vector",
@@ -322,7 +322,7 @@ func TestCheckAlertIsFiring_AlertNotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{
+		_, _ = fmt.Fprint(w, `{
 			"status": "success",
 			"data": {
 				"resultType": "vector",

@@ -200,46 +200,41 @@ func WaitForVMClusterToBeOperational(ctx context.Context, t terratesting.Testing
 	require.NoError(t, err)
 }
 
-func ExposeVMSelectAsIngress(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string) {
-	ingress := `
+const (
+	ingressTemplate = `
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: vmselect-ingress
+  name: %s
 spec:
+  ingressClassName: nginx
   rules:
-  - host: vmselect-%s.%s
+  - host: %s-%s.%s.nip.io
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: vmselect-vm
+            name: %s-vm
             port:
-              number: 8481
+              number: %d
 `
-	k8s.KubectlApplyFromString(t, kubeOpts, fmt.Sprintf(ingress, namespace, consts.NginxHost()))
+)
+
+func exposeServiceAsIngress(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace, serviceName string, servicePort int32) {
+	ingressName := fmt.Sprintf("%s-%s", serviceName, namespace)
+
+	ingress := fmt.Sprintf(ingressTemplate, ingressName, serviceName, namespace, consts.NginxHost(), serviceName, servicePort)
+	k8s.KubectlApplyFromString(t, kubeOpts, ingress)
+
+	k8s.WaitUntilIngressAvailable(t, kubeOpts, ingressName, consts.Retries, consts.PollingInterval)
 }
 
 func ExposeVMInsertAsIngress(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string) {
-	ingress := `
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: vminsert-ingress
-spec:
-  rules:
-  - host: vminsert-%s.%s
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: vminsert-vm
-            port:
-              number: 8480
-`
-	k8s.KubectlApplyFromString(t, kubeOpts, fmt.Sprintf(ingress, namespace, consts.NginxHost()))
+	exposeServiceAsIngress(ctx, t, kubeOpts, namespace, "vminsert", 8480)
+}
+
+func ExposeVMSelectAsIngress(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string) {
+	exposeServiceAsIngress(ctx, t, kubeOpts, namespace, "vmselect", 8481)
 }

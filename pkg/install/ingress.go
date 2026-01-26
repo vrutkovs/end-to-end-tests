@@ -44,7 +44,7 @@ func DiscoverIngressHost(ctx context.Context, t terratesting.TestingT) {
 		nginxHost = "127.0.0.1"
 	} else {
 		// For non-kind environments, watch the service until LoadBalancer.Ingress is set
-		nginxHost = waitForLoadBalancerIngress(ctx, t, kubeOpts)
+		nginxHost = waitForIngressLoadBalancerIngress(ctx, t, kubeOpts)
 	}
 
 	logger.Default.Logf(t, "nginxHost: %s", nginxHost)
@@ -53,13 +53,13 @@ func DiscoverIngressHost(ctx context.Context, t terratesting.TestingT) {
 	consts.SetNginxHost(nginxHost)
 }
 
-// waitForLoadBalancerIngress watches the ingress-nginx-controller Service until
+// waitForIngressLoadBalancerIngress watches the ingress-nginx-controller Service until
 // its status contains a LoadBalancer ingress IP, then returns that IP.
 //
 // It performs an initial check and if needed sets up a watch on the specific
 // Service object. On error or timeout it will fail the test via the provided
 // terratest testing interface.
-func waitForLoadBalancerIngress(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions) string {
+func waitForIngressLoadBalancerIngress(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions) string {
 	logger.Default.Logf(t, "Waiting for ingress-nginx-controller service to have LoadBalancer.Ingress set...")
 
 	// Create Kubernetes client from kubeOpts

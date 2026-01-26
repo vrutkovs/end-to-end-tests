@@ -1,4 +1,4 @@
-package distributed_chart_test
+package distributed_test
 
 import (
 	"context"
@@ -30,7 +30,7 @@ func TestDistributedChartTests(t *testing.T) {
 
 	RegisterFailHandler(Fail)
 	suiteConfig, reporterConfig := GinkgoConfiguration()
-	suiteConfig.FocusStrings = []string{"should handle load test"}
+	suiteConfig.FocusStrings = []string{"should support reading and writing over global and local endpoints"}
 	RunSpecs(t, "DistributedChart test Suite", suiteConfig, reporterConfig)
 }
 
@@ -65,6 +65,12 @@ var _ = SynchronizedBeforeSuite(
 		// Remove stock VMCluster - it would be recreated in vm* namespaces
 		kubeOpts := k8s.NewKubectlOptions("", "", vmNamespace)
 		install.DeleteVMCluster(t, kubeOpts, releaseName)
+
+		// Prepare namespace for k6 tests
+		kubeOpts = k8s.NewKubectlOptions("", "", k6TestsNamespace)
+		if _, err := k8s.GetNamespaceE(t, kubeOpts, k6OperatorNamespace); err != nil {
+			k8s.CreateNamespace(t, kubeOpts, k6TestsNamespace)
+		}
 
 		install.InstallK6(ctx, t, k6OperatorNamespace)
 	}, func(ctx context.Context) {
@@ -101,7 +107,7 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 		}
 	})
 
-	It("should support reading and writing over global endpoints", Label("gke", "id=b81bf219-e97c-49fc-8050-8d80153224c7"), func(ctx context.Context) {
+	It("should support reading and writing over global and local endpoints", Label("gke", "id=b81bf219-e97c-49fc-8050-8d80153224c7"), func(ctx context.Context) {
 		install.InstallVMDistributedWithHelm(ctx, vmHelmChart, vmValuesFile, t, namespace, releaseName)
 
 		By("Insert data into global write endpoint")
@@ -127,7 +133,7 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 
 		for _, zone := range []string{"europe-central2-a", "europe-central2-b", "europe-central2-c"} {
 			By(fmt.Sprintf("Read data from zone %s endpoint", zone))
-			zoneSelectURL := fmt.Sprintf("http://vmselect-%s.127.0.0.1.nip.io/select/0/prometheus", zone)
+			zoneSelectURL := fmt.Sprintf("http://vmselect-%s.%s.nip.io/select/0/prometheus", zone, consts.NginxHost())
 			tenantProm, err := promquery.NewPrometheusClient(zoneSelectURL)
 			require.NoError(t, err)
 			tenantProm.Start = overwatch.Start

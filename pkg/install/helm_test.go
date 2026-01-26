@@ -142,7 +142,7 @@ func TestBuildVMTagSetValues(t *testing.T) {
 			consts.SetNginxHost(tt.nginxHost)
 
 			// Call the function under test
-			setValues := buildVMTagSetValues(tt.namespace)
+			setValues := buildVMK8StackValues(tt.namespace)
 
 			// Verify all expected values are present
 			for key, expectedValue := range tt.expectedTags {
@@ -177,7 +177,7 @@ func TestBuildVMTagSetValuesConsistency(t *testing.T) {
 			consts.SetVMTag(version)
 			consts.SetNginxHost("192.168.1.200")
 
-			setValues := buildVMTagSetValues("vm")
+			setValues := buildVMK8StackValues("vm")
 
 			// Verify all cluster components have the same tag with -cluster suffix
 			expectedClusterTag := version + "-cluster"
@@ -222,7 +222,7 @@ func TestBuildVMTagSetValuesLatestSpecialCase(t *testing.T) {
 	consts.SetVMTag("latest")
 	consts.SetNginxHost("172.17.0.100")
 
-	setValues := buildVMTagSetValues("vm")
+	setValues := buildVMK8StackValues("vm")
 
 	// Verify all components (including cluster ones) get "latest" without suffix
 	allComponents := []string{
@@ -266,7 +266,7 @@ func TestInstallWithHelmUsesVMTagFunction(t *testing.T) {
 	consts.SetNginxHost("10.10.10.10")
 
 	// Get the setValues that would be used by InstallWithHelm
-	setValues := buildVMTagSetValues("vm")
+	setValues := buildVMK8StackValues("vm")
 
 	// Create helm options structure similar to what InstallWithHelm creates
 	kubeOpts := k8s.NewKubectlOptions("", "", "test-namespace")
@@ -325,7 +325,7 @@ func TestBuildVMTagSetValuesWithEmptyNginxHost(t *testing.T) {
 	consts.SetVMTag("v1.131.0")
 	consts.SetNginxHost("") // Empty host
 
-	setValues := buildVMTagSetValues("vm")
+	setValues := buildVMK8StackValues("vm")
 
 	// Verify ingress host is set (even if empty)
 	ingressHost, exists := setValues["vmcluster.ingress.select.hosts[0]"]
@@ -353,8 +353,8 @@ func TestBuildVMTagSetValuesReturnsCopy(t *testing.T) {
 	consts.SetVMTag("v1.131.0")
 	consts.SetNginxHost("198.51.100.42")
 
-	setValues1 := buildVMTagSetValues("test")
-	setValues2 := buildVMTagSetValues("test")
+	setValues1 := buildVMK8StackValues("test")
+	setValues2 := buildVMK8StackValues("test")
 
 	// Verify they have the same content
 	assert.Equal(t, setValues1, setValues2, "Both calls should return maps with same content")

@@ -49,7 +49,7 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 		overwatch.Start = time.Now()
 
 		install.InstallVMGather(t)
-		install.InstallWithHelm(ctx, helmChart, valuesFile, t, vmNamespace, releaseName)
+		install.InstallVMK8StackWithHelm(ctx, helmChart, valuesFile, t, vmNamespace, releaseName)
 		install.InstallOverwatch(ctx, t, overwatchNamespace, vmNamespace, releaseName)
 	})
 	AfterEach(func() {

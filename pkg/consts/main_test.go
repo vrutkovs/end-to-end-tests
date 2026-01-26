@@ -1,6 +1,7 @@
 package consts
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 
@@ -41,9 +42,7 @@ func TestVMSingleUrl(t *testing.T) {
 	SetNginxHost(testNginxHost)
 	result := VMSingleUrl()
 
-	if result != expectedURL {
-		t.Errorf("Expected VMSingleUrl to be %s, got %s", expectedURL, result)
-	}
+	assert.Equal(t, expectedURL, result)
 }
 
 func TestVMSelectUrlWithNamespace(t *testing.T) {
@@ -54,9 +53,7 @@ func TestVMSelectUrlWithNamespace(t *testing.T) {
 	SetNginxHost(testNginxHost)
 	result := VMSelectUrl(testNamespace)
 
-	if result != expectedURL {
-		t.Errorf("Expected VMSelectUrl to be %s, got %s", expectedURL, result)
-	}
+	assert.Equal(t, expectedURL, result)
 }
 
 func TestVMSelectUrlWithoutNamespace(t *testing.T) {
@@ -66,9 +63,7 @@ func TestVMSelectUrlWithoutNamespace(t *testing.T) {
 	SetNginxHost(testNginxHost)
 	result := VMSelectUrl("")
 
-	if result != expectedURL {
-		t.Errorf("Expected VMSelectUrl to be %s, got %s", expectedURL, result)
-	}
+	assert.Equal(t, expectedURL, result)
 }
 
 func TestVMSingleHost(t *testing.T) {
@@ -78,9 +73,7 @@ func TestVMSingleHost(t *testing.T) {
 	SetNginxHost(testNginxHost)
 	result := VMSingleHost()
 
-	if result != expectedHost {
-		t.Errorf("Expected VMSingleHost to be %s, got %s", expectedHost, result)
-	}
+	assert.Equal(t, expectedHost, result)
 }
 
 func TestVMSelectHostWithNamespace(t *testing.T) {
@@ -91,9 +84,7 @@ func TestVMSelectHostWithNamespace(t *testing.T) {
 	SetNginxHost(testNginxHost)
 	result := VMSelectHost(testNamespace)
 
-	if result != expectedHost {
-		t.Errorf("Expected VMSelectHost to be %s, got %s", expectedHost, result)
-	}
+	assert.Equal(t, expectedHost, result)
 }
 
 func TestVMSelectHostWithoutNamespace(t *testing.T) {
@@ -103,9 +94,7 @@ func TestVMSelectHostWithoutNamespace(t *testing.T) {
 	SetNginxHost(testNginxHost)
 	result := VMSelectHost("")
 
-	if result != expectedHost {
-		t.Errorf("Expected VMSelectHost to be %s, got %s", expectedHost, result)
-	}
+	assert.Equal(t, expectedHost, result)
 }
 
 func TestVMHostsWithEmptyNginxHost(t *testing.T) {
@@ -113,21 +102,13 @@ func TestVMHostsWithEmptyNginxHost(t *testing.T) {
 	SetNginxHost("")
 
 	// Both hosts should return empty string when nginx host is empty
-	if VMSingleHost() != "" {
-		t.Errorf("Expected VMSingleHost to be empty when nginx host is empty, got %s", VMSingleHost())
-	}
-	if VMSelectHost("test") != "" {
-		t.Errorf("Expected VMSelectHost to be empty when nginx host is empty, got %s", VMSelectHost("test"))
-	}
+	assert.Empty(t, VMSingleHost(), "VMSingleHost should be empty when nginx host is empty")
+	assert.Empty(t, VMSelectHost("test"), "VMSelectHost should be empty when nginx host is empty")
 
 	// URLs should return "http://" when hosts are empty
 	expectedEmptyURL := "http://"
-	if VMSingleUrl() != expectedEmptyURL {
-		t.Errorf("Expected VMSingleUrl to be %s when nginx host is empty, got %s", expectedEmptyURL, VMSingleUrl())
-	}
-	if VMSelectUrl("test") != expectedEmptyURL {
-		t.Errorf("Expected VMSelectUrl to be %s when nginx host is empty, got %s", expectedEmptyURL, VMSelectUrl("test"))
-	}
+	assert.Equal(t, expectedEmptyURL, VMSingleUrl(), "VMSingleUrl should be http:// when nginx host is empty")
+	assert.Equal(t, expectedEmptyURL, VMSelectUrl("test"), "VMSelectUrl should be http:// when nginx host is empty")
 }
 
 func TestHelmChartVersion(t *testing.T) {
@@ -136,9 +117,7 @@ func TestHelmChartVersion(t *testing.T) {
 	SetHelmChartVersion(testValue)
 	result := HelmChartVersion()
 
-	if result != testValue {
-		t.Errorf("Expected HelmChartVersion to be %s, got %s", testValue, result)
-	}
+	assert.Equal(t, testValue, result)
 }
 
 func TestVMVersion(t *testing.T) {
@@ -147,9 +126,7 @@ func TestVMVersion(t *testing.T) {
 	SetVMVersion(testValue)
 	result := VMVersion()
 
-	if result != testValue {
-		t.Errorf("Expected VMVersion to be %s, got %s", testValue, result)
-	}
+	assert.Equal(t, testValue, result)
 }
 
 func TestOperatorVersion(t *testing.T) {
@@ -158,9 +135,7 @@ func TestOperatorVersion(t *testing.T) {
 	SetOperatorVersion(testValue)
 	result := OperatorVersion()
 
-	if result != testValue {
-		t.Errorf("Expected OperatorVersion to be %s, got %s", testValue, result)
-	}
+	assert.Equal(t, testValue, result)
 }
 
 func TestConcurrentAccess(t *testing.T) {
@@ -176,7 +151,7 @@ func TestConcurrentAccess(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 			for j := 0; j < numOperations; j++ {
-				testValue := "test-value-" + string(rune(id)) + "-" + string(rune(j))
+				testValue := fmt.Sprintf("test-value-%c-%c", rune(id), rune(j))
 				SetReportLocation(testValue)
 				SetEnvK8SDistro(testValue)
 				SetNginxHost(testValue)
@@ -220,39 +195,22 @@ func TestInitialValues(t *testing.T) {
 	SetOperatorVersion("")
 
 	// Test that initial values are empty
-	if ReportLocation() != "" {
-		t.Errorf("Expected initial ReportLocation to be empty, got %s", ReportLocation())
-	}
-	if EnvK8SDistro() != "" {
-		t.Errorf("Expected initial EnvK8SDistro to be empty, got %s", EnvK8SDistro())
-	}
-	if NginxHost() != "" {
-		t.Errorf("Expected initial NginxHost to be empty, got %s", NginxHost())
-	}
+	assert.Empty(t, ReportLocation(), "Initial ReportLocation should be empty")
+	assert.Empty(t, EnvK8SDistro(), "Initial EnvK8SDistro should be empty")
+	assert.Empty(t, NginxHost(), "Initial NginxHost should be empty")
+
 	// When nginx host is empty, VM hosts should be empty
-	if VMSingleHost() != "" {
-		t.Errorf("Expected initial VMSingleHost to be empty, got %s", VMSingleHost())
-	}
-	if VMSelectHost("test") != "" {
-		t.Errorf("Expected initial VMSelectHost to be empty, got %s", VMSelectHost("test"))
-	}
+	assert.Empty(t, VMSingleHost(), "Initial VMSingleHost should be empty")
+	assert.Empty(t, VMSelectHost("test"), "Initial VMSelectHost should be empty")
+
 	// When nginx host is empty, VM URLs should be "http://"
 	expectedEmptyURL := "http://"
-	if VMSingleUrl() != expectedEmptyURL {
-		t.Errorf("Expected initial VMSingleUrl to be %s, got %s", expectedEmptyURL, VMSingleUrl())
-	}
-	if VMSelectUrl("test") != expectedEmptyURL {
-		t.Errorf("Expected initial VMSelectUrl to be %s, got %s", expectedEmptyURL, VMSelectUrl("test"))
-	}
-	if HelmChartVersion() != "" {
-		t.Errorf("Expected initial HelmChartVersion to be empty, got %s", HelmChartVersion())
-	}
-	if VMVersion() != "" {
-		t.Errorf("Expected initial VMVersion to be empty, got %s", VMVersion())
-	}
-	if OperatorVersion() != "" {
-		t.Errorf("Expected initial OperatorVersion to be empty, got %s", OperatorVersion())
-	}
+	assert.Equal(t, expectedEmptyURL, VMSingleUrl(), "Initial VMSingleUrl should be http://")
+	assert.Equal(t, expectedEmptyURL, VMSelectUrl("test"), "Initial VMSelectUrl should be http://")
+
+	assert.Empty(t, HelmChartVersion(), "Initial HelmChartVersion should be empty")
+	assert.Empty(t, VMVersion(), "Initial VMVersion should be empty")
+	assert.Empty(t, OperatorVersion(), "Initial OperatorVersion should be empty")
 }
 
 func TestSetVMTag(t *testing.T) {
@@ -264,9 +222,7 @@ func TestSetVMTag(t *testing.T) {
 	SetVMTag(testTag)
 	result := VMVersion()
 
-	if result != testTag {
-		t.Errorf("Expected VMVersion to be %s after SetVMTag, got %s", testTag, result)
-	}
+	assert.Equal(t, testTag, result)
 }
 
 func TestSetVMTagWithDifferentVersions(t *testing.T) {
@@ -287,9 +243,7 @@ func TestSetVMTagWithDifferentVersions(t *testing.T) {
 	for _, version := range testVersions {
 		SetVMTag(version)
 		result := VMVersion()
-		if result != version {
-			t.Errorf("Expected VMVersion to be '%s' after SetVMTag, got '%s'", version, result)
-		}
+		assert.Equal(t, version, result, "VMVersion should match set version '%s'", version)
 	}
 }
 
@@ -301,9 +255,7 @@ func TestSetVMTagEmptyString(t *testing.T) {
 	SetVMTag("")
 	result := VMVersion()
 
-	if result != "" {
-		t.Errorf("Expected VMVersion to be empty string after SetVMTag(''), got '%s'", result)
-	}
+	assert.Empty(t, result)
 }
 
 func TestSetVMTagConcurrency(t *testing.T) {
@@ -312,7 +264,6 @@ func TestSetVMTagConcurrency(t *testing.T) {
 	defer SetVMTag(originalVMVersion) // Restore original value
 
 	const numGoroutines = 50
-
 	const numOperations = 20
 
 	var wg sync.WaitGroup
@@ -323,7 +274,7 @@ func TestSetVMTagConcurrency(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 			for j := 0; j < numOperations; j++ {
-				testTag := "v1.130." + string(rune('0'+id%10))
+				testTag := fmt.Sprintf("v1.130.%c", rune('0'+id%10))
 				SetVMTag(testTag)
 			}
 		}(i)
@@ -353,25 +304,19 @@ func TestSetVMTagIntegration(t *testing.T) {
 	SetVMTag(testTag)
 
 	// Verify it's set correctly
-	if VMVersion() != testTag {
-		t.Errorf("Expected VMVersion to be %s, got %s", testTag, VMVersion())
-	}
+	assert.Equal(t, testTag, VMVersion())
 
 	// Test that SetVMVersion still works after SetVMTag
 	differentTag := "v1.130.0"
 	SetVMVersion(differentTag)
 
-	if VMVersion() != differentTag {
-		t.Errorf("Expected VMVersion to be %s after SetVMVersion, got %s", differentTag, VMVersion())
-	}
+	assert.Equal(t, differentTag, VMVersion())
 
 	// Test that SetVMTag can override SetVMVersion
 	finalTag := "v1.129.1"
 	SetVMTag(finalTag)
 
-	if VMVersion() != finalTag {
-		t.Errorf("Expected VMVersion to be %s after final SetVMTag, got %s", finalTag, VMVersion())
-	}
+	assert.Equal(t, finalTag, VMVersion())
 }
 
 func TestNamespaceFormattingEdgeCases(t *testing.T) {
@@ -415,12 +360,8 @@ func TestNamespaceFormattingEdgeCases(t *testing.T) {
 			singleHost := VMSingleHost()
 			selectHost := VMSelectHost(tt.namespace)
 
-			if singleHost != tt.expectedSingleHost {
-				t.Errorf("Expected VMSingleHost to be %s, got %s", tt.expectedSingleHost, singleHost)
-			}
-			if selectHost != tt.expectedSelectHost {
-				t.Errorf("Expected VMSelectHost to be %s, got %s", tt.expectedSelectHost, selectHost)
-			}
+			assert.Equal(t, tt.expectedSingleHost, singleHost)
+			assert.Equal(t, tt.expectedSelectHost, selectHost)
 
 			// Test URLs as well
 			expectedSingleUrl := "http://" + tt.expectedSingleHost
@@ -429,12 +370,8 @@ func TestNamespaceFormattingEdgeCases(t *testing.T) {
 			singleUrl := VMSingleUrl()
 			selectUrl := VMSelectUrl(tt.namespace)
 
-			if singleUrl != expectedSingleUrl {
-				t.Errorf("Expected VMSingleUrl to be %s, got %s", expectedSingleUrl, singleUrl)
-			}
-			if selectUrl != expectedSelectUrl {
-				t.Errorf("Expected VMSelectUrl to be %s, got %s", expectedSelectUrl, selectUrl)
-			}
+			assert.Equal(t, expectedSingleUrl, singleUrl)
+			assert.Equal(t, expectedSelectUrl, selectUrl)
 		})
 	}
 }
@@ -475,9 +412,7 @@ func TestGetVMSelectSvc(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := GetVMSelectSvc(tt.namespace)
-			if result != tt.expected {
-				t.Errorf("Expected GetVMSelectSvc to be %s, got %s", tt.expected, result)
-			}
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -513,9 +448,7 @@ func TestGetVMSingleSvc(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := GetVMSingleSvc(tt.namespace)
-			if result != tt.expected {
-				t.Errorf("Expected GetVMSingleSvc to be %s, got %s", tt.expected, result)
-			}
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -530,40 +463,18 @@ func TestKubernetesServiceAddressesIntegration(t *testing.T) {
 			vmSingleSvc := GetVMSingleSvc(ns)
 
 			// Verify they contain the namespace
-			if !contains(vmSelectSvc, ns) {
-				t.Errorf("VMSelect service address should contain namespace %s: %s", ns, vmSelectSvc)
-			}
-			if !contains(vmSingleSvc, ns) {
-				t.Errorf("VMSingle service address should contain namespace %s: %s", ns, vmSingleSvc)
-			}
+			assert.Contains(t, vmSelectSvc, ns, "VMSelect service address should contain namespace")
+			assert.Contains(t, vmSingleSvc, ns, "VMSingle service address should contain namespace")
 
 			// Verify they contain the correct service names
-			if !contains(vmSelectSvc, "vmselect-vmks") {
-				t.Errorf("VMSelect service address should contain 'vmselect-vmks': %s", vmSelectSvc)
-			}
-			if !contains(vmSingleSvc, "vmsingle") {
-				t.Errorf("VMSingle service address should contain 'vmsingle': %s", vmSingleSvc)
-			}
+			assert.Contains(t, vmSelectSvc, "vmselect-vmks", "VMSelect service address should contain 'vmselect-vmks'")
+			assert.Contains(t, vmSingleSvc, "vmsingle", "VMSingle service address should contain 'vmsingle'")
 
 			// Verify they contain the correct ports
-			if !contains(vmSelectSvc, ":8481") {
-				t.Errorf("VMSelect service address should contain port ':8481': %s", vmSelectSvc)
-			}
-			if !contains(vmSingleSvc, ":8428") {
-				t.Errorf("VMSingle service address should contain port ':8428': %s", vmSingleSvc)
-			}
+			assert.Contains(t, vmSelectSvc, ":8481", "VMSelect service address should contain port ':8481'")
+			assert.Contains(t, vmSingleSvc, ":8428", "VMSingle service address should contain port ':8428'")
 		})
 	}
-}
-
-// Helper function for string contains check
-func contains(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }
 
 func TestGetVMInsertSvc(t *testing.T) {
@@ -602,9 +513,7 @@ func TestGetVMInsertSvc(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := GetVMInsertSvc(tt.namespace)
-			if result != tt.expected {
-				t.Errorf("Expected GetVMInsertSvc to be %s, got %s", tt.expected, result)
-			}
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -620,37 +529,19 @@ func TestVMServiceAddressesIntegration(t *testing.T) {
 			vmInsertSvc := GetVMInsertSvc(ns)
 
 			// Verify they contain the namespace
-			if !contains(vmSelectSvc, ns) {
-				t.Errorf("VMSelect service address should contain namespace %s: %s", ns, vmSelectSvc)
-			}
-			if !contains(vmSingleSvc, ns) {
-				t.Errorf("VMSingle service address should contain namespace %s: %s", ns, vmSingleSvc)
-			}
-			if !contains(vmInsertSvc, ns) {
-				t.Errorf("VMInsert service address should contain namespace %s: %s", ns, vmInsertSvc)
-			}
+			assert.Contains(t, vmSelectSvc, ns, "VMSelect service address should contain namespace")
+			assert.Contains(t, vmSingleSvc, ns, "VMSingle service address should contain namespace")
+			assert.Contains(t, vmInsertSvc, ns, "VMInsert service address should contain namespace")
 
 			// Verify they contain the correct service names
-			if !contains(vmSelectSvc, "vmselect-vmks") {
-				t.Errorf("VMSelect service address should contain 'vmselect-vmks': %s", vmSelectSvc)
-			}
-			if !contains(vmSingleSvc, "vmsingle") {
-				t.Errorf("VMSingle service address should contain 'vmsingle': %s", vmSingleSvc)
-			}
-			if !contains(vmInsertSvc, "vminsert-vmks") {
-				t.Errorf("VMInsert service address should contain 'vminsert-vmks': %s", vmInsertSvc)
-			}
+			assert.Contains(t, vmSelectSvc, "vmselect-vmks", "VMSelect service address should contain 'vmselect-vmks'")
+			assert.Contains(t, vmSingleSvc, "vmsingle", "VMSingle service address should contain 'vmsingle'")
+			assert.Contains(t, vmInsertSvc, "vminsert-vmks", "VMInsert service address should contain 'vminsert-vmks'")
 
 			// Verify they contain the correct ports
-			if !contains(vmSelectSvc, ":8481") {
-				t.Errorf("VMSelect service address should contain port ':8481': %s", vmSelectSvc)
-			}
-			if !contains(vmSingleSvc, ":8428") {
-				t.Errorf("VMSingle service address should contain port ':8428': %s", vmSingleSvc)
-			}
-			if !contains(vmInsertSvc, ":8480") {
-				t.Errorf("VMInsert service address should contain port ':8480': %s", vmInsertSvc)
-			}
+			assert.Contains(t, vmSelectSvc, ":8481", "VMSelect service address should contain port ':8481'")
+			assert.Contains(t, vmSingleSvc, ":8428", "VMSingle service address should contain port ':8428'")
+			assert.Contains(t, vmInsertSvc, ":8480", "VMInsert service address should contain port ':8480'")
 		})
 	}
 }

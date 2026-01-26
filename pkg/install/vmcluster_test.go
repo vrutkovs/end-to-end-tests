@@ -264,25 +264,19 @@ func TestEnsureVMClusterComponents(t *testing.T) {
 
 			// Check if error was expected
 			if tt.expectError {
-				if len(testRecorder.errors) == 0 {
-					t.Errorf("Expected error containing '%s', but no error occurred", tt.errorContains)
-				} else {
-					// Check if any error contains the expected message
+				assert.True(t, testRecorder.failed, "Expected EnsureVMClusterComponents to fail")
+				if testRecorder.failed {
 					found := false
 					for _, err := range testRecorder.errors {
-						if len(tt.errorContains) > 0 && strings.Contains(err, tt.errorContains) {
+						if strings.Contains(err, tt.errorContains) {
 							found = true
 							break
 						}
 					}
-					if !found {
-						t.Errorf("Expected error containing '%s', but got: %v", tt.errorContains, testRecorder.errors)
-					}
+					assert.True(t, found, "Expected error containing '%s', got: %v", tt.errorContains, testRecorder.errors)
 				}
 			} else {
-				if len(testRecorder.errors) > 0 {
-					t.Errorf("Expected no error, but got: %v", testRecorder.errors)
-				}
+				assert.False(t, testRecorder.failed, "Expected EnsureVMClusterComponents to succeed, but failed with: %v", testRecorder.errors)
 			}
 		})
 	}
@@ -339,9 +333,8 @@ func TestVMClusterEndpointsIntegration(t *testing.T) {
 	EnsureVMClusterComponents(ctx, testRecorder, kubeOpts, "vm", fakeVMClient, "overwatch")
 
 	// Should succeed without errors
-	if len(testRecorder.errors) > 0 {
-		t.Errorf("Expected no errors, but got: %v", testRecorder.errors)
-	}
+	assert.False(t, testRecorder.failed, "Expected no errors, but got: %v", testRecorder.errors)
+	assert.Empty(t, testRecorder.errors, "Expected no error messages")
 
 	// Test service endpoint generation
 	endpoints := GetVMClusterServiceEndpoints("vm", "overwatch")
@@ -394,9 +387,8 @@ func TestWaitForVMClusterToBeOperationalIntegration(t *testing.T) {
 	WaitForVMClusterToBeOperational(ctx, testRecorder, kubeOpts, "test-ns", fakeVMClient)
 
 	// Check that no errors occurred
-	if len(testRecorder.errors) > 0 {
-		t.Errorf("Expected no errors, but got: %v", testRecorder.errors)
-	}
+	assert.False(t, testRecorder.failed, "Expected no errors, but got: %v", testRecorder.errors)
+	assert.Empty(t, testRecorder.errors, "Expected no error messages")
 }
 
 func TestVMClusterNameGeneration(t *testing.T) {

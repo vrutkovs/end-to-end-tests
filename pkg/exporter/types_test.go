@@ -216,61 +216,33 @@ func TestRequestBodySerialization(t *testing.T) {
 	}
 
 	data, err := json.Marshal(reqBody)
-	if err != nil {
-		t.Fatalf("Failed to marshal RequestBody: %v", err)
-	}
+	require.NoError(t, err, "Failed to marshal RequestBody")
 
 	var unmarshaled RequestBody
 	err = json.Unmarshal(data, &unmarshaled)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal RequestBody: %v", err)
-	}
+	require.NoError(t, err, "Failed to unmarshal RequestBody")
 
 	// Test Connection
-	if unmarshaled.Connection.URL != reqBody.Connection.URL {
-		t.Errorf("Expected Connection.URL to be %s, got %s", reqBody.Connection.URL, unmarshaled.Connection.URL)
-	}
-	if *unmarshaled.Connection.TenantID != *reqBody.Connection.TenantID {
-		t.Errorf("Expected Connection.TenantID to be %d, got %d", *reqBody.Connection.TenantID, *unmarshaled.Connection.TenantID)
-	}
+	assert.Equal(t, reqBody.Connection.URL, unmarshaled.Connection.URL, "Connection.URL should match")
+	assert.Equal(t, *reqBody.Connection.TenantID, *unmarshaled.Connection.TenantID, "Connection.TenantID should match")
 
 	// Test TimeRange
-	if !unmarshaled.TimeRange.Start.Equal(reqBody.TimeRange.Start) {
-		t.Errorf("Expected TimeRange.Start to be %v, got %v", reqBody.TimeRange.Start, unmarshaled.TimeRange.Start)
-	}
-	if !unmarshaled.TimeRange.End.Equal(reqBody.TimeRange.End) {
-		t.Errorf("Expected TimeRange.End to be %v, got %v", reqBody.TimeRange.End, unmarshaled.TimeRange.End)
-	}
+	assert.True(t, unmarshaled.TimeRange.Start.Equal(reqBody.TimeRange.Start), "TimeRange.Start should match")
+	assert.True(t, unmarshaled.TimeRange.End.Equal(reqBody.TimeRange.End), "TimeRange.End should match")
 
 	// Test Components
-	if len(unmarshaled.Components) != len(reqBody.Components) {
-		t.Errorf("Expected Components length to be %d, got %d", len(reqBody.Components), len(unmarshaled.Components))
-	}
-	for i, component := range reqBody.Components {
-		if unmarshaled.Components[i] != component {
-			t.Errorf("Expected Components[%d] to be %s, got %s", i, component, unmarshaled.Components[i])
-		}
-	}
+	assert.Len(t, unmarshaled.Components, len(reqBody.Components), "Components length should match")
+	assert.Equal(t, reqBody.Components, unmarshaled.Components, "Components should match")
 
 	// Test Jobs
-	if len(unmarshaled.Jobs) != len(reqBody.Jobs) {
-		t.Errorf("Expected Jobs length to be %d, got %d", len(reqBody.Jobs), len(unmarshaled.Jobs))
-	}
-	for i, job := range reqBody.Jobs {
-		if unmarshaled.Jobs[i] != job {
-			t.Errorf("Expected Jobs[%d] to be %s, got %s", i, job, unmarshaled.Jobs[i])
-		}
-	}
+	assert.Len(t, unmarshaled.Jobs, len(reqBody.Jobs), "Jobs length should match")
+	assert.Equal(t, reqBody.Jobs, unmarshaled.Jobs, "Jobs should match")
 
 	// Test StagingDir
-	if unmarshaled.StagingDir != reqBody.StagingDir {
-		t.Errorf("Expected StagingDir to be %s, got %s", reqBody.StagingDir, unmarshaled.StagingDir)
-	}
+	assert.Equal(t, reqBody.StagingDir, unmarshaled.StagingDir, "StagingDir should match")
 
 	// Test MetricStepSeconds
-	if unmarshaled.MetricStepSeconds != reqBody.MetricStepSeconds {
-		t.Errorf("Expected MetricStepSeconds to be %d, got %d", reqBody.MetricStepSeconds, unmarshaled.MetricStepSeconds)
-	}
+	assert.Equal(t, reqBody.MetricStepSeconds, unmarshaled.MetricStepSeconds, "MetricStepSeconds should match")
 }
 
 func TestEmptySlicesSerialization(t *testing.T) {

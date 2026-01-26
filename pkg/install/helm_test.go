@@ -33,8 +33,8 @@ func (m *MockTestingT) Name() string {
 	return args.String(0)
 }
 
-func TestBuildVMTagSetValues(t *testing.T) {
-	// Test buildVMTagSetValues function with various configurations
+func TestBuildVMK8StackValues(t *testing.T) {
+	// Save original values
 	originalVMVersion := consts.VMVersion()
 	originalNginxHost := consts.NginxHost()
 	defer func() {
@@ -137,21 +137,17 @@ func TestBuildVMTagSetValues(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Set test values
 			consts.SetVMTag(tt.vmTag)
 			consts.SetNginxHost(tt.nginxHost)
 
-			// Call the function under test
 			setValues := buildVMK8StackValues(tt.namespace)
 
-			// Verify all expected values are present
 			for key, expectedValue := range tt.expectedTags {
 				actualValue, exists := setValues[key]
 				assert.True(t, exists, "Expected key '%s' to exist in setValues", key)
 				assert.Equal(t, expectedValue, actualValue, "Expected value for key '%s' to be '%s', got '%s'", key, expectedValue, actualValue)
 			}
 
-			// Verify no unexpected values are present
 			if tt.shouldHaveTags {
 				assert.Len(t, setValues, len(tt.expectedTags), "SetValues should contain exactly %d entries", len(tt.expectedTags))
 			} else {
@@ -161,8 +157,7 @@ func TestBuildVMTagSetValues(t *testing.T) {
 	}
 }
 
-func TestBuildVMTagSetValuesConsistency(t *testing.T) {
-	// Test that cluster components always get the same tag (with or without -cluster suffix)
+func TestBuildVMK8StackValuesConsistency(t *testing.T) {
 	originalVMVersion := consts.VMVersion()
 	originalNginxHost := consts.NginxHost()
 	defer func() {
@@ -179,7 +174,6 @@ func TestBuildVMTagSetValuesConsistency(t *testing.T) {
 
 			setValues := buildVMK8StackValues("vm")
 
-			// Verify all cluster components have the same tag with -cluster suffix
 			expectedClusterTag := version + "-cluster"
 			clusterComponents := []string{
 				"vmcluster.spec.vmstorage.image.tag",
@@ -193,7 +187,6 @@ func TestBuildVMTagSetValuesConsistency(t *testing.T) {
 				assert.Equal(t, expectedClusterTag, actualTag, "Cluster component %s should have tag %s", component, expectedClusterTag)
 			}
 
-			// Verify all non-cluster components have the same tag without suffix
 			nonClusterComponents := []string{
 				"vmsingle.spec.image.tag",
 				"vmalert.spec.image.tag",
@@ -210,8 +203,7 @@ func TestBuildVMTagSetValuesConsistency(t *testing.T) {
 	}
 }
 
-func TestBuildVMTagSetValuesLatestSpecialCase(t *testing.T) {
-	// Test that "latest" tag doesn't get -cluster suffix for cluster components
+func TestBuildVMK8StackValuesLatestSpecialCase(t *testing.T) {
 	originalVMVersion := consts.VMVersion()
 	originalNginxHost := consts.NginxHost()
 	defer func() {
@@ -224,7 +216,6 @@ func TestBuildVMTagSetValuesLatestSpecialCase(t *testing.T) {
 
 	setValues := buildVMK8StackValues("vm")
 
-	// Verify all components (including cluster ones) get "latest" without suffix
 	allComponents := []string{
 		"vmsingle.spec.image.tag",
 		"vmcluster.spec.vmstorage.image.tag",
@@ -241,7 +232,6 @@ func TestBuildVMTagSetValuesLatestSpecialCase(t *testing.T) {
 		assert.Equal(t, "latest", actualTag, "Component %s should have tag 'latest'", component)
 	}
 
-	// Verify ingress host is also set
 	ingressHost, exists := setValues["vmcluster.ingress.select.hosts[0]"]
 	assert.True(t, exists, "Ingress host should be set")
 	assert.Equal(t, "vmselect-vm.172.17.0.100.nip.io", ingressHost)
@@ -251,10 +241,53 @@ func TestBuildVMTagSetValuesLatestSpecialCase(t *testing.T) {
 	assert.Equal(t, "vminsert-vm.172.17.0.100.nip.io", insertHost)
 }
 
-func TestInstallWithHelmUsesVMTagFunction(t *testing.T) {
-	// This test verifies that InstallWithHelm properly uses buildVMTagSetValues
-	// We can't test the full InstallWithHelm function due to its dependencies,
-	// but we can test that it would use the correct setValues structure
+func TestBuildVMK8StackValuesWithEmptyNginxHost(t *testing.T) {
+	originalVMVersion := consts.VMVersion()
+	originalNginxHost := consts.NginxHost()
+	defer func() {
+		consts.SetVMTag(originalVMVersion)
+		consts.SetNginxHost(originalNginxHost)
+	}()
+
+	consts.SetVMTag("v1.131.0")
+	consts.SetNginxHost("")
+
+	setValues := buildVMK8StackValues("vm")
+
+	ingressHost, exists := setValues["vmcluster.ingress.select.hosts[0]"]
+	assert.True(t, exists, "Ingress host key should exist")
+	assert.Equal(t, "", ingressHost, "Ingress host should be empty string")
+
+	insertHost, exists := setValues["vmcluster.ingress.insert.hosts[0]"]
+	assert.True(t, exists, "Insert ingress host key should exist")
+	assert.Equal(t, "", insertHost, "Insert ingress host should be empty string")
+
+	assert.Equal(t, "v1.131.0", setValues["vmsingle.spec.image.tag"])
+	assert.Equal(t, "v1.131.0-cluster", setValues["vmcluster.spec.vmstorage.image.tag"])
+}
+
+func TestBuildVMK8StackValuesReturnsCopy(t *testing.T) {
+	originalVMVersion := consts.VMVersion()
+	originalNginxHost := consts.NginxHost()
+	defer func() {
+		consts.SetVMTag(originalVMVersion)
+		consts.SetNginxHost(originalNginxHost)
+	}()
+
+	consts.SetVMTag("v1.131.0")
+	consts.SetNginxHost("198.51.100.42")
+
+	setValues1 := buildVMK8StackValues("test")
+	setValues2 := buildVMK8StackValues("test")
+
+	assert.Equal(t, setValues1, setValues2, "Both calls should return maps with same content")
+
+	setValues1["test.key"] = "modified"
+	_, exists := setValues2["test.key"]
+	assert.False(t, exists, "Modifying one map should not affect the other")
+}
+
+func TestInstallWithHelmUsesVMK8StackValues(t *testing.T) {
 	originalVMVersion := consts.VMVersion()
 	originalNginxHost := consts.NginxHost()
 	defer func() {
@@ -265,10 +298,8 @@ func TestInstallWithHelmUsesVMTagFunction(t *testing.T) {
 	consts.SetVMTag("v1.131.0")
 	consts.SetNginxHost("10.10.10.10")
 
-	// Get the setValues that would be used by InstallWithHelm
 	setValues := buildVMK8StackValues("vm")
 
-	// Create helm options structure similar to what InstallWithHelm creates
 	kubeOpts := k8s.NewKubectlOptions("", "", "test-namespace")
 	helmOpts := &helm.Options{
 		KubectlOptions: kubeOpts,
@@ -279,19 +310,16 @@ func TestInstallWithHelmUsesVMTagFunction(t *testing.T) {
 		},
 	}
 
-	// Verify structure is correct
 	assert.NotNil(t, helmOpts.KubectlOptions)
 	assert.Equal(t, "test-namespace", helmOpts.KubectlOptions.Namespace)
 	assert.NotNil(t, helmOpts.SetValues)
 	assert.NotNil(t, helmOpts.ExtraArgs)
 
-	// Verify ExtraArgs contains expected upgrade flags
 	upgradeArgs, exists := helmOpts.ExtraArgs["upgrade"]
 	assert.True(t, exists, "Expected upgrade extra args to exist")
 	assert.Contains(t, upgradeArgs, "--create-namespace")
 	assert.Contains(t, upgradeArgs, "--wait")
 
-	// Verify VM tag values are correctly set
 	expectedSetValues := map[string]string{
 		"vmcluster.ingress.select.hosts[0]":  "vmselect-vm.10.10.10.10.nip.io",
 		"vmcluster.ingress.insert.hosts[0]":  "vminsert-vm.10.10.10.10.nip.io",
@@ -313,8 +341,7 @@ func TestInstallWithHelmUsesVMTagFunction(t *testing.T) {
 	}
 }
 
-func TestBuildVMTagSetValuesWithEmptyNginxHost(t *testing.T) {
-	// Test edge case where NginxHost is empty
+func TestBuildVMDistributedValues(t *testing.T) {
 	originalVMVersion := consts.VMVersion()
 	originalNginxHost := consts.NginxHost()
 	defer func() {
@@ -322,45 +349,79 @@ func TestBuildVMTagSetValuesWithEmptyNginxHost(t *testing.T) {
 		consts.SetNginxHost(originalNginxHost)
 	}()
 
-	consts.SetVMTag("v1.131.0")
-	consts.SetNginxHost("") // Empty host
+	tests := []struct {
+		name           string
+		vmTag          string
+		namespace      string
+		nginxHost      string
+		expectedTags   map[string]string
+		shouldHaveTags bool
+	}{
+		{
+			name:      "VM tag v1.131.0 with namespace should set all component tags with cluster suffix",
+			vmTag:     "v1.131.0",
+			namespace: "vm",
+			nginxHost: "192.168.1.100",
+			expectedTags: map[string]string{
+				"read.global.vmauth.spec.ingress.host":      "vmselect-vm.192.168.1.100.nip.io",
+				"write.global.vmauth.spec.ingress.host":     "vminsert-vm.192.168.1.100.nip.io",
+				"common.vmcluster.spec.vmstorage.image.tag": "v1.131.0-cluster",
+				"common.vmcluster.spec.vmselect.image.tag":  "v1.131.0-cluster",
+				"common.vmcluster.spec.vminsert.image.tag":  "v1.131.0-cluster",
+				"common.vmalert.spec.image.tag":             "v1.131.0",
+				"common.vmagent.spec.image.tag":             "v1.131.0",
+				"common.vmauth.spec.image.tag":              "v1.131.0",
+			},
+			shouldHaveTags: true,
+		},
+		{
+			name:      "Empty VM tag should only set ingress hosts",
+			vmTag:     "",
+			namespace: "test",
+			nginxHost: "10.0.0.1",
+			expectedTags: map[string]string{
+				"read.global.vmauth.spec.ingress.host":  "vmselect-test.10.0.0.1.nip.io",
+				"write.global.vmauth.spec.ingress.host": "vminsert-test.10.0.0.1.nip.io",
+			},
+			shouldHaveTags: false,
+		},
+		{
+			name:      "Latest tag should set all component tags without cluster suffix",
+			vmTag:     "latest",
+			namespace: "production",
+			nginxHost: "172.16.1.50",
+			expectedTags: map[string]string{
+				"read.global.vmauth.spec.ingress.host":      "vmselect-production.172.16.1.50.nip.io",
+				"write.global.vmauth.spec.ingress.host":     "vminsert-production.172.16.1.50.nip.io",
+				"common.vmcluster.spec.vmstorage.image.tag": "latest",
+				"common.vmcluster.spec.vmselect.image.tag":  "latest",
+				"common.vmcluster.spec.vminsert.image.tag":  "latest",
+				"common.vmalert.spec.image.tag":             "latest",
+				"common.vmagent.spec.image.tag":             "latest",
+				"common.vmauth.spec.image.tag":              "latest",
+			},
+			shouldHaveTags: true,
+		},
+	}
 
-	setValues := buildVMK8StackValues("vm")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			consts.SetVMTag(tt.vmTag)
+			consts.SetNginxHost(tt.nginxHost)
 
-	// Verify ingress host is set (even if empty)
-	ingressHost, exists := setValues["vmcluster.ingress.select.hosts[0]"]
-	assert.True(t, exists, "Ingress host key should exist")
-	assert.Equal(t, "", ingressHost, "Ingress host should be empty string")
+			setValues := buildVMDistributedValues(tt.namespace)
 
-	insertHost, exists := setValues["vmcluster.ingress.insert.hosts[0]"]
-	assert.True(t, exists, "Insert ingress host key should exist")
-	assert.Equal(t, "", insertHost, "Insert ingress host should be empty string")
+			for key, expectedValue := range tt.expectedTags {
+				actualValue, exists := setValues[key]
+				assert.True(t, exists, "Expected key '%s' to exist in setValues", key)
+				assert.Equal(t, expectedValue, actualValue, "Expected value for key '%s' to be '%s', got '%s'", key, expectedValue, actualValue)
+			}
 
-	// Verify VM tags are still set correctly
-	assert.Equal(t, "v1.131.0", setValues["vmsingle.spec.image.tag"])
-	assert.Equal(t, "v1.131.0-cluster", setValues["vmcluster.spec.vmstorage.image.tag"])
-}
-
-func TestBuildVMTagSetValuesReturnsCopy(t *testing.T) {
-	// Test that buildVMTagSetValues returns a new map each time (not shared state)
-	originalVMVersion := consts.VMVersion()
-	originalNginxHost := consts.NginxHost()
-	defer func() {
-		consts.SetVMTag(originalVMVersion)
-		consts.SetNginxHost(originalNginxHost)
-	}()
-
-	consts.SetVMTag("v1.131.0")
-	consts.SetNginxHost("198.51.100.42")
-
-	setValues1 := buildVMK8StackValues("test")
-	setValues2 := buildVMK8StackValues("test")
-
-	// Verify they have the same content
-	assert.Equal(t, setValues1, setValues2, "Both calls should return maps with same content")
-
-	// Verify they are different map instances (not shared)
-	setValues1["test.key"] = "modified"
-	_, exists := setValues2["test.key"]
-	assert.False(t, exists, "Modifying one map should not affect the other")
+			if tt.shouldHaveTags {
+				assert.Len(t, setValues, len(tt.expectedTags), "SetValues should contain exactly %d entries", len(tt.expectedTags))
+			} else {
+				assert.Len(t, setValues, 2, "SetValues should contain only ingress hosts when no VM tag is set")
+			}
+		})
+	}
 }

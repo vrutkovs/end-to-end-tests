@@ -203,10 +203,11 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 			require.Equal(t, value, model.SampleValue(0))
 
 			By("Verifying data can be retrieved via multitenant URL")
-			multitenantSelectURL := fmt.Sprintf("%s/select/multitenant/prometheus", consts.VMSelectUrl(vmNamespace))
+			multitenantSelectURL := fmt.Sprintf("%s/select/multitenant/prometheus", consts.VMSelectUrl(namespace))
 			multitenantProm, err := promquery.NewPrometheusClient(multitenantSelectURL)
-			multitenantProm.Start = overwatch.Start
 			require.NoError(t, err)
+			multitenantProm.Start = overwatch.Start
+
 			value, err = multitenantProm.VectorValue(ctx, "foo_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
@@ -216,7 +217,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 		})
 
 		It("should accept data via multitenant URL", Label("gke", "id=16c08934-9e25-45ed-a94b-4fbbbe3170ef"), func(ctx context.Context) {
-			multitenantInsertURL := fmt.Sprintf("http://%s/insert/multitenant/prometheus/api/v1/write", consts.VMInsertHost(vmNamespace))
+			multitenantInsertURL := fmt.Sprintf("http://%s/insert/multitenant/prometheus/api/v1/write", consts.VMInsertHost(namespace))
 
 			By("Inserting data into tenant 0")
 			ts := remotewrite.GenTimeSeries("foo", 10, 1)
@@ -241,10 +242,11 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 			time.Sleep(30 * time.Second)
 
 			By("Verifying data is not mixed")
-			tenantOneSelectURL := fmt.Sprintf("%s/select/0/prometheus", consts.VMSelectUrl(vmNamespace))
+			tenantOneSelectURL := fmt.Sprintf("%s/select/0/prometheus", consts.VMSelectUrl(namespace))
 			tenantOneProm, err := promquery.NewPrometheusClient(tenantOneSelectURL)
-			tenantOneProm.Start = overwatch.Start
 			require.NoError(t, err)
+			tenantOneProm.Start = overwatch.Start
+
 			value, err := tenantOneProm.VectorValue(ctx, "foo_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
@@ -252,10 +254,11 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 			require.EqualError(t, err, "no data returned")
 			require.Equal(t, value, model.SampleValue(0))
 
-			tenantTwoSelectURL := fmt.Sprintf("%s/select/1/prometheus", consts.VMSelectUrl(vmNamespace))
+			tenantTwoSelectURL := fmt.Sprintf("%s/select/1/prometheus", consts.VMSelectUrl(namespace))
 			tenantTwoProm, err := promquery.NewPrometheusClient(tenantTwoSelectURL)
-			tenantTwoProm.Start = overwatch.Start
 			require.NoError(t, err)
+			tenantTwoProm.Start = overwatch.Start
+
 			value, err = tenantTwoProm.VectorValue(ctx, "bar_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
@@ -266,13 +269,13 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 
 		It("should retrieve data from different tenants via multitenant URL", Label("gke", "id=7e075898-f6c4-49d5-9d7f-8a6163759065"), func(ctx context.Context) {
 			By("Inserting data into tenant 0")
-			tenantOneInsertURL := fmt.Sprintf("http://%s/insert/0/prometheus/api/v1/write", consts.VMInsertHost(vmNamespace))
+			tenantOneInsertURL := fmt.Sprintf("http://%s/insert/0/prometheus/api/v1/write", consts.VMInsertHost(namespace))
 			ts := remotewrite.GenTimeSeries("foo", 10, 1)
 			err := remotewrite.RemoteWrite(c, ts, tenantOneInsertURL)
 			require.NoError(t, err)
 
 			By("Inserting data into tenant 1")
-			tenantTwoInsertURL := fmt.Sprintf("http://%s/insert/1/prometheus/api/v1/write", consts.VMInsertHost(vmNamespace))
+			tenantTwoInsertURL := fmt.Sprintf("http://%s/insert/1/prometheus/api/v1/write", consts.VMInsertHost(namespace))
 			ts = remotewrite.GenTimeSeries("bar", 10, 5)
 			err = remotewrite.RemoteWrite(c, ts, tenantTwoInsertURL)
 			require.NoError(t, err)
@@ -280,10 +283,11 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 			time.Sleep(30 * time.Second)
 
 			By("Verifying data can be retrieved via multitenant URL")
-			multitenantSelectURL := fmt.Sprintf("%s/select/multitenant/prometheus", consts.VMSelectUrl(vmNamespace))
+			multitenantSelectURL := fmt.Sprintf("%s/select/multitenant/prometheus", consts.VMSelectUrl(namespace))
 			multitenantProm, err := promquery.NewPrometheusClient(multitenantSelectURL)
-			multitenantProm.Start = overwatch.Start
 			require.NoError(t, err)
+			multitenantProm.Start = overwatch.Start
+
 			value, err := multitenantProm.VectorValue(ctx, "foo_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))

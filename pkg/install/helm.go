@@ -120,6 +120,9 @@ func buildVMDistributedValues(namespace string) map[string]string {
 		"write.global.vmauth.spec.ingress.host": consts.VMInsertHost(namespace),
 	}
 
+	// Set region-specific ingress hosts
+	setValues["zoneTpl.read.vmauth.spec.ingress.host"] = fmt.Sprintf("vmselect-{{ (.zone).name }}.%s.nip.io", consts.NginxHost())
+
 	// Add VM tag if provided
 	vmTag := consts.VMVersion()
 	if vmTag != "" {

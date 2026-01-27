@@ -365,6 +365,7 @@ func TestBuildVMDistributedValues(t *testing.T) {
 			expectedTags: map[string]string{
 				"read.global.vmauth.spec.ingress.host":      "vmselect-vm.192.168.1.100.nip.io",
 				"write.global.vmauth.spec.ingress.host":     "vminsert-vm.192.168.1.100.nip.io",
+				"zoneTpl.read.vmauth.spec.ingress.host":     "vmselect-{{ (.zone).name }}.192.168.1.100.nip.io",
 				"common.vmcluster.spec.vmstorage.image.tag": "v1.131.0-cluster",
 				"common.vmcluster.spec.vmselect.image.tag":  "v1.131.0-cluster",
 				"common.vmcluster.spec.vminsert.image.tag":  "v1.131.0-cluster",
@@ -382,6 +383,7 @@ func TestBuildVMDistributedValues(t *testing.T) {
 			expectedTags: map[string]string{
 				"read.global.vmauth.spec.ingress.host":  "vmselect-test.10.0.0.1.nip.io",
 				"write.global.vmauth.spec.ingress.host": "vminsert-test.10.0.0.1.nip.io",
+				"zoneTpl.read.vmauth.spec.ingress.host": "vmselect-{{ (.zone).name }}.10.0.0.1.nip.io",
 			},
 			shouldHaveTags: false,
 		},
@@ -393,6 +395,7 @@ func TestBuildVMDistributedValues(t *testing.T) {
 			expectedTags: map[string]string{
 				"read.global.vmauth.spec.ingress.host":      "vmselect-production.172.16.1.50.nip.io",
 				"write.global.vmauth.spec.ingress.host":     "vminsert-production.172.16.1.50.nip.io",
+				"zoneTpl.read.vmauth.spec.ingress.host":     "vmselect-{{ (.zone).name }}.172.16.1.50.nip.io",
 				"common.vmcluster.spec.vmstorage.image.tag": "latest",
 				"common.vmcluster.spec.vmselect.image.tag":  "latest",
 				"common.vmcluster.spec.vminsert.image.tag":  "latest",
@@ -420,7 +423,7 @@ func TestBuildVMDistributedValues(t *testing.T) {
 			if tt.shouldHaveTags {
 				assert.Len(t, setValues, len(tt.expectedTags), "SetValues should contain exactly %d entries", len(tt.expectedTags))
 			} else {
-				assert.Len(t, setValues, 2, "SetValues should contain only ingress hosts when no VM tag is set")
+				assert.Len(t, setValues, 3, "SetValues should contain only ingress hosts when no VM tag is set")
 			}
 		})
 	}

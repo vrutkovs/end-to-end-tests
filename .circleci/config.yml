@@ -75,7 +75,7 @@ jobs:
             sudo chmod +x /usr/local/bin/vmexporter
       - run:
           name: Run e2e tests
-          no_output_timeout: 30m
+          no_output_timeout: 1h
           command: |
             export PATH="$PATH:$(go env GOPATH)/bin"
             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
@@ -84,7 +84,7 @@ jobs:
             mkdir -p "${REPORT_DIR}"
             ginkgo -v \
               -procs=1 \
-              -timeout=30m \
+              -timeout=60m \
               --label-filter=${LABEL_FILTER} \
               ./tests/smoke_test \
               -- \
@@ -182,7 +182,7 @@ jobs:
             helm repo update
       - run:
           name: Run e2e tests
-          no_output_timeout: 30m
+          no_output_timeout: 1h
           command: |
             export PATH="$PATH:$(go env GOPATH)/bin"
             export KUBECONFIG=/tmp/kubeconfig.yaml

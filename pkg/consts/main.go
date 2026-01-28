@@ -8,7 +8,7 @@ import (
 
 const (
 	PollingInterval     = 30 * time.Second
-	PollingTimeout      = 10 * time.Minute
+	PollingTimeout      = 15 * time.Minute
 	ResourceWaitTimeout = 10 * time.Minute
 
 	K6JobPollingInterval = 1 * time.Minute

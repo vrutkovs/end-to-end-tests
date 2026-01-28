@@ -108,6 +108,7 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 	})
 
 	It("should support reading and writing over global and local endpoints", Label("gke", "id=b81bf219-e97c-49fc-8050-8d80153224c7"), func(ctx context.Context) {
+		By(fmt.Sprintf("Installing distributed-chart in namespace %s", namespace))
 		install.InstallVMDistributedWithHelm(ctx, vmHelmChart, vmValuesFile, t, namespace, releaseName)
 
 		By("Insert data into global write endpoint")
@@ -145,6 +146,7 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 	})
 
 	It("should handle load test", Label("gke", "id=fc171682-00dc-48ee-9686-5eea85890078"), func(ctx context.Context) {
+		By(fmt.Sprintf("Installing distributed-chart in namespace %s", namespace))
 		install.InstallVMDistributedWithHelm(ctx, vmHelmChart, vmValuesFile, t, namespace, releaseName)
 
 		globalWriteURL := fmt.Sprintf("http://%s/api/v1/write", consts.VMInsertHost(namespace))

@@ -269,7 +269,7 @@ workflows:
       - gke-test:
           name: gke-distributed
           test_suite: distributed
-          procs: 1
+          procs: 10
           timeout: 90m
           vm_version: << pipeline.parameters.default_vm_version >>
           requires:
@@ -330,7 +330,7 @@ workflows:
       - gke-test:
           name: gke-vmcluster
           test_suite: vmcluster
-          procs: 1
+          procs: 10
           timeout: 90m
           vm_version: << pipeline.parameters.default_vm_version >>
           requires:

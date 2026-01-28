@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestDiscoverIngressHostWithLoadBalancer(t *testing.T) {
-	t.Parallel()
 	// Create a fake Kubernetes client
 	fakeClient := fake.NewSimpleClientset()
 
@@ -37,9 +38,7 @@ func TestDiscoverIngressHostWithLoadBalancer(t *testing.T) {
 		service,
 		metav1.CreateOptions{},
 	)
-	if err != nil {
-		t.Fatalf("Failed to create fake service: %v", err)
-	}
+	require.NoError(t, err, "Failed to create fake service")
 
 	// Preserve original consts and restore after test
 	originalDistro := consts.EnvK8SDistro()
@@ -58,16 +57,11 @@ func TestDiscoverIngressHostWithLoadBalancer(t *testing.T) {
 	expectedVMSelectHost := "vmselect-test-ns.192.168.1.100.nip.io"
 	expectedVMSingleHost := "vmsingle.192.168.1.100.nip.io"
 
-	if consts.VMSelectHost(testNamespace) != expectedVMSelectHost {
-		t.Errorf("Expected VMSelect host to be '%s', got '%s'", expectedVMSelectHost, consts.VMSelectHost(testNamespace))
-	}
-	if consts.VMSingleHost() != expectedVMSingleHost {
-		t.Errorf("Expected VMSingle host to be '%s', got '%s'", expectedVMSingleHost, consts.VMSingleHost())
-	}
+	assert.Equal(t, expectedVMSelectHost, consts.VMSelectHost(testNamespace))
+	assert.Equal(t, expectedVMSingleHost, consts.VMSingleHost())
 }
 
 func TestDiscoverIngressHostKindLogic(t *testing.T) {
-	t.Parallel()
 	// Preserve original consts and restore after test
 	originalDistro := consts.EnvK8SDistro()
 	originalNginx := consts.NginxHost()
@@ -86,19 +80,12 @@ func TestDiscoverIngressHostKindLogic(t *testing.T) {
 	expectedVMSingleHost := "vmsingle.127.0.0.1.nip.io"
 	expectedVMSelectUrl := "http://vmselect-vm.127.0.0.1.nip.io"
 
-	if consts.VMSelectHost(namespace) != expectedVMSelectHost {
-		t.Errorf("Expected VMSelect host for kind to be '%s', got '%s'", expectedVMSelectHost, consts.VMSelectHost(namespace))
-	}
-	if consts.VMSingleHost() != expectedVMSingleHost {
-		t.Errorf("Expected VMSingle host for kind to be '%s', got '%s'", expectedVMSingleHost, consts.VMSingleHost())
-	}
-	if consts.VMSelectUrl(namespace) != expectedVMSelectUrl {
-		t.Errorf("Expected VMSelect URL for kind to be '%s', got '%s'", expectedVMSelectUrl, consts.VMSelectUrl(namespace))
-	}
+	assert.Equal(t, expectedVMSelectHost, consts.VMSelectHost(namespace))
+	assert.Equal(t, expectedVMSingleHost, consts.VMSingleHost())
+	assert.Equal(t, expectedVMSelectUrl, consts.VMSelectUrl(namespace))
 }
 
 func TestHostnameFormatting(t *testing.T) {
-	t.Parallel()
 	// Preserve original nginx host and restore after test
 	original := consts.NginxHost()
 	defer consts.SetNginxHost(original)
@@ -138,32 +125,24 @@ func TestHostnameFormatting(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			consts.SetNginxHost(tt.nginxHost)
 
 			// Test with empty namespace (no namespace prefix)
 			namespace := ""
 
-			if consts.VMSelectHost(namespace) != tt.expectedSelect {
-				t.Errorf("Expected VMSelect host to be '%s', got '%s'", tt.expectedSelect, consts.VMSelectHost(namespace))
-			}
-			if consts.VMSelectUrl(namespace) != tt.expectedSelectUrl {
-				t.Errorf("Expected VMSelect URL to be '%s', got '%s'", tt.expectedSelectUrl, consts.VMSelectUrl(namespace))
-			}
+			assert.Equal(t, tt.expectedSelect, consts.VMSelectHost(namespace))
+			assert.Equal(t, tt.expectedSelectUrl, consts.VMSelectUrl(namespace))
 		})
 	}
 }
 
 func TestWaitForLoadBalancerIngress(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
-		name           string
-		services       []*corev1.Service
-		expectedHost   string
-		shouldFail     bool
-		failureMessage string
+		name         string
+		services     []*corev1.Service
+		expectedHost string
+		shouldFail   bool
 	}{
 		{
 			name: "service with IP immediately available",
@@ -188,9 +167,7 @@ func TestWaitForLoadBalancerIngress(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			// Create a fake Kubernetes client
 			fakeClient := fake.NewSimpleClientset()
 
@@ -202,9 +179,7 @@ func TestWaitForLoadBalancerIngress(t *testing.T) {
 						svc,
 						metav1.CreateOptions{},
 					)
-					if err != nil {
-						t.Fatalf("Failed to create fake service: %v", err)
-					}
+					require.NoError(t, err, "Failed to create fake service")
 				}
 			}
 
@@ -225,16 +200,13 @@ func TestWaitForLoadBalancerIngress(t *testing.T) {
 					}
 				}
 
-				if host != tt.expectedHost {
-					t.Errorf("Expected host to be '%s', got '%s'", tt.expectedHost, host)
-				}
+				assert.Equal(t, tt.expectedHost, host)
 			}
 		})
 	}
 }
 
 func TestEnvironmentDistroLogic(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name         string
 		distro       string
@@ -268,9 +240,7 @@ func TestEnvironmentDistroLogic(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			// Set the environment distro
 			originalDistro := consts.EnvK8SDistro()
 			defer consts.SetEnvK8SDistro(originalDistro) // Restore original value
@@ -278,23 +248,18 @@ func TestEnvironmentDistroLogic(t *testing.T) {
 			consts.SetEnvK8SDistro(tt.distro)
 
 			isKind := consts.EnvK8SDistro() == "kind"
-			if isKind != tt.expectKind {
-				t.Errorf("Expected isKind to be %v, got %v", tt.expectKind, isKind)
-			}
+			assert.Equal(t, tt.expectKind, isKind)
 
 			if tt.expectKind {
 				// For kind environments, we should use localhost
 				nginxHost := "127.0.0.1"
-				if nginxHost != tt.expectedHost {
-					t.Errorf("Expected nginx host for kind to be '%s', got '%s'", tt.expectedHost, nginxHost)
-				}
+				assert.Equal(t, tt.expectedHost, nginxHost)
 			}
 		})
 	}
 }
 
 func TestExtractIngressHost(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name         string
 		service      *corev1.Service
@@ -354,13 +319,9 @@ func TestExtractIngressHost(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			host := extractIngressHost(tt.service)
-			if host != tt.expectedHost {
-				t.Errorf("Expected host to be '%s', got '%s'", tt.expectedHost, host)
-			}
+			assert.Equal(t, tt.expectedHost, host)
 		})
 	}
 }

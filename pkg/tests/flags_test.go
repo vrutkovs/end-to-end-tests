@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestInit(t *testing.T) {
@@ -28,16 +30,10 @@ func TestInit(t *testing.T) {
 
 	// Test with default values
 	err := testFlagSet.Parse([]string{})
-	if err != nil {
-		t.Fatalf("Failed to parse test flags: %v", err)
-	}
+	require.NoError(t, err, "Failed to parse test flags")
 
-	if testReportLocation != "/tmp/allure-results" {
-		t.Errorf("Expected default report location to be '/tmp/allure-results', got '%s'", testReportLocation)
-	}
-	if testEnvK8SDistro != "kind" {
-		t.Errorf("Expected default env k8s distro to be 'kind', got '%s'", testEnvK8SDistro)
-	}
+	assert.Equal(t, "/tmp/allure-results", testReportLocation, "Expected default report location to match")
+	assert.Equal(t, "kind", testEnvK8SDistro, "Expected default env k8s distro to match")
 }
 
 func TestInitWithCustomFlags(t *testing.T) {
@@ -60,16 +56,10 @@ func TestInitWithCustomFlags(t *testing.T) {
 
 	// Test with custom values
 	err := testFlagSet.Parse([]string{"-report", "/custom/report/path", "-env-k8s-distro", "minikube"})
-	if err != nil {
-		t.Fatalf("Failed to parse test flags: %v", err)
-	}
+	require.NoError(t, err, "Failed to parse test flags")
 
-	if testReportLocation != "/custom/report/path" {
-		t.Errorf("Expected report location to be '/custom/report/path', got '%s'", testReportLocation)
-	}
-	if testEnvK8SDistro != "minikube" {
-		t.Errorf("Expected env k8s distro to be 'minikube', got '%s'", testEnvK8SDistro)
-	}
+	assert.Equal(t, "/custom/report/path", testReportLocation)
+	assert.Equal(t, "minikube", testEnvK8SDistro)
 }
 
 func TestInitAlreadyParsed(t *testing.T) {
@@ -88,12 +78,8 @@ func TestInitAlreadyParsed(t *testing.T) {
 
 	// Since we can't easily test Init with already parsed flags without side effects,
 	// we test that the consts package setter/getter work correctly
-	if consts.ReportLocation() != "/initial/path" {
-		t.Errorf("Expected report location to be '/initial/path', got '%s'", consts.ReportLocation())
-	}
-	if consts.EnvK8SDistro() != "initial-distro" {
-		t.Errorf("Expected env k8s distro to be 'initial-distro', got '%s'", consts.EnvK8SDistro())
-	}
+	assert.Equal(t, "/initial/path", consts.ReportLocation())
+	assert.Equal(t, "initial-distro", consts.EnvK8SDistro())
 }
 
 func TestFlagDefaults(t *testing.T) {
@@ -115,16 +101,10 @@ func TestFlagDefaults(t *testing.T) {
 
 	// Parse empty args to get defaults
 	err := testFlagSet.Parse([]string{})
-	if err != nil {
-		t.Fatalf("Failed to parse empty flags: %v", err)
-	}
+	require.NoError(t, err, "Failed to parse empty flags")
 
-	if testReportLocation != "/tmp/allure-results" {
-		t.Errorf("Expected default report location to be '/tmp/allure-results', got '%s'", testReportLocation)
-	}
-	if testEnvK8SDistro != "kind" {
-		t.Errorf("Expected default env k8s distro to be 'kind', got '%s'", testEnvK8SDistro)
-	}
+	assert.Equal(t, "/tmp/allure-results", testReportLocation)
+	assert.Equal(t, "kind", testEnvK8SDistro)
 }
 
 func TestMultipleInits(t *testing.T) {
@@ -148,12 +128,8 @@ func TestMultipleInits(t *testing.T) {
 	consts.SetReportLocation("/first/path")
 	consts.SetEnvK8SDistro("first-distro")
 
-	if consts.ReportLocation() != firstReport {
-		t.Errorf("Expected report location to remain '%s' after second set, got '%s'", firstReport, consts.ReportLocation())
-	}
-	if consts.EnvK8SDistro() != firstDistro {
-		t.Errorf("Expected env k8s distro to remain '%s' after second set, got '%s'", firstDistro, consts.EnvK8SDistro())
-	}
+	assert.Equal(t, firstReport, consts.ReportLocation())
+	assert.Equal(t, firstDistro, consts.EnvK8SDistro())
 }
 
 func TestVMTagFlagDefault(t *testing.T) {
@@ -166,13 +142,9 @@ func TestVMTagFlagDefault(t *testing.T) {
 
 	// Parse empty args to get defaults
 	err := testFlagSet.Parse([]string{})
-	if err != nil {
-		t.Fatalf("Failed to parse empty flags: %v", err)
-	}
+	require.NoError(t, err, "Failed to parse empty flags")
 
-	if testVMTag != "" {
-		t.Errorf("Expected default vmtag to be empty string, got '%s'", testVMTag)
-	}
+	assert.Empty(t, testVMTag, "Expected default vmtag to be empty string")
 }
 
 func TestVMTagFlagCustomValue(t *testing.T) {
@@ -184,13 +156,9 @@ func TestVMTagFlagCustomValue(t *testing.T) {
 
 	// Test with custom VM tag
 	err := testFlagSet.Parse([]string{"-vmtag", "v1.131.0"})
-	if err != nil {
-		t.Fatalf("Failed to parse vmtag flag: %v", err)
-	}
+	require.NoError(t, err, "Failed to parse vmtag flag")
 
-	if testVMTag != "v1.131.0" {
-		t.Errorf("Expected vmtag to be 'v1.131.0', got '%s'", testVMTag)
-	}
+	assert.Equal(t, "v1.131.0", testVMTag)
 }
 
 func TestVMTagSetterAndGetter(t *testing.T) {
@@ -205,9 +173,7 @@ func TestVMTagSetterAndGetter(t *testing.T) {
 	consts.SetVMTag(testTag)
 
 	retrievedTag := consts.VMVersion()
-	if retrievedTag != testTag {
-		t.Errorf("Expected VM version to be '%s', got '%s'", testTag, retrievedTag)
-	}
+	assert.Equal(t, testTag, retrievedTag)
 }
 
 func TestVMTagWithDifferentVersions(t *testing.T) {
@@ -222,9 +188,7 @@ func TestVMTagWithDifferentVersions(t *testing.T) {
 	for _, version := range testVersions {
 		consts.SetVMTag(version)
 		retrievedVersion := consts.VMVersion()
-		if retrievedVersion != version {
-			t.Errorf("Expected VM version to be '%s', got '%s'", version, retrievedVersion)
-		}
+		assert.Equal(t, version, retrievedVersion)
 	}
 }
 
@@ -238,9 +202,7 @@ func TestVMTagEmptyValue(t *testing.T) {
 	// Set empty tag
 	consts.SetVMTag("")
 	retrievedTag := consts.VMVersion()
-	if retrievedTag != "" {
-		t.Errorf("Expected VM version to be empty string, got '%s'", retrievedTag)
-	}
+	assert.Empty(t, retrievedTag)
 }
 
 func TestGetVMTagFunction(t *testing.T) {
@@ -253,9 +215,7 @@ func TestGetVMTagFunction(t *testing.T) {
 	vmTag = testTag
 
 	retrievedTag := GetVMTag()
-	if retrievedTag != testTag {
-		t.Errorf("Expected GetVMTag() to return '%s', got '%s'", testTag, retrievedTag)
-	}
+	assert.Equal(t, testTag, retrievedTag)
 
 	// Reset original value
 	vmTag = originalVMTag
@@ -283,9 +243,7 @@ func TestVMTagIntegrationWithInit(t *testing.T) {
 
 	// Verify that consts was updated
 	retrievedVersion := consts.VMVersion()
-	if retrievedVersion != testTag {
-		t.Errorf("Expected VM version to be '%s' after SetVMTag(), got '%s'", testTag, retrievedVersion)
-	}
+	assert.Equal(t, testTag, retrievedVersion)
 }
 
 func TestVMTagFlagVariableExists(t *testing.T) {
@@ -295,8 +253,6 @@ func TestVMTagFlagVariableExists(t *testing.T) {
 	// Test that we can read and write to it
 	originalValue := vmTag
 	vmTag = "test-value"
-	if vmTag != "test-value" {
-		t.Errorf("Expected vmTag to be 'test-value', got '%s'", vmTag)
-	}
+	assert.Equal(t, "test-value", vmTag)
 	vmTag = originalValue
 }

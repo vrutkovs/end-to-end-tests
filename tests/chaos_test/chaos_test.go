@@ -54,7 +54,7 @@ var _ = SynchronizedBeforeSuite(
 		install.DiscoverIngressHost(ctx, t)
 		install.InstallChaosMesh(ctx, chaosHelmChart, chaosValuesFile, t, chaosNamespace, chaosReleaseName)
 		install.InstallVMGather(t)
-		install.InstallWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, k8sStackNamespace, releaseName)
+		install.InstallVMK8StackWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, k8sStackNamespace, releaseName)
 		install.InstallOverwatch(ctx, t, overwatchNamespace, k8sStackNamespace, releaseName)
 
 		// Remove stock VMCluster - it would be recreated in vm* namespaces

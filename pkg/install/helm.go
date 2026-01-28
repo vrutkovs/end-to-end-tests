@@ -17,10 +17,10 @@ import (
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 )
 
-// buildVMTagSetValues creates Helm set values for VM component image tags based on the configured VM version.
+// buildVMK8StackValues creates Helm set values for VM component image tags based on the configured VM version.
 // It handles the logic for setting appropriate image tags for all VictoriaMetrics components,
 // including the special case of adding "-cluster" suffix for cluster components when not using "latest" tag.
-func buildVMTagSetValues(namespace string) map[string]string {
+func buildVMK8StackValues(namespace string) map[string]string {
 	setValues := map[string]string{
 		"vmcluster.ingress.select.hosts[0]": consts.VMSelectHost(namespace),
 		"vmcluster.ingress.insert.hosts[0]": consts.VMInsertHost(namespace),
@@ -48,7 +48,7 @@ func buildVMTagSetValues(namespace string) map[string]string {
 	return setValues
 }
 
-// InstallWithHelm installs or upgrades a Helm chart into the specified namespace and waits for key operator
+// InstallVMK8StackWithHelm installs or upgrades a Helm chart into the specified namespace and waits for key operator
 // and component deployments to become available. The function also reads version labels from deployed resources
 // and stores them in package-level consts for later use by tests.
 //
@@ -59,9 +59,9 @@ func buildVMTagSetValues(namespace string) map[string]string {
 // - t: terratest testing interface for running commands and assertions.
 // - namespace: Kubernetes namespace for the release.
 // - releaseName: Helm release name to use for the upgrade.
-func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terratesting.TestingT, namespace string, releaseName string) {
+func InstallVMK8StackWithHelm(ctx context.Context, helmChart, valuesFile string, t terratesting.TestingT, namespace string, releaseName string) {
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
-	setValues := buildVMTagSetValues(namespace)
+	setValues := buildVMK8StackValues(namespace)
 
 	helmOpts := &helm.Options{
 		KubectlOptions: kubeOpts,
@@ -109,6 +109,72 @@ func InstallWithHelm(ctx context.Context, helmChart, valuesFile string, t terrat
 		fmt.Printf("Found helm.sh/chart label: %s\n", helmChartVersion)
 	}
 	consts.SetHelmChartVersion(helmChartVersion)
+}
+
+// buildVMK8StackValues creates Helm set values for VM component image tags based on the configured VM version.
+// It handles the logic for setting appropriate image tags for all VictoriaMetrics components,
+// including the special case of adding "-cluster" suffix for cluster components when not using "latest" tag.
+func buildVMDistributedValues(namespace string) map[string]string {
+	setValues := map[string]string{
+		"read.global.vmauth.spec.ingress.host":  consts.VMSelectHost(namespace),
+		"write.global.vmauth.spec.ingress.host": consts.VMInsertHost(namespace),
+	}
+
+	// Set region-specific ingress hosts
+	setValues["zoneTpl.read.vmauth.spec.ingress.host"] = fmt.Sprintf("vmselect-{{ (.zone).name }}.%s.nip.io", consts.NginxHost())
+
+	// Add VM tag if provided
+	vmTag := consts.VMVersion()
+	if vmTag != "" {
+		// For cluster components, add "-cluster" suffix unless using "latest" tag
+		clusterTag := vmTag
+		if vmTag != "latest" {
+			clusterTag = fmt.Sprintf("%s-cluster", vmTag)
+		}
+
+		setValues["common.vmcluster.spec.vmstorage.image.tag"] = clusterTag
+		setValues["common.vmcluster.spec.vmselect.image.tag"] = clusterTag
+		setValues["common.vmcluster.spec.vminsert.image.tag"] = clusterTag
+		setValues["common.vmalert.spec.image.tag"] = vmTag
+		setValues["common.vmagent.spec.image.tag"] = vmTag
+		setValues["common.vmauth.spec.image.tag"] = vmTag
+	}
+
+	return setValues
+}
+
+// InstallVMK8StackWithHelm installs or upgrades a Helm chart into the specified namespace and waits for key operator
+// and component deployments to become available. The function also reads version labels from deployed resources
+// and stores them in package-level consts for later use by tests.
+//
+// Parameters:
+// - ctx: parent context for the operation (not used directly for Helm invocation here).
+// - helmChart: path or name of the Helm chart to install/upgrade.
+// - valuesFile: path to the Helm values file to apply.
+// - t: terratest testing interface for running commands and assertions.
+// - namespace: Kubernetes namespace for the release.
+// - releaseName: Helm release name to use for the upgrade.
+func InstallVMDistributedWithHelm(ctx context.Context, helmChart, valuesFile string, t terratesting.TestingT, namespace string, releaseName string) {
+	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+	setValues := buildVMDistributedValues(namespace)
+
+	helmOpts := &helm.Options{
+		KubectlOptions: kubeOpts,
+		ValuesFiles:    []string{valuesFile},
+		SetValues:      setValues,
+		ExtraArgs: map[string][]string{
+			"upgrade": {"--create-namespace", "--wait"},
+		},
+	}
+
+	By(fmt.Sprintf("Install %s chart", helmChart))
+	helm.Upgrade(t, helmOpts, helmChart, releaseName)
+
+	for _, vmAuthType := range []string{"read", "write"} {
+		vmAuthName := fmt.Sprintf("vmauth-vmauth-global-%s-vmks-vm-distributed", vmAuthType)
+		k8s.WaitUntilDeploymentAvailable(t, kubeOpts, vmAuthName, consts.Retries, consts.PollingInterval)
+		k8s.WaitUntilIngressAvailable(t, kubeOpts, vmAuthName, consts.Retries, consts.PollingInterval)
+	}
 }
 
 // InstallOverwatch provisions a lightweight VMSingle overwatch instance and a VMAgent that forwards data to it.

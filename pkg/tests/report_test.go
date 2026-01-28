@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEnvironmentPropertiesContent(t *testing.T) {
@@ -64,20 +66,17 @@ func TestEnvironmentPropertiesContent(t *testing.T) {
 			lines := strings.Split(strings.TrimSpace(resultStr), "\n")
 			if len(tt.expected) == 0 {
 				if resultStr != "" {
-					t.Errorf("Expected empty content for empty props, got '%s'", resultStr)
+					assert.Empty(t, resultStr, "Expected empty content for empty props")
 				}
 				return
 			}
 
-			if len(lines) != len(tt.expected) {
-				t.Errorf("Expected %d lines, got %d. Content: '%s'", len(tt.expected), len(lines), resultStr)
-				return
-			}
+			assert.Equal(t, len(tt.expected), len(lines), "Expected %d lines", len(tt.expected))
 
 			// Check that all expected lines are present (order should be alphabetical)
 			for i, expectedLine := range tt.expected {
-				if lines[i] != expectedLine {
-					t.Errorf("Expected line %d to be '%s', got '%s'", i, expectedLine, lines[i])
+				if i < len(lines) {
+					assert.Equal(t, expectedLine, lines[i], "Expected line %d to match", i)
 				}
 			}
 		})
@@ -104,8 +103,10 @@ func TestEnvironmentPropertiesContentOrdering(t *testing.T) {
 	lines := strings.Split(strings.TrimSpace(resultStr), "\n")
 
 	for i, expectedLine := range expectedOrder {
-		if i >= len(lines) || lines[i] != expectedLine {
-			t.Errorf("Expected line %d to be '%s', got '%s'. Full content: '%s'", i, expectedLine, lines[i], resultStr)
+		if i < len(lines) {
+			assert.Equal(t, expectedLine, lines[i], "Expected line %d to match", i)
+		} else {
+			t.Errorf("Missing line %d: %s", i, expectedLine)
 		}
 	}
 }
@@ -113,9 +114,7 @@ func TestEnvironmentPropertiesContentOrdering(t *testing.T) {
 func TestWriteEnvironmentProperties(t *testing.T) {
 	// Create a temporary directory
 	tempDir, err := os.MkdirTemp("", "test-env-props")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
+	require.NoError(t, err, "Failed to create temp directory")
 	defer os.RemoveAll(tempDir)
 
 	// Set some test values in consts
@@ -126,21 +125,16 @@ func TestWriteEnvironmentProperties(t *testing.T) {
 
 	// Test writeEnvironmentProperties
 	err = writeEnvironmentProperties(tempDir)
-	if err != nil {
-		t.Fatalf("writeEnvironmentProperties failed: %v", err)
-	}
+	require.NoError(t, err, "writeEnvironmentProperties failed")
 
 	// Verify the file was created
 	envFilePath := filepath.Join(tempDir, "environment.properties")
-	if _, err := os.Stat(envFilePath); os.IsNotExist(err) {
-		t.Fatal("environment.properties file was not created")
-	}
+	_, err = os.Stat(envFilePath)
+	assert.False(t, os.IsNotExist(err), "environment.properties file was not created")
 
 	// Read and verify the content
 	content, err := os.ReadFile(envFilePath)
-	if err != nil {
-		t.Fatalf("Failed to read environment.properties: %v", err)
-	}
+	require.NoError(t, err, "Failed to read environment.properties")
 
 	contentStr := string(content)
 	expectedLines := []string{
@@ -152,13 +146,11 @@ func TestWriteEnvironmentProperties(t *testing.T) {
 
 	lines := strings.Split(strings.TrimSpace(contentStr), "\n")
 
-	if len(lines) != len(expectedLines) {
-		t.Errorf("Expected %d lines, got %d. Content: '%s'", len(expectedLines), len(lines), contentStr)
-	}
+	assert.Equal(t, len(expectedLines), len(lines), "Expected line count match")
 
 	for i, expectedLine := range expectedLines {
-		if i >= len(lines) || lines[i] != expectedLine {
-			t.Errorf("Expected line %d to be '%s', got '%s'", i, expectedLine, lines[i])
+		if i < len(lines) {
+			assert.Equal(t, expectedLine, lines[i], "Expected line %d to match", i)
 		}
 	}
 }
@@ -166,9 +158,7 @@ func TestWriteEnvironmentProperties(t *testing.T) {
 func TestWriteEnvironmentPropertiesCreatesDirectory(t *testing.T) {
 	// Create a temporary directory
 	tempDir, err := os.MkdirTemp("", "test-env-props-dir")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
+	require.NoError(t, err, "Failed to create temp directory")
 	defer os.RemoveAll(tempDir)
 
 	// Use a nested path that doesn't exist
@@ -176,28 +166,22 @@ func TestWriteEnvironmentPropertiesCreatesDirectory(t *testing.T) {
 
 	// Test writeEnvironmentProperties with nested path
 	err = writeEnvironmentProperties(nestedPath)
-	if err != nil {
-		t.Fatalf("writeEnvironmentProperties failed: %v", err)
-	}
+	require.NoError(t, err, "writeEnvironmentProperties failed")
 
 	// Verify the nested directory was created
-	if _, err := os.Stat(nestedPath); os.IsNotExist(err) {
-		t.Fatal("Nested directory was not created")
-	}
+	_, err = os.Stat(nestedPath)
+	assert.False(t, os.IsNotExist(err), "Nested directory was not created")
 
 	// Verify the file was created in the nested directory
 	envFilePath := filepath.Join(nestedPath, "environment.properties")
-	if _, err := os.Stat(envFilePath); os.IsNotExist(err) {
-		t.Fatal("environment.properties file was not created in nested directory")
-	}
+	_, err = os.Stat(envFilePath)
+	assert.False(t, os.IsNotExist(err), "environment.properties file was not created in nested directory")
 }
 
 func TestWriteEnvironmentPropertiesWithEmptyValues(t *testing.T) {
 	// Create a temporary directory
 	tempDir, err := os.MkdirTemp("", "test-env-props-empty")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
+	require.NoError(t, err, "Failed to create temp directory")
 	defer os.RemoveAll(tempDir)
 
 	// Set empty values in consts
@@ -208,16 +192,12 @@ func TestWriteEnvironmentPropertiesWithEmptyValues(t *testing.T) {
 
 	// Test writeEnvironmentProperties
 	err = writeEnvironmentProperties(tempDir)
-	if err != nil {
-		t.Fatalf("writeEnvironmentProperties failed: %v", err)
-	}
+	require.NoError(t, err, "writeEnvironmentProperties failed")
 
 	// Read and verify the content
 	envFilePath := filepath.Join(tempDir, "environment.properties")
 	content, err := os.ReadFile(envFilePath)
-	if err != nil {
-		t.Fatalf("Failed to read environment.properties: %v", err)
-	}
+	require.NoError(t, err, "Failed to read environment.properties")
 
 	contentStr := string(content)
 	expectedLines := []string{
@@ -229,13 +209,11 @@ func TestWriteEnvironmentPropertiesWithEmptyValues(t *testing.T) {
 
 	lines := strings.Split(strings.TrimSpace(contentStr), "\n")
 
-	if len(lines) != len(expectedLines) {
-		t.Errorf("Expected %d lines, got %d. Content: '%s'", len(expectedLines), len(lines), contentStr)
-	}
+	assert.Equal(t, len(expectedLines), len(lines), "Expected line count match")
 
 	for i, expectedLine := range expectedLines {
-		if i >= len(lines) || lines[i] != expectedLine {
-			t.Errorf("Expected line %d to be '%s', got '%s'", i, expectedLine, lines[i])
+		if i < len(lines) {
+			assert.Equal(t, expectedLine, lines[i], "Expected line %d to match", i)
 		}
 	}
 }
@@ -266,16 +244,8 @@ func TestConstsIntegration(t *testing.T) {
 	consts.SetOperatorVersion(testOperator)
 	consts.SetVMVersion(testVM)
 
-	if consts.EnvK8SDistro() != testDistro {
-		t.Errorf("Expected EnvK8SDistro to be '%s', got '%s'", testDistro, consts.EnvK8SDistro())
-	}
-	if consts.HelmChartVersion() != testChart {
-		t.Errorf("Expected HelmChartVersion to be '%s', got '%s'", testChart, consts.HelmChartVersion())
-	}
-	if consts.OperatorVersion() != testOperator {
-		t.Errorf("Expected OperatorVersion to be '%s', got '%s'", testOperator, consts.OperatorVersion())
-	}
-	if consts.VMVersion() != testVM {
-		t.Errorf("Expected VMVersion to be '%s', got '%s'", testVM, consts.VMVersion())
-	}
+	assert.Equal(t, testDistro, consts.EnvK8SDistro())
+	assert.Equal(t, testChart, consts.HelmChartVersion())
+	assert.Equal(t, testOperator, consts.OperatorVersion())
+	assert.Equal(t, testVM, consts.VMVersion())
 }

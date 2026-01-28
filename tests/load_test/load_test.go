@@ -56,7 +56,7 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 		overwatch.Start = time.Now()
 
 		install.InstallVMGather(t)
-		install.InstallWithHelm(ctx, helmChart, valuesFile, t, vmNamespace, releaseName)
+		install.InstallVMK8StackWithHelm(ctx, helmChart, valuesFile, t, vmNamespace, releaseName)
 		install.InstallOverwatch(ctx, t, overwatchNamespace, vmNamespace, releaseName)
 
 		// Install k6 operator
@@ -89,7 +89,13 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 		It("Default installation should handle 50vus-30mins load test scenario", Label("kind", "gke", "id=d37b1987-a9e7-4d13-87b7-f2ded679c249"), func() {
 			By("Run 50vus-30mins scenario")
 			scenario := "vmselect-50vus-30mins"
-			err := install.RunK6Scenario(ctx, t, k6TestsNamespace, vmNamespace, scenario, 3)
+
+			// Update URL with GetVMSelectSvc - replace the full URL pattern identified by "let url ="
+			vmSelectSvcAddr := consts.GetVMSelectSvc(vmNamespace)
+			// Build the new URL with the dynamic service address
+			vmSelectURL := fmt.Sprintf("http://%s/select/0/prometheus/api/v1/query_range", vmSelectSvcAddr)
+
+			err := install.RunK6Scenario(ctx, t, k6TestsNamespace, vmNamespace, scenario, vmSelectURL, 3)
 			require.NoError(t, err)
 
 			By("Waiting for K6 jobs to complete")

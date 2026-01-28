@@ -94,9 +94,8 @@ func TestWaitForVMAgentToBeOperational(t *testing.T) {
 	WaitForVMAgentToBeOperational(ctx, testRecorder, kubeOpts, "test-ns", fakeVMClient)
 
 	// Check that no errors occurred
-	if len(testRecorder.errors) > 0 {
-		t.Errorf("Expected no errors, but got: %v", testRecorder.errors)
-	}
+	assert.Empty(t, testRecorder.errors, "Expected no errors")
+	assert.False(t, testRecorder.failed, "Expected failed to be false")
 }
 
 func TestVMAgentURLReplacement(t *testing.T) {
@@ -138,8 +137,8 @@ spec:
 			updatedContent = strings.ReplaceAll(updatedContent, oldVMSingleURL, newVMSingleURL)
 
 			// Verify the replacement occurred (except for vm namespace where URLs might be the same)
-			if updatedContent == originalVMAgentContent && tt.namespace != "vm" {
-				t.Error("URL replacement did not occur")
+			if tt.namespace != "vm" {
+				assert.NotEqual(t, originalVMAgentContent, updatedContent, "URL replacement should occur")
 			}
 
 			// Verify that the content still contains the expected structure

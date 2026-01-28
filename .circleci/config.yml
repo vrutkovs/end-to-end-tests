@@ -75,7 +75,7 @@ jobs:
             sudo chmod +x /usr/local/bin/vmexporter
       - run:
           name: Run e2e tests
-          no_output_timeout: 30m
+          no_output_timeout: 1h
           command: |
             export PATH="$PATH:$(go env GOPATH)/bin"
             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
@@ -84,7 +84,7 @@ jobs:
             mkdir -p "${REPORT_DIR}"
             ginkgo -v \
               -procs=1 \
-              -timeout=30m \
+              -timeout=60m \
               --label-filter=${LABEL_FILTER} \
               ./tests/smoke_test \
               -- \
@@ -182,7 +182,7 @@ jobs:
             helm repo update
       - run:
           name: Run e2e tests
-          no_output_timeout: 30m
+          no_output_timeout: 1h
           command: |
             export PATH="$PATH:$(go env GOPATH)/bin"
             export KUBECONFIG=/tmp/kubeconfig.yaml
@@ -267,24 +267,24 @@ workflows:
     jobs:
       - unit-tests
       - gke-test:
-          name: gke-vmcluster
-          test_suite: vmcluster
-          procs: 1
+          name: gke-distributed
+          test_suite: distributed
+          procs: 10
           timeout: 90m
           vm_version: << pipeline.parameters.default_vm_version >>
           requires:
             - unit-tests
       - cleanup:
-          name: gke-vmcluster-cleanup
-          test_suite: vmcluster
+          name: gke-distributed-cleanup
+          test_suite: distributed
           requires:
-            - gke-vmcluster:
+            - gke-distributed:
               - success
               - failed
               - canceled
       - deploy-report:
           requires:
-            - gke-vmcluster-cleanup
+            - gke-distributed-cleanup
 
   main-branch-tests:
     when: pipeline.git.branch == "main"
@@ -330,7 +330,7 @@ workflows:
       - gke-test:
           name: gke-vmcluster
           test_suite: vmcluster
-          procs: 1
+          procs: 10
           timeout: 90m
           vm_version: << pipeline.parameters.default_vm_version >>
           requires:
@@ -359,6 +359,22 @@ workflows:
               - success
               - failed
               - canceled
+      - gke-test:
+          name: gke-distributed
+          test_suite: distributed
+          procs: 10
+          timeout: 90m
+          vm_version: << pipeline.parameters.default_vm_version >>
+          requires:
+            - kind-smoke-test
+      - cleanup:
+          name: gke-distributed-cleanup
+          test_suite: distributed
+          requires:
+            - gke-distributed:
+              - success
+              - failed
+              - canceled
       - deploy-report:
           requires:
             - gke-smoke-cleanup:
@@ -374,6 +390,10 @@ workflows:
               - failed
               - canceled
             - gke-vmcluster-cleanup:
+              - success
+              - failed
+              - canceled
+            - gke-distributed-cleanup:
               - success
               - failed
               - canceled

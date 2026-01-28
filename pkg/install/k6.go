@@ -52,7 +52,7 @@ func InstallK6(ctx context.Context, t terratesting.TestingT, namespace string) {
 // - scenario: base name of the scenario file (without .js extension).
 // - parallelism: number of k6 parallel instances to request for the TestRun.
 // Returns an error if reading or marshaling manifests fails.
-func RunK6Scenario(ctx context.Context, t terratesting.TestingT, k6namespace, targetNamespace, scenario string, parallelism int) error {
+func RunK6Scenario(ctx context.Context, t terratesting.TestingT, k6namespace, targetNamespace, scenario, vmSelectURL string, parallelism int) error {
 	kubeOpts := k8s.NewKubectlOptions("", "", k6namespace)
 
 	scenarioPath := fmt.Sprintf("../../manifests/load-tests/%s.js", scenario)
@@ -61,16 +61,11 @@ func RunK6Scenario(ctx context.Context, t terratesting.TestingT, k6namespace, ta
 		return fmt.Errorf("failed to read scenario file: %w", err)
 	}
 
-	// Update URL with GetVMSelectSvc - replace the full URL pattern identified by "let url ="
-	vmSelectSvcAddr := consts.GetVMSelectSvc(targetNamespace)
-	// Build the new URL with the dynamic service address
-	newURL := fmt.Sprintf("http://%s/select/0/prometheus/api/v1/query_range", vmSelectSvcAddr)
-
 	// Replace the URL line pattern: let url = "old_url";
 	urlPattern := `let url =
     "http://vmselect-vmks.vm.svc.cluster.local.:8481/select/0/prometheus/api/v1/query_range"`
 	newURLPattern := fmt.Sprintf(`let url =
-    "%s"`, newURL)
+    "%s"`, vmSelectURL)
 
 	updatedScenarioContent := strings.ReplaceAll(string(scenarioContent), urlPattern, newURLPattern)
 

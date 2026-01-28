@@ -90,7 +90,7 @@ resource "google_container_cluster" "primary" {
     }
 
     node_config {
-      preemptible  = true
+      preemptible  = false
       machine_type = var.machine_type
       disk_size_gb = var.disk_size_gb
       disk_type    = "pd-standard"

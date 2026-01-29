@@ -196,6 +196,15 @@ OuterLoop:
 	ginkgo.AddReportEntry("vmexporter-report.zip", zipBuffer.String(), ginkgo.ReportEntryVisibilityNever)
 }
 
+// RestartOverwatchInstance restarts the overwatch VMSingle instance by deleting its pod
+// and waiting for it to become operational again.
+//
+// This is used to test resilience or configuration reloads.
+//
+// Parameters:
+// - ctx: context for the operation.
+// - t: terratest testing interface.
+// - namespace: Kubernetes namespace where overwatch is installed.
 func RestartOverwatchInstance(ctx context.Context, t testing.TestingT, namespace string) {
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 	client, err := k8s.GetKubernetesClientE(t)

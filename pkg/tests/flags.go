@@ -18,6 +18,7 @@ func init() {
 	flag.StringVar(&vmTag, "vmtag", "", "VictoriaMetrics image tag to use for testing")
 }
 
+// Init initializes test configuration by parsing flags and setting up constants.
 func Init() {
 	if !flag.Parsed() {
 		flag.Parse()
@@ -27,6 +28,7 @@ func Init() {
 	consts.SetVMTag(vmTag)
 }
 
+// GetVMTag returns the VictoriaMetrics image tag specified via command-line flags.
 func GetVMTag() string {
 	return vmTag
 }

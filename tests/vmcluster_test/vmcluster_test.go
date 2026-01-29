@@ -1,4 +1,4 @@
-package vmcluster_test
+package vmsingle_test
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 
+	jsonpatch "github.com/evanphx/json-patch/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -79,7 +80,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 		// Create new VMCluster object
 		kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 		vmclient := install.GetVMClient(t, kubeOpts)
-		install.InstallVMCluster(ctx, t, kubeOpts, namespace, vmclient)
+		install.InstallVMCluster(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{})
 		c = &http.Client{
 			Timeout: time.Second * 10,
 		}

@@ -23,10 +23,13 @@ func GetT() terratesting.TestingT {
 	}
 }
 
+// myTestingT wraps GinkgoTInterface to satisfy terratesting.TestingT interface.
 type myTestingT struct {
 	GinkgoTInterface
 }
 
+// Name returns the name of the test.
+// It returns an empty string as Ginkgo tests don't map 1:1 to testing.T names in this context.
 func (mt *myTestingT) Name() string {
 	return ""
 }
@@ -55,6 +58,8 @@ var _ = ReportAfterSuite("allure report", func(report types.Report) {
 	GinkgoLogr.Info("Allure report generated", "path", reportPath)
 })
 
+// writeEnvironmentProperties writes environment information to environment.properties file in the report directory.
+// This file is used by Allure to display environment information.
 func writeEnvironmentProperties(reportPath string) error {
 	envFilePath := filepath.Join(reportPath, "environment.properties")
 	if err := os.MkdirAll(filepath.Dir(envFilePath), 0755); err != nil {
@@ -72,6 +77,8 @@ func writeEnvironmentProperties(reportPath string) error {
 	return os.WriteFile(envFilePath, environmentPropertiesContent(props), 0644)
 }
 
+// environmentPropertiesContent generates the content for environment.properties file
+// from a map of properties. Keys are sorted alphabetically.
 func environmentPropertiesContent(props map[string]string) []byte {
 	keys := make([]string, 0, len(props))
 	for k := range props {

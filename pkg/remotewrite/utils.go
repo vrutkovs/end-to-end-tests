@@ -11,6 +11,9 @@ import (
 	"github.com/klauspost/compress/snappy"
 )
 
+// GenTimeSeries generates a slice of Prometheus time series with generated labels and sample values.
+// The name_prefix is used to generate the metric name, and size determines the number of series.
+// All series will have the same sample value and current timestamp.
 func GenTimeSeries(name_prefix string, size int, value float64) []prompb.TimeSeries {
 	ts := []prompb.TimeSeries{}
 	for i := 0; i < size; i++ {
@@ -29,6 +32,8 @@ func GenTimeSeries(name_prefix string, size int, value float64) []prompb.TimeSer
 	return ts
 }
 
+// GenPayload marshals the time series into a WriteRequest protobuf and snappy encodes it.
+// This matches the format expected by the Prometheus remote write API.
 func GenPayload(timeseries []prompb.TimeSeries) []byte {
 	r := &prompb.WriteRequest{}
 	r.Timeseries = timeseries
@@ -36,6 +41,8 @@ func GenPayload(timeseries []prompb.TimeSeries) []byte {
 	return snappy.Encode(nil, payload)
 }
 
+// RemoteWrite sends the time series to the specified remote write URL using the provided HTTP client.
+// It constructs the payload using GenPayload and sets the appropriate headers.
 func RemoteWrite(c *http.Client, ts []prompb.TimeSeries, url string) error {
 	payload := GenPayload(ts)
 	req, _ := http.NewRequest("POST", url, bytes.NewReader(payload))

@@ -15,11 +15,14 @@ const (
 	queryStep    = 1 * time.Minute
 )
 
+// PrometheusClient is a wrapper around the Prometheus API client.
+// It keeps track of a Start time for range queries.
 type PrometheusClient struct {
 	client promv1.API
 	Start  time.Time
 }
 
+// NewPrometheusClient creates a new PrometheusClient for the given URL.
 func NewPrometheusClient(url string) (PrometheusClient, error) {
 	promClient, err := promapi.NewClient(promapi.Config{
 		Address: url,
@@ -31,6 +34,7 @@ func NewPrometheusClient(url string) (PrometheusClient, error) {
 	return PrometheusClient{client: promv1api}, nil
 }
 
+// QueryRange executes a Prometheus range query from p.Start to now.
 func (p PrometheusClient) QueryRange(ctx context.Context, query string) (prommodel.Value, promv1.Warnings, error) {
 	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
 	defer cancel()
@@ -42,6 +46,7 @@ func (p PrometheusClient) QueryRange(ctx context.Context, query string) (prommod
 	})
 }
 
+// Query executes an instant Prometheus query at the current time.
 func (p PrometheusClient) Query(ctx context.Context, query string) (prommodel.Value, promv1.Warnings, error) {
 	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
 	defer cancel()
@@ -49,6 +54,8 @@ func (p PrometheusClient) Query(ctx context.Context, query string) (prommodel.Va
 	return p.client.Query(ctx, query, time.Now())
 }
 
+// VectorValue executes an instant query and returns the first sample value from the result vector.
+// It returns an error if the query fails, returns no data, or returns a non-vector result.
 func (p PrometheusClient) VectorValue(ctx context.Context, query string) (prommodel.SampleValue, error) {
 	result, _, err := p.Query(ctx, query)
 	if err != nil {
@@ -62,5 +69,23 @@ func (p PrometheusClient) VectorValue(ctx context.Context, query string) (prommo
 		return 0, fmt.Errorf("no data returned")
 	}
 	return vec[0].Value, nil
+
+}
+
+// VectorMetric executes an instant query and returns the first sample value from the result vector.
+// It returns an error if the query fails, returns no data, or returns a non-vector result.
+func (p PrometheusClient) VectorMetric(ctx context.Context, query string) (prommodel.Metric, error) {
+	result, _, err := p.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	if result.Type() != prommodel.ValVector {
+		return nil, fmt.Errorf("unexpected result type: %s", result.Type())
+	}
+	vec := result.(prommodel.Vector)
+	if len(vec) == 0 {
+		return nil, fmt.Errorf("no data returned")
+	}
+	return vec[0].Metric, nil
 
 }

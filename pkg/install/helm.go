@@ -111,7 +111,7 @@ func InstallVMK8StackWithHelm(ctx context.Context, helmChart, valuesFile string,
 	consts.SetHelmChartVersion(helmChartVersion)
 }
 
-// buildVMK8StackValues creates Helm set values for VM component image tags based on the configured VM version.
+// buildVMDistributedValues creates Helm set values for VM component image tags based on the configured VM version.
 // It handles the logic for setting appropriate image tags for all VictoriaMetrics components,
 // including the special case of adding "-cluster" suffix for cluster components when not using "latest" tag.
 func buildVMDistributedValues(namespace string) map[string]string {
@@ -143,9 +143,8 @@ func buildVMDistributedValues(namespace string) map[string]string {
 	return setValues
 }
 
-// InstallVMK8StackWithHelm installs or upgrades a Helm chart into the specified namespace and waits for key operator
-// and component deployments to become available. The function also reads version labels from deployed resources
-// and stores them in package-level consts for later use by tests.
+// InstallVMDistributedWithHelm installs or upgrades a Helm chart into the specified namespace and waits for key
+// component deployments to become available.
 //
 // Parameters:
 // - ctx: parent context for the operation (not used directly for Helm invocation here).
@@ -202,24 +201,7 @@ func InstallOverwatch(ctx context.Context, t terratesting.TestingT, namespace, v
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmsingle-overwatch", consts.Retries, consts.PollingInterval)
 
 	By("Install VMSingle ingress")
-	// Copy vmsingle-ingress.yaml to temp file, update ingress host and apply it
-	vmsingleYaml, err := os.ReadFile("../../manifests/overwatch/vmsingle-ingress.yaml")
-	require.NoError(t, err)
-
-	tempFile, err := os.CreateTemp("", "vmsingle-ingress.yaml")
-	require.NoError(t, err)
-	defer func() {
-		err := os.Remove(tempFile.Name())
-		require.NoError(t, err)
-	}()
-
-	// Extract host from consts.VMSingleUrl
-	vmsingleYaml = []byte(strings.ReplaceAll(string(vmsingleYaml), "vmsingle.example.com", consts.VMSingleHost()))
-
-	_, err = tempFile.Write(vmsingleYaml)
-	require.NoError(t, err)
-
-	k8s.KubectlApply(t, kubeOpts, tempFile.Name())
+	ExposeVMSingleAsIngress(ctx, t, kubeOpts, namespace)
 
 	By("Reconfigure VMAgent to send data to VMSingle")
 	// Read vmagent.yaml content

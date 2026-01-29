@@ -11,6 +11,7 @@ import (
 	terratesting "github.com/gruntwork-io/terratest/modules/testing"
 	"github.com/stretchr/testify/require"
 
+	jsonpatch "github.com/evanphx/json-patch/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -79,7 +80,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		// Create new VMCluster object
 		kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 		vmclient := install.GetVMClient(t, kubeOpts)
-		install.InstallVMCluster(ctx, t, kubeOpts, namespace, vmclient)
+		install.InstallVMCluster(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{})
 
 		// Ensure VMAgent remote write URL is set up. vmagent already created in k8sStackNamespace namespace
 		remoteWriteURL := fmt.Sprintf("http://vminsert-%s.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write", namespace, namespace)

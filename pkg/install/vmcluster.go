@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	jsonpatch "github.com/evanphx/json-patch/v5"
+	"sigs.k8s.io/yaml"
+
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	terratesting "github.com/gruntwork-io/terratest/modules/testing"
 	"github.com/stretchr/testify/require"
@@ -35,7 +38,8 @@ import (
 // - kubeOpts: terratest KubectlOptions pointing at the cluster to operate against.
 // - namespace: Kubernetes namespace where the VMCluster will be created.
 // - vmclient: client for interacting with VictoriaMetrics Operator CRDs.
-func InstallVMCluster(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient vmclient.Interface) {
+// - jsonPatches: list of json patches to apply to the VMCluster resource.
+func InstallVMCluster(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient vmclient.Interface, jsonPatches []jsonpatch.Patch) {
 	// Make sure namespace exists
 	if _, err := k8s.GetNamespaceE(t, kubeOpts, namespace); err != nil {
 		k8s.CreateNamespace(t, kubeOpts, namespace)
@@ -46,9 +50,17 @@ func InstallVMCluster(ctx context.Context, t terratesting.TestingT, kubeOpts *k8
 	vmclusterYaml, err := os.ReadFile(vmclusterYamlPath)
 	require.NoError(t, err, "failed to read VMCluster YAML")
 
+	vmclusterJson, err := yaml.YAMLToJSON(vmclusterYaml)
+	require.NoError(t, err, "failed to convert VMCluster YAML to JSON")
+
+	for _, patch := range jsonPatches {
+		vmclusterJson, err = patch.Apply(vmclusterJson)
+		require.NoError(t, err, "failed to apply patch")
+	}
+
 	// Apply the VMCluster manifest
 	fmt.Printf("Installing VMCluster in namespace %s\n", namespace)
-	k8s.KubectlApplyFromString(t, kubeOpts, string(vmclusterYaml))
+	k8s.KubectlApplyFromString(t, kubeOpts, string(vmclusterJson))
 
 	// Wait for VMCluster to become operational
 	WaitForVMClusterToBeOperational(ctx, t, kubeOpts, namespace, vmclient)

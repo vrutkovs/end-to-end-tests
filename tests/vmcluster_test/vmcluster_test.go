@@ -42,11 +42,12 @@ var (
 )
 
 const (
-	releaseName        = "vmks"
+	k8sReleaseName     = "vmks"
 	overwatchNamespace = "overwatch"
 	vmNamespace        = "monitoring"
 	vmHelmChart        = "vm/victoria-metrics-k8s-stack"
 	vmValuesFile       = "../../manifests/smoke.yaml"
+	vmClusterName      = "vm"
 )
 
 // Install VM from helm chart for the first process, set namespace for the rest
@@ -55,12 +56,12 @@ var _ = SynchronizedBeforeSuite(
 		t = tests.GetT()
 		install.DiscoverIngressHost(ctx, t)
 		install.InstallVMGather(t)
-		install.InstallVMK8StackWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, vmNamespace, releaseName)
-		install.InstallOverwatch(ctx, t, overwatchNamespace, vmNamespace, releaseName)
+		install.InstallVMK8StackWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, vmNamespace, k8sReleaseName)
+		install.InstallOverwatch(ctx, t, overwatchNamespace, vmNamespace, k8sReleaseName)
 
 		// Remove stock VMCluster - it would be recreated in vm* namespaces
 		kubeOpts := k8s.NewKubectlOptions("", "", vmNamespace)
-		install.DeleteVMCluster(t, kubeOpts, releaseName)
+		install.DeleteVMCluster(t, kubeOpts, k8sReleaseName)
 	}, func(ctx context.Context) {
 		t = tests.GetT()
 		namespace = fmt.Sprintf("vm%d", GinkgoParallelProcess())
@@ -93,7 +94,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 		k8s.RunKubectl(t, kubeOpts, "delete", "namespace", namespace, "--ignore-not-found=true")
 
 		if CurrentSpecReport().Failed() {
-			gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, releaseName)
+			gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, k8sReleaseName)
 			gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
 		}
 	})
@@ -324,6 +325,79 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 			value, err = multitenantProm.VectorValue(ctx, "bar_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
+		})
+	})
+
+	Describe("Relabeling", func() {
+		It("should relabel data sent via remote write", Label("gke", "id=e72f26ba-c1b7-4671-9c7e-7cfa630c33a9"), func(ctx context.Context) {
+			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+			if _, err := k8s.GetNamespaceE(t, kubeOpts, namespace); err != nil {
+				k8s.CreateNamespace(t, kubeOpts, namespace)
+			}
+			vmclient := install.GetVMClient(t, kubeOpts)
+
+			By("Configure VMAgent to relabel data")
+			vmInsertURL := fmt.Sprintf("http://%s/insert/0/prometheus/api/v1/write", consts.GetVMInsertSvc(vmClusterName, namespace))
+			patchOps := []install.PatchOp{
+				{
+					Op:   "add",
+					Path: "/spec/remoteWrite",
+					Value: []map[string]interface{}{
+						{
+							"url": vmInsertURL,
+							"inlineUrlRelabelConfig": []map[string]interface{}{
+								{
+									"target_label": "cluster",
+									"replacement":  "dev",
+								},
+								{
+									"action":        "drop",
+									"source_labels": []string{"__name__"},
+									"regex":         "bar_.*",
+								},
+							},
+						},
+					},
+				},
+			}
+			patch, err := install.CreateJsonPatch(patchOps)
+			require.NoError(t, err)
+
+			install.InstallVMAgent(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{patch})
+			install.ExposeVMAgentAsIngress(ctx, t, kubeOpts, namespace)
+
+			By("Inserting data into tenant 0")
+			vmagentWriteURL := fmt.Sprintf("http://%s/api/v1/write", consts.VMAgentNamespacedHost(namespace))
+			ts := remotewrite.GenTimeSeries("foo", 10, 1)
+			err = remotewrite.RemoteWrite(c, ts, vmagentWriteURL)
+			require.NoError(t, err)
+
+			By("Inserting data into tenant 1")
+			ts = remotewrite.GenTimeSeries("bar", 10, 5)
+			err = remotewrite.RemoteWrite(c, ts, vmagentWriteURL)
+			require.NoError(t, err)
+
+			time.Sleep(30 * time.Second)
+
+			By("foo has cluster=dev label")
+			tenantOneSelectURL := fmt.Sprintf("%s/select/0/prometheus", consts.VMSelectUrl(namespace))
+			tenantOneProm, err := promquery.NewPrometheusClient(tenantOneSelectURL)
+			require.NoError(t, err)
+			tenantOneProm.Start = overwatch.Start
+
+			value, err := tenantOneProm.VectorValue(ctx, "foo_2")
+			require.NoError(t, err)
+			require.Equal(t, value, model.SampleValue(1))
+
+			labels, err := tenantOneProm.VectorMetric(ctx, "foo_2")
+			require.NoError(t, err)
+			require.Contains(t, labels, model.LabelName("cluster"))
+			require.Equal(t, labels["cluster"], model.LabelValue("dev"))
+
+			By("bar_2 was removed")
+			value, err = tenantOneProm.VectorValue(ctx, "bar_2")
+			require.EqualError(t, err, "no data returned")
+			require.Equal(t, value, model.SampleValue(0))
 		})
 	})
 })

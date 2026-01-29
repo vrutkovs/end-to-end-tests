@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/gather"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/install"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/promquery"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/remotewrite"
@@ -56,13 +57,13 @@ var _ = SynchronizedBeforeSuite(
 	func(ctx context.Context) {
 		t = tests.GetT()
 		install.DiscoverIngressHost(ctx, t)
-		// install.InstallVMGather(t)
-		// install.InstallVMK8StackWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, vmNamespace, releaseName)
-		// install.InstallOverwatch(ctx, t, overwatchNamespace, vmNamespace, releaseName)
+		install.InstallVMGather(t)
+		install.InstallVMK8StackWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, vmNamespace, releaseName)
+		install.InstallOverwatch(ctx, t, overwatchNamespace, vmNamespace, releaseName)
 
-		// // Remove stock VMCluster
-		// kubeOpts := k8s.NewKubectlOptions("", "", vmNamespace)
-		// install.DeleteVMCluster(t, kubeOpts, releaseName)
+		// Remove stock VMCluster
+		kubeOpts := k8s.NewKubectlOptions("", "", vmNamespace)
+		install.DeleteVMCluster(t, kubeOpts, releaseName)
 
 	}, func(ctx context.Context) {
 		t = tests.GetT()
@@ -91,10 +92,10 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 		install.DeleteVMSingle(t, kubeOpts, namespace)
 		k8s.RunKubectl(t, kubeOpts, "delete", "namespace", namespace, "--ignore-not-found=true")
 
-		// if CurrentSpecReport().Failed() {
-		// 	gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, releaseName)
-		// 	gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
-		// }
+		if CurrentSpecReport().Failed() {
+			gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, releaseName)
+			gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
+		}
 	})
 
 	Describe("Relabeling", func() {

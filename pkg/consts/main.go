@@ -149,6 +149,17 @@ func VMSingleNamespacedHost(namespace string) string {
 	return fmt.Sprintf("vmsingle-%s.%s.nip.io", namespace, host)
 }
 
+// VMAgentNamespacedHost returns the hostname for VMAgent in the given namespace.
+func VMAgentNamespacedHost(namespace string) string {
+	mu.Lock()
+	host := nginxHost
+	mu.Unlock()
+	if host == "" {
+		return ""
+	}
+	return fmt.Sprintf("vmagent-%s.%s.nip.io", namespace, host)
+}
+
 // VMSelectHost returns the hostname for VMSelect in the given namespace.
 func VMSelectHost(namespace string) string {
 	mu.Lock()
@@ -191,18 +202,18 @@ func VMGatherHost() string {
 // Kubernetes service address functions
 
 // GetVMSelectSvc returns the internal Kubernetes service address for VMSelect.
-func GetVMSelectSvc(namespace string) string {
-	return fmt.Sprintf("vmselect-vmks.%s.svc.cluster.local:8481", namespace)
+func GetVMSelectSvc(releaseName, namespace string) string {
+	return fmt.Sprintf("vmselect-%s.%s.svc.cluster.local:8481", releaseName, namespace)
 }
 
 // GetVMSingleSvc returns the internal Kubernetes service address for VMSingle.
-func GetVMSingleSvc(namespace string) string {
-	return fmt.Sprintf("vmsingle-overwatch.%s.svc.cluster.local:8428", namespace)
+func GetVMSingleSvc(releaseName, namespace string) string {
+	return fmt.Sprintf("vmsingle-%s.%s.svc.cluster.local:8428", releaseName, namespace)
 }
 
 // GetVMInsertSvc returns the internal Kubernetes service address for VMInsert.
-func GetVMInsertSvc(namespace string) string {
-	return fmt.Sprintf("vminsert-vmks.%s.svc.cluster.local:8480", namespace)
+func GetVMInsertSvc(releaseName, namespace string) string {
+	return fmt.Sprintf("vminsert-%s.%s.svc.cluster.local:8480", releaseName, namespace)
 }
 
 // HelmChartVersion returns the stored Helm chart version.

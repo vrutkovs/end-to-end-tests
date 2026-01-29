@@ -210,7 +210,7 @@ func InstallOverwatch(ctx context.Context, t terratesting.TestingT, namespace, v
 	require.NoError(t, err)
 
 	// Replace URLs with dynamic service addresses
-	vmSingleSvc := consts.GetVMSingleSvc(namespace)
+	vmSingleSvc := consts.GetVMSingleSvc("overwatch", namespace)
 	oldVMSingleURL := "http://vmsingle-overwatch.vm.svc.cluster.local.:8428/prometheus/api/v1/write"
 	newVMSingleURL := fmt.Sprintf("http://%s/prometheus/api/v1/write", vmSingleSvc)
 	updatedVmagentYaml := strings.ReplaceAll(string(vmagentYaml), oldVMSingleURL, newVMSingleURL)
@@ -223,7 +223,7 @@ func InstallOverwatch(ctx context.Context, t terratesting.TestingT, namespace, v
 	WaitForVMAgentToBeOperational(ctx, t, kubeOpts, vmAgentNamespace, vmclient)
 
 	By("Reconfigure VMAlert to read data from VMSingle")
-	ReconfigureVMAlert(ctx, t, vmAgentNamespace, vmAgentReleaseName, consts.GetVMSingleSvc(namespace))
+	ReconfigureVMAlert(ctx, t, vmAgentNamespace, vmAgentReleaseName, consts.GetVMSingleSvc("overwatch", namespace))
 	WaitForVMAlertToBeOperational(ctx, t, kubeOpts, vmAgentNamespace, vmclient)
 
 	By("Wait for overwatch VMSingle to become operational")

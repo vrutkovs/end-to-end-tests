@@ -378,40 +378,46 @@ func TestNamespaceFormattingEdgeCases(t *testing.T) {
 
 func TestGetVMSelectSvc(t *testing.T) {
 	tests := []struct {
-		name      string
-		namespace string
-		expected  string
+		name        string
+		releaseName string
+		namespace   string
+		expected    string
 	}{
 		{
-			name:      "standard namespace",
-			namespace: "vm",
-			expected:  "vmselect-vmks.vm.svc.cluster.local:8481",
+			name:        "standard namespace",
+			releaseName: "vmks",
+			namespace:   "vm",
+			expected:    "vmselect-vmks.vm.svc.cluster.local:8481",
 		},
 		{
-			name:      "production namespace",
-			namespace: "production",
-			expected:  "vmselect-vmks.production.svc.cluster.local:8481",
+			name:        "production namespace",
+			releaseName: "vmks",
+			namespace:   "production",
+			expected:    "vmselect-vmks.production.svc.cluster.local:8481",
 		},
 		{
-			name:      "staging namespace",
-			namespace: "staging",
-			expected:  "vmselect-vmks.staging.svc.cluster.local:8481",
+			name:        "staging namespace",
+			releaseName: "vmks",
+			namespace:   "staging",
+			expected:    "vmselect-vmks.staging.svc.cluster.local:8481",
 		},
 		{
-			name:      "namespace with dashes",
-			namespace: "vm-cluster-test",
-			expected:  "vmselect-vmks.vm-cluster-test.svc.cluster.local:8481",
+			name:        "namespace with dashes",
+			releaseName: "vmks",
+			namespace:   "vm-cluster-test",
+			expected:    "vmselect-vmks.vm-cluster-test.svc.cluster.local:8481",
 		},
 		{
-			name:      "empty namespace",
-			namespace: "",
-			expected:  "vmselect-vmks..svc.cluster.local:8481",
+			name:        "empty namespace",
+			releaseName: "vmks",
+			namespace:   "",
+			expected:    "vmselect-vmks..svc.cluster.local:8481",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := GetVMSelectSvc(tt.namespace)
+			result := GetVMSelectSvc(tt.releaseName, tt.namespace)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -419,35 +425,40 @@ func TestGetVMSelectSvc(t *testing.T) {
 
 func TestGetVMSingleSvc(t *testing.T) {
 	tests := []struct {
-		name      string
-		namespace string
-		expected  string
+		name        string
+		releaseName string
+		namespace   string
+		expected    string
 	}{
 		{
-			name:      "standard namespace",
-			namespace: "vm",
-			expected:  "vmsingle-overwatch.vm.svc.cluster.local:8428",
+			name:        "standard namespace",
+			releaseName: "overwatch",
+			namespace:   "vm",
+			expected:    "vmsingle-overwatch.vm.svc.cluster.local:8428",
 		},
 		{
-			name:      "production namespace",
-			namespace: "production",
-			expected:  "vmsingle-overwatch.production.svc.cluster.local:8428",
+			name:        "production namespace",
+			releaseName: "overwatch",
+			namespace:   "production",
+			expected:    "vmsingle-overwatch.production.svc.cluster.local:8428",
 		},
 		{
-			name:      "staging namespace",
-			namespace: "staging",
-			expected:  "vmsingle-overwatch.staging.svc.cluster.local:8428",
+			name:        "staging namespace",
+			releaseName: "overwatch",
+			namespace:   "staging",
+			expected:    "vmsingle-overwatch.staging.svc.cluster.local:8428",
 		},
 		{
-			name:      "namespace with dashes",
-			namespace: "vm-cluster-test",
-			expected:  "vmsingle-overwatch.vm-cluster-test.svc.cluster.local:8428",
+			name:        "namespace with dashes",
+			releaseName: "overwatch",
+			namespace:   "vm-cluster-test",
+			expected:    "vmsingle-overwatch.vm-cluster-test.svc.cluster.local:8428",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := GetVMSingleSvc(tt.namespace)
+			result := GetVMSingleSvc(tt.releaseName, tt.namespace)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -459,8 +470,8 @@ func TestKubernetesServiceAddressesIntegration(t *testing.T) {
 
 	for _, ns := range namespaces {
 		t.Run("namespace_"+ns, func(t *testing.T) {
-			vmSelectSvc := GetVMSelectSvc(ns)
-			vmSingleSvc := GetVMSingleSvc(ns)
+			vmSelectSvc := GetVMSelectSvc("vmks", ns)
+			vmSingleSvc := GetVMSingleSvc("overwatch", ns)
 
 			// Verify they contain the namespace
 			assert.Contains(t, vmSelectSvc, ns, "VMSelect service address should contain namespace")
@@ -479,40 +490,46 @@ func TestKubernetesServiceAddressesIntegration(t *testing.T) {
 
 func TestGetVMInsertSvc(t *testing.T) {
 	tests := []struct {
-		name      string
-		namespace string
-		expected  string
+		name        string
+		releaseName string
+		namespace   string
+		expected    string
 	}{
 		{
-			name:      "standard namespace",
-			namespace: "vm",
-			expected:  "vminsert-vmks.vm.svc.cluster.local:8480",
+			name:        "standard namespace",
+			releaseName: "vmks",
+			namespace:   "vm",
+			expected:    "vminsert-vmks.vm.svc.cluster.local:8480",
 		},
 		{
-			name:      "production namespace",
-			namespace: "production",
-			expected:  "vminsert-vmks.production.svc.cluster.local:8480",
+			name:        "production namespace",
+			releaseName: "vmks",
+			namespace:   "production",
+			expected:    "vminsert-vmks.production.svc.cluster.local:8480",
 		},
 		{
-			name:      "staging namespace",
-			namespace: "staging",
-			expected:  "vminsert-vmks.staging.svc.cluster.local:8480",
+			name:        "staging namespace",
+			releaseName: "vmks",
+			namespace:   "staging",
+			expected:    "vminsert-vmks.staging.svc.cluster.local:8480",
 		},
 		{
-			name:      "namespace with dashes",
-			namespace: "vm-cluster-test",
-			expected:  "vminsert-vmks.vm-cluster-test.svc.cluster.local:8480",
+			name:        "namespace with dashes",
+			releaseName: "vmks",
+			namespace:   "vm-cluster-test",
+			expected:    "vminsert-vmks.vm-cluster-test.svc.cluster.local:8480",
 		},
 		{
-			name:      "empty namespace",
-			namespace: "",
-			expected:  "vminsert-vmks..svc.cluster.local:8480",
+			name:        "empty namespace",
+			releaseName: "vmks",
+			namespace:   "",
+			expected:    "vminsert-vmks..svc.cluster.local:8480",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := GetVMInsertSvc(tt.namespace)
+			result := GetVMInsertSvc(tt.releaseName, tt.namespace)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -524,9 +541,9 @@ func TestVMServiceAddressesIntegration(t *testing.T) {
 
 	for _, ns := range namespaces {
 		t.Run("namespace_"+ns, func(t *testing.T) {
-			vmSelectSvc := GetVMSelectSvc(ns)
-			vmSingleSvc := GetVMSingleSvc(ns)
-			vmInsertSvc := GetVMInsertSvc(ns)
+			vmSelectSvc := GetVMSelectSvc("vmks", ns)
+			vmSingleSvc := GetVMSingleSvc("overwatch", ns)
+			vmInsertSvc := GetVMInsertSvc("vmks", ns)
 
 			// Verify they contain the namespace
 			assert.Contains(t, vmSelectSvc, ns, "VMSelect service address should contain namespace")

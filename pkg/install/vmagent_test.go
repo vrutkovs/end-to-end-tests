@@ -122,8 +122,8 @@ spec:
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			// Get service names for the namespace
-			vmInsertSvc := consts.GetVMInsertSvc(tt.namespace)
-			vmSingleSvc := consts.GetVMSingleSvc(tt.namespace)
+			vmInsertSvc := consts.GetVMInsertSvc("vmks", tt.namespace)
+			vmSingleSvc := consts.GetVMSingleSvc("overwatch", tt.namespace)
 
 			// Define old and new URLs
 			oldVMInsertURL := "http://vminsert-vmks.vm.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write"
@@ -152,11 +152,11 @@ func TestVMAgentURLReplacementFormat(t *testing.T) {
 	// Test that service functions return the expected format for URL construction
 	namespace := "test-ns"
 
-	vmInsertSvc := consts.GetVMInsertSvc(namespace)
+	vmInsertSvc := consts.GetVMInsertSvc("vmks", namespace)
 	expectedVMInsertFormat := "vminsert-vmks.test-ns.svc.cluster.local:8480"
 	assert.Equal(t, expectedVMInsertFormat, vmInsertSvc, "GetVMInsertSvc should return expected format")
 
-	vmSingleSvc := consts.GetVMSingleSvc(namespace)
+	vmSingleSvc := consts.GetVMSingleSvc("overwatch", namespace)
 	expectedVMSingleFormat := "vmsingle-overwatch.test-ns.svc.cluster.local:8428"
 	assert.Equal(t, expectedVMSingleFormat, vmSingleSvc, "GetVMSingleSvc should return expected format")
 
@@ -181,8 +181,8 @@ spec:
   - url: http://some-other-service.example.com/write`
 
 	// Should not modify content that doesn't have the expected patterns
-	vmInsertSvc := consts.GetVMInsertSvc("test")
-	vmSingleSvc := consts.GetVMSingleSvc("test")
+	vmInsertSvc := consts.GetVMInsertSvc("vmks", "test")
+	vmSingleSvc := consts.GetVMSingleSvc("overwatch", "test")
 
 	oldVMInsertURL := "http://vminsert-vmks.vm.svc.cluster.local:8480/insert/0/prometheus/api/v1/write"
 	newVMInsertURL := "http://" + vmInsertSvc + "/insert/0/prometheus/api/v1/write"
@@ -209,7 +209,7 @@ spec:
   - url: http://vmsingle-overwatch.vm.svc.cluster.local:8428/prometheus/api/v1/write`
 
 	namespace := "production"
-	vmSingleSvc := consts.GetVMSingleSvc(namespace)
+	vmSingleSvc := consts.GetVMSingleSvc("overwatch", namespace)
 
 	// Use the same replacement logic as in the actual function
 	oldVMSingleURL := "http://vmsingle-overwatch.vm.svc.cluster.local:8428/prometheus/api/v1/write"

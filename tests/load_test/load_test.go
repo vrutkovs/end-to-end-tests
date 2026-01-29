@@ -91,7 +91,7 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 			scenario := "vmselect-50vus-30mins"
 
 			// Update URL with GetVMSelectSvc - replace the full URL pattern identified by "let url ="
-			vmSelectSvcAddr := consts.GetVMSelectSvc(vmNamespace)
+			vmSelectSvcAddr := consts.GetVMSelectSvc(releaseName, vmNamespace)
 			// Build the new URL with the dynamic service address
 			vmSelectURL := fmt.Sprintf("http://%s/select/0/prometheus/api/v1/query_range", vmSelectSvcAddr)
 

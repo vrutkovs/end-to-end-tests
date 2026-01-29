@@ -2,6 +2,11 @@ package install
 
 import (
 	"context"
+	"fmt"
+	"os"
+
+	jsonpatch "github.com/evanphx/json-patch/v5"
+	"sigs.k8s.io/yaml"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	vmclient "github.com/VictoriaMetrics/operator/api/client/versioned"
@@ -14,6 +19,103 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	watchtools "k8s.io/client-go/tools/watch"
 )
+
+// InstallVMAgent installs a single-node VictoriaMetrics instance (VMAgent) into the specified namespace.
+//
+// It performs the following steps:
+// 1. Ensures the target namespace exists.
+// 2. Reads the VMAgent manifest from "../../manifests/vmagent.yaml".
+// 3. Applies the manifest using kubectl.
+// 4. Waits for the VMAgent instance to become operational.
+//
+// Parameters:
+// - ctx: context for cancellation and timeouts.
+// - t: terratest testing interface.
+// - kubeOpts: Kubernetes options including namespace.
+// - namespace: target Kubernetes namespace.
+// - vmclient: VictoriaMetrics operator client.
+// - jsonPatches: list of json patches to apply to the VMAgent resource.
+func InstallVMAgent(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string, vmclient vmclient.Interface, jsonPatches []jsonpatch.Patch) {
+	// Make sure namespace exists
+	if _, err := k8s.GetNamespaceE(t, kubeOpts, namespace); err != nil {
+		k8s.CreateNamespace(t, kubeOpts, namespace)
+	}
+
+	// Read VMAgent and patch it
+	vmagentYamlPath := "../../manifests/vmagent.yaml"
+	vmagentYaml, err := os.ReadFile(vmagentYamlPath)
+	require.NoError(t, err, "failed to read VMAgent YAML")
+
+	vmagentJson, err := yaml.YAMLToJSON(vmagentYaml)
+	require.NoError(t, err, "failed to convert VMAgent YAML to JSON")
+
+	for _, patch := range jsonPatches {
+		vmagentJson, err = patch.Apply(vmagentJson)
+		require.NoError(t, err, "failed to apply patch")
+	}
+
+	// Apply the VMAgent manifest
+	fmt.Printf("Installing VMAgent in namespace %s\n", namespace)
+	k8s.KubectlApplyFromString(t, kubeOpts, string(vmagentJson))
+
+	// Wait for VMAgent to become operational
+	WaitForVMAgentToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
+
+	// Expose VMAgent as ingress
+	ExposeVMAgentAsIngress(ctx, t, kubeOpts, namespace)
+}
+
+// ExposeVMAgentAsIngress creates an Ingress resource to expose the VMAgent instance.
+//
+// It reads the ingress template from "../../manifests/overwatch/vmsingle-ingress.yaml",
+// replaces the host placeholder with the configured VMAgent host, and applies it.
+//
+// Parameters:
+// - ctx: context for the operation.
+// - t: terratest testing interface.
+// - kubeOpts: Kubernetes options.
+// - namespace: Kubernetes namespace where the ingress should be created.
+func ExposeVMAgentAsIngress(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace string) {
+	// Copy vmsingle-ingress.yaml to temp file, update ingress host and apply it
+	vmagentYaml, err := os.ReadFile("../../manifests/overwatch/vmsingle-ingress.yaml")
+	require.NoError(t, err)
+
+	docJson, err := yaml.YAMLToJSON(vmagentYaml)
+	require.NoError(t, err)
+
+	host := consts.VMAgentNamespacedHost(namespace)
+
+	patchOps := []PatchOp{
+		{
+			Op:    "replace",
+			Path:  "/metadata/name",
+			Value: "vmagent-ingress",
+		},
+		{
+			Op:    "add",
+			Path:  "/metadata/namespace",
+			Value: namespace,
+		},
+		{
+			Op:    "replace",
+			Path:  "/spec/rules/0/host",
+			Value: host,
+		},
+		{
+			Op:    "replace",
+			Path:  "/spec/rules/0/http/paths/0/backend/service/name",
+			Value: "vmagent-vmagent",
+		},
+	}
+
+	patchObj, err := CreateJsonPatch(patchOps)
+	require.NoError(t, err)
+	docJson, err = patchObj.Apply(docJson)
+	require.NoError(t, err)
+
+	k8s.KubectlApplyFromString(t, kubeOpts, string(docJson))
+	k8s.WaitUntilIngressAvailable(t, kubeOpts, "vmagent-ingress", consts.Retries, consts.PollingInterval)
+}
 
 // EnsureVMAgentRemoteWriteURL ensures that the specified VMAgent contains a remoteWrite
 // entry with the provided URL. If no remoteWrite entries exist or the provided URL is
@@ -96,4 +198,17 @@ func WaitForVMAgentToBeOperational(ctx context.Context, t terratesting.TestingT,
 		return false, nil
 	})
 	require.NoError(t, err)
+}
+
+// DeleteVMAgent deletes the specified VMAgent resource from the cluster.
+// It ignores "not found" errors.
+//
+// Parameters:
+// - t: terratest testing interface.
+// - kubeOpts: Kubernetes options.
+// - vmagentName: name of the VMAgent resource to delete.
+func DeleteVMAgent(t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, vmagentName string) {
+	// Delete the VMAgent resource
+	fmt.Printf("Deleting VMAgent %s\n", vmagentName)
+	k8s.RunKubectl(t, kubeOpts, "delete", "vmagent", vmagentName, "--ignore-not-found=true")
 }

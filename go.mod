@@ -6,6 +6,7 @@ require (
 	github.com/Moon1706/ginkgo2allure v0.3.0
 	github.com/VictoriaMetrics/VictoriaMetrics v1.134.0
 	github.com/VictoriaMetrics/operator/api v0.65.0
+	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/grafana/k6-operator v1.1.0
 	github.com/gruntwork-io/terratest v0.53.0
 	github.com/klauspost/compress v1.18.3
@@ -73,7 +74,6 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
-	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-errors/errors v1.0.2-0.20180813162953-d98b870cc4e0 // indirect

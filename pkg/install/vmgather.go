@@ -2,13 +2,13 @@ package install
 
 import (
 	"os"
-	"strings"
 
 	. "github.com/onsi/ginkgo/v2" //nolint
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	terratesting "github.com/gruntwork-io/terratest/modules/testing"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/yaml"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 )
@@ -18,9 +18,7 @@ import (
 // Behavior:
 //   - Ensures the `vmgather` namespace exists.
 //   - Reads the VMGather manifest from the repository manifests.
-//   - Replaces the placeholder host `vmgather.example.com` with the runtime value
-//     provided by `consts.VMGatherHost()` so the ingress/host configuration matches
-//     the test environment.
+//   - Patches the ingress host in-memory using JSON patch to match the test environment.
 //   - Applies the modified manifest and waits for the `vmgather` deployment to become available.
 //
 // Parameters:
@@ -34,24 +32,29 @@ func InstallVMGather(t terratesting.TestingT) {
 	}
 
 	By("Install VMGather")
-	// Copy vmsingle-ingress.yaml to temp file, update ingress host and apply it
-	vmgather, err := os.ReadFile("../../manifests/vmgather.yaml")
+	vmgatherYaml, err := os.ReadFile("../../manifests/vmgather.yaml")
 	require.NoError(t, err)
+	k8s.KubectlApplyFromString(t, kubeOpts, string(vmgatherYaml))
 
-	tempFile, err := os.CreateTemp("", "vmgather.yaml")
+	// Patch the ingress host in-memory
+	vmgatherYaml, err = os.ReadFile("../../manifests/vmgather-ingress.yaml")
 	require.NoError(t, err)
-	defer func() {
-		err := os.Remove(tempFile.Name())
-		require.NoError(t, err)
-	}()
-
-	// Extract host from consts.VMSingleUrl
-	vmgather = []byte(strings.ReplaceAll(string(vmgather), "vmgather.example.com", consts.VMGatherHost()))
-
-	_, err = tempFile.Write(vmgather)
+	patchOps := []PatchOp{
+		{
+			Op:    "replace",
+			Path:  "/spec/rules/0/host",
+			Value: consts.VMGatherHost(),
+		},
+	}
+	patch, err := CreateJsonPatch(patchOps)
 	require.NoError(t, err)
-
-	k8s.KubectlApply(t, kubeOpts, tempFile.Name())
+	vmgatherJson, err := yaml.YAMLToJSON(vmgatherYaml)
+	require.NoError(t, err)
+	vmgatherJson, err = patch.Apply(vmgatherJson)
+	require.NoError(t, err)
+	vmgatherPatched, err := yaml.JSONToYAML(vmgatherJson)
+	require.NoError(t, err)
+	k8s.KubectlApplyFromString(t, kubeOpts, string(vmgatherPatched))
 
 	By("Wait for vmgather deployment to be available")
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmgather", consts.Retries, consts.PollingInterval)

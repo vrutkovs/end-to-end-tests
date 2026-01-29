@@ -8,7 +8,7 @@ import (
 
 const (
 	// PollingInterval is the interval at which tests verify conditions (e.g. resource readiness).
-	PollingInterval = 30 * time.Second
+	PollingInterval = 5 * time.Second
 	// PollingTimeout defines the overall timeout for polling operations.
 	PollingTimeout = 15 * time.Minute
 	// ResourceWaitTimeout is the maximum duration to wait for Kubernetes resources to become available.

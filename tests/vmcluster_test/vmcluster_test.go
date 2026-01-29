@@ -400,4 +400,83 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 			require.Equal(t, value, model.SampleValue(0))
 		})
 	})
+
+	Describe("Streaming Aggregation", func() {
+		It("should aggregate data with sum_samples output via VMAgent", Label("gke", "id=c3d4e5f6-a7b8-9012-cdef-345678901234"), func(ctx context.Context) {
+			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+			if _, err := k8s.GetNamespaceE(t, kubeOpts, namespace); err != nil {
+				k8s.CreateNamespace(t, kubeOpts, namespace)
+			}
+			vmclient := install.GetVMClient(t, kubeOpts)
+
+			By("Configure VMAgent with streaming aggregation")
+			vmInsertURL := fmt.Sprintf("http://%s/insert/0/prometheus/api/v1/write", consts.GetVMInsertSvc(vmClusterName, namespace))
+			patchOps := []install.PatchOp{
+				{
+					Op:   "add",
+					Path: "/spec/remoteWrite",
+					Value: []map[string]interface{}{
+						{
+							"url": vmInsertURL,
+							"streamAggrConfig": map[string]interface{}{
+								"rules": []map[string]interface{}{
+									{
+										"match":    []string{`{__name__=~"cluster_aggr_.*"}`},
+										"interval": "30s",
+										"outputs":  []string{"sum_samples"},
+										"without":  []string{"foo", "bar", "baz"},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			patch, err := install.CreateJsonPatch(patchOps)
+			require.NoError(t, err)
+
+			install.InstallVMAgent(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{patch})
+			install.ExposeVMAgentAsIngress(ctx, t, kubeOpts, namespace)
+
+			By("Inserting multiple samples for aggregation")
+			vmagentWriteURL := fmt.Sprintf("http://%s/api/v1/write", consts.VMAgentNamespacedHost(namespace))
+
+			// Send multiple samples that should be aggregated
+			for i := 0; i < 5; i++ {
+				ts := remotewrite.GenTimeSeries("cluster_aggr_test", 3, 1)
+				err = remotewrite.RemoteWrite(c, ts, vmagentWriteURL)
+				require.NoError(t, err)
+				time.Sleep(2 * time.Second)
+			}
+
+			// Also send some metrics that should NOT be aggregated (no match)
+			ts := remotewrite.GenTimeSeries("cluster_nonaggr", 3, 100)
+			err = remotewrite.RemoteWrite(c, ts, vmagentWriteURL)
+			require.NoError(t, err)
+
+			By("Waiting for aggregation interval to pass")
+			time.Sleep(45 * time.Second)
+
+			By("Verifying aggregated metrics exist with correct naming")
+			selectURL := fmt.Sprintf("%s/select/0/prometheus", consts.VMSelectUrl(namespace))
+			prom, err := promquery.NewPrometheusClient(selectURL)
+			require.NoError(t, err)
+			prom.Start = overwatch.Start
+
+			value, err := prom.VectorValue(ctx, "sum_over_time(cluster_aggr_test_0:30s_without_bar_baz_foo_sum_samples[5m])")
+			require.NoError(t, err)
+			// The sum should be exactly 5 (5 samples with value 1)
+			require.Equal(t, value, model.SampleValue(5))
+
+			By("Verifying non-matching metrics are written as-is")
+			value, err = prom.VectorValue(ctx, "cluster_nonaggr_0")
+			require.NoError(t, err)
+			require.Equal(t, value, model.SampleValue(100))
+
+			By("Verifying original aggr metrics are dropped")
+			value, err = prom.VectorValue(ctx, "cluster_aggr_test_0")
+			require.EqualError(t, err, "no data returned")
+			require.Equal(t, value, model.SampleValue(0))
+		})
+	})
 })

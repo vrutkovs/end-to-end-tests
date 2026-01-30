@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
-	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 
@@ -29,60 +27,55 @@ func TestLoadTestsTests(t *testing.T) {
 }
 
 var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), func() {
-	const (
-		vmNamespace         = "monitoring"
-		overwatchNamespace  = "overwatch"
-		k6OperatorNamespace = "k6-operator-system"
-		k6TestsNamespace    = "k6-tests"
-		releaseName         = "vmks"
-		helmChart           = "vm/victoria-metrics-k8s-stack"
-		benchmarkNamespace  = "vm-benchmark"
-		valuesFile          = "../../manifests/smoke.yaml"
-	)
-
 	ctx := context.Background()
-
 	t := tests.GetT()
 
 	var overwatch promquery.PrometheusClient
 
 	BeforeAll(func() {
-		install.DiscoverIngressHost(ctx, t)
-
 		var err error
-		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl())
-		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
+		overwatch, err = tests.SetupOverwatchClient(ctx, t)
 		require.NoError(t, err)
-		overwatch.Start = time.Now()
 
 		install.InstallVMGather(t)
-		install.InstallVMK8StackWithHelm(ctx, helmChart, valuesFile, t, vmNamespace, releaseName)
-		install.InstallOverwatch(ctx, t, overwatchNamespace, vmNamespace, releaseName)
+		install.InstallVMK8StackWithHelm(
+			ctx,
+			consts.VMK8sStackChart,
+			consts.SmokeValuesFile,
+			t,
+			consts.DefaultVMNamespace,
+			consts.DefaultReleaseName,
+		)
+		install.InstallOverwatch(ctx, t, consts.OverwatchNamespace, consts.DefaultVMNamespace, consts.DefaultReleaseName)
 
 		// Install k6 operator
-		install.InstallK6(ctx, t, k6OperatorNamespace)
+		install.InstallK6(ctx, t, consts.K6OperatorNamespace)
 
-		// Install prometheus benchmark
-		prombenchChartValues := map[string]string{
-			"disableMonitoring":          "true",
-			"targetsCount":               "500",
-			"remoteStorages.vm.writeURL": fmt.Sprintf("http://vminsert-%s.%s.svc.cluster.local:8480/insert/0/prometheus/api/v1/write", releaseName, vmNamespace),
-			"remoteStorages.vm.readURL":  fmt.Sprintf("http://vmselect-%s.%s.svc.cluster.local:8481/select/0/prometheus", releaseName, vmNamespace),
+		// Build prometheus benchmark configuration
+		vmSelectSvcAddr := consts.GetVMSelectSvc(consts.DefaultReleaseName, consts.DefaultVMNamespace)
+		vmInsertSvcAddr := consts.GetVMInsertSvc(consts.DefaultReleaseName, consts.DefaultVMNamespace)
+
+		prombenchConfig := tests.PromBenchmarkConfig{
+			DisableMonitoring: true,
+			TargetsCount:      "500",
+			WriteURL:          fmt.Sprintf("http://%s/insert/0/prometheus/api/v1/write", vmInsertSvcAddr),
+			ReadURL:           fmt.Sprintf("http://%s/select/0/prometheus", vmSelectSvcAddr),
 		}
-		install.InstallPrometheusBenchmark(ctx, t, benchmarkNamespace, prombenchChartValues)
+		install.InstallPrometheusBenchmark(ctx, t, consts.BenchmarkNamespace, prombenchConfig.ToHelmValues())
 
 		// Prepare namespace for k6 tests
-		kubeOpts := k8s.NewKubectlOptions("", "", k6TestsNamespace)
-		k8s.CreateNamespace(t, kubeOpts, k6TestsNamespace)
+		kubeOpts := k8s.NewKubectlOptions("", "", consts.K6TestsNamespace)
+		k8s.CreateNamespace(t, kubeOpts, consts.K6TestsNamespace)
 	})
+
 	AfterEach(func() {
 		defer func() {
-			kubeOpts := k8s.NewKubectlOptions("", "", k6TestsNamespace)
-			k8s.DeleteNamespace(t, kubeOpts, k6TestsNamespace)
+			kubeOpts := k8s.NewKubectlOptions("", "", consts.K6TestsNamespace)
+			k8s.DeleteNamespace(t, kubeOpts, consts.K6TestsNamespace)
 		}()
 
 		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
-		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, releaseName)
+		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, consts.DefaultReleaseName)
 	})
 
 	Describe("Inner", func() {
@@ -90,19 +83,18 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 			By("Run 50vus-30mins scenario")
 			scenario := "vmselect-50vus-30mins"
 
-			// Update URL with GetVMSelectSvc - replace the full URL pattern identified by "let url ="
-			vmSelectSvcAddr := consts.GetVMSelectSvc(releaseName, vmNamespace)
-			// Build the new URL with the dynamic service address
+			// Build VMSelect URL using constants
+			vmSelectSvcAddr := consts.GetVMSelectSvc(consts.DefaultReleaseName, consts.DefaultVMNamespace)
 			vmSelectURL := fmt.Sprintf("http://%s/select/0/prometheus/api/v1/query_range", vmSelectSvcAddr)
 
-			err := install.RunK6Scenario(ctx, t, k6TestsNamespace, vmNamespace, scenario, vmSelectURL, 3)
+			err := install.RunK6Scenario(ctx, t, consts.K6TestsNamespace, consts.DefaultVMNamespace, scenario, vmSelectURL, 3)
 			require.NoError(t, err)
 
 			By("Waiting for K6 jobs to complete")
-			install.WaitForK6JobsToComplete(ctx, t, k6TestsNamespace, scenario, 3)
+			install.WaitForK6JobsToComplete(ctx, t, consts.K6TestsNamespace, scenario, 3)
 
 			By("No alerts are firing")
-			overwatch.CheckNoAlertsFiring(ctx, t, vmNamespace, nil)
+			overwatch.CheckNoAlertsFiring(ctx, t, consts.DefaultVMNamespace, nil)
 
 			By("At least 50m rows were inserted")
 			value, err := overwatch.VectorValue(ctx, "sum (vm_rows_inserted_total)")

@@ -27,8 +27,3 @@ func Init() {
 	consts.SetEnvK8SDistro(envK8SDistro)
 	consts.SetVMTag(vmTag)
 }
-
-// GetVMTag returns the VictoriaMetrics image tag specified via command-line flags.
-func GetVMTag() string {
-	return vmTag
-}

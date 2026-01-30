@@ -206,7 +206,7 @@ func TestVMTagEmptyValue(t *testing.T) {
 }
 
 func TestGetVMTagFunction(t *testing.T) {
-	// Test the GetVMTag function exists and works
+	// Test reading the package variable vmTag directly
 	// Save original value
 	originalVMTag := vmTag
 
@@ -214,7 +214,7 @@ func TestGetVMTagFunction(t *testing.T) {
 	testTag := "v1.129.1"
 	vmTag = testTag
 
-	retrievedTag := GetVMTag()
+	retrievedTag := vmTag
 	assert.Equal(t, testTag, retrievedTag)
 
 	// Reset original value

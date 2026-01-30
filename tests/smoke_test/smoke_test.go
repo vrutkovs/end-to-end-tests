@@ -2,7 +2,6 @@ package smoke_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -27,45 +26,41 @@ func TestSmokeTests(t *testing.T) {
 }
 
 var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func() {
-	const (
-		vmNamespace        = "monitoring"
-		overwatchNamespace = "overwatch"
-		releaseName        = "vmks"
-		helmChart          = "vm/victoria-metrics-k8s-stack"
-		valuesFile         = "../../manifests/smoke.yaml"
-	)
-
 	ctx := context.Background()
 	t := tests.GetT()
 	var overwatch promquery.PrometheusClient
 
 	BeforeAll(func() {
-		install.DiscoverIngressHost(ctx, t)
-
 		var err error
-		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl())
-		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
+		overwatch, err = tests.SetupOverwatchClient(ctx, t)
 		require.NoError(t, err)
-		overwatch.Start = time.Now()
 
 		install.InstallVMGather(t)
-		install.InstallVMK8StackWithHelm(ctx, helmChart, valuesFile, t, vmNamespace, releaseName)
-		install.InstallOverwatch(ctx, t, overwatchNamespace, vmNamespace, releaseName)
+		install.InstallVMK8StackWithHelm(
+			ctx,
+			consts.VMK8sStackChart,
+			consts.SmokeValuesFile,
+			t,
+			consts.DefaultVMNamespace,
+			consts.DefaultReleaseName,
+		)
+		install.InstallOverwatch(ctx, t, consts.OverwatchNamespace, consts.DefaultVMNamespace, consts.DefaultReleaseName)
 	})
+
 	AfterEach(func() {
 		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
-		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, releaseName)
+		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, consts.DefaultReleaseName)
 	})
 
 	Describe("Inner", func() {
 		It("Default installation should handle select requests for 5 mins", Label("kind", "gke", "id=37076a52-94ca-4de1-b1c8-029f8ce56bb7"), func() {
-
 			By("Send requests for 5 minutes")
 			tickerPeriod := time.Second
 
-			logger.Default.Logf(t, "Sending requests to %s", consts.VMSelectUrl(vmNamespace))
-			promAPI, err := promquery.NewPrometheusClient(fmt.Sprintf("%s/select/0/prometheus", consts.VMSelectUrl(vmNamespace)))
-			promAPI.Start = overwatch.Start
+			vmSelectURL := tests.TenantSelectURL(consts.DefaultVMNamespace, 0)
+			logger.Default.Logf(t, "Sending requests to %s", vmSelectURL)
+
+			promAPI, err := tests.NewPromClientWithURL(vmSelectURL, overwatch.Start)
 			require.NoError(t, err)
 
 			ticker := time.NewTicker(tickerPeriod)
@@ -83,9 +78,8 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 			}
 
 			By("No alerts are firing")
-			overwatch.CheckNoAlertsFiring(ctx, t, vmNamespace, nil)
+			overwatch.CheckNoAlertsFiring(ctx, t, consts.DefaultVMNamespace, nil)
 
-			// Expect to make at least 10k requests
 			By("At least 1k requests were made")
 			value, err := overwatch.VectorValue(ctx, "sum(vm_requests_total)")
 			require.NoError(t, err)

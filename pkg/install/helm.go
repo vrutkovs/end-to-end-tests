@@ -197,7 +197,7 @@ func InstallOverwatch(ctx context.Context, t terratesting.TestingT, namespace, v
 	vmclient := GetVMClient(t, kubeOpts)
 
 	By("Install VMSingle overwatch instance")
-	k8s.KubectlApply(t, kubeOpts, "../../manifests/overwatch/vmsingle.yaml")
+	k8s.KubectlApply(t, kubeOpts, consts.OverwatchVMSingleYaml)
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmsingle-overwatch", consts.Retries, consts.PollingInterval)
 
 	By("Install VMSingle ingress")
@@ -205,7 +205,7 @@ func InstallOverwatch(ctx context.Context, t terratesting.TestingT, namespace, v
 
 	By("Reconfigure VMAgent to send data to VMSingle")
 	// Read vmagent.yaml content
-	vmagentYamlPath := "../../manifests/overwatch/vmagent.yaml"
+	vmagentYamlPath := consts.OverwatchVMAgentYaml
 	vmagentYaml, err := os.ReadFile(vmagentYamlPath)
 	require.NoError(t, err)
 

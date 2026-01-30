@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/gruntwork-io/terratest/modules/logger"
@@ -16,7 +15,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
-	"github.com/VictoriaMetrics/end-to-end-tests/pkg/gather"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/install"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/promquery"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/tests"
@@ -29,19 +27,6 @@ func TestChaosTestsTests(t *testing.T) {
 	RunSpecs(t, "Chaos test Suite", suiteConfig, reporterConfig)
 }
 
-const (
-	chaosValuesFile  = "../../manifests/chaos-mesh-operator/values.yaml"
-	chaosReleaseName = "chaos-mesh"
-	chaosNamespace   = "chaos-mesh"
-	chaosHelmChart   = "chaos-mesh/chaos-mesh"
-
-	releaseName        = "vmks"
-	overwatchNamespace = "overwatch"
-	k8sStackNamespace  = "monitoring"
-	vmHelmChart        = "vm/victoria-metrics-k8s-stack"
-	vmValuesFile       = "../../manifests/smoke.yaml"
-)
-
 var (
 	t         terratesting.TestingT
 	namespace string
@@ -53,173 +38,322 @@ var _ = SynchronizedBeforeSuite(
 	func(ctx context.Context) {
 		t := tests.GetT()
 		install.DiscoverIngressHost(ctx, t)
-		install.InstallChaosMesh(ctx, chaosHelmChart, chaosValuesFile, t, chaosNamespace, chaosReleaseName)
+
+		// Install Chaos Mesh
+		chaosCfg := tests.DefaultChaosMeshConfig()
+		install.InstallChaosMesh(
+			ctx,
+			chaosCfg.HelmChart,
+			chaosCfg.ValuesFile,
+			t,
+			chaosCfg.Namespace,
+			chaosCfg.ReleaseName,
+		)
+
+		// Install VM K8s Stack
 		install.InstallVMGather(t)
-		install.InstallVMK8StackWithHelm(context.Background(), vmHelmChart, vmValuesFile, t, k8sStackNamespace, releaseName)
-		install.InstallOverwatch(ctx, t, overwatchNamespace, k8sStackNamespace, releaseName)
+		install.InstallVMK8StackWithHelm(
+			context.Background(),
+			consts.VMK8sStackChart,
+			consts.SmokeValuesFile,
+			t,
+			consts.DefaultVMNamespace,
+			consts.DefaultReleaseName,
+		)
+		install.InstallOverwatch(ctx, t, consts.OverwatchNamespace, consts.DefaultVMNamespace, consts.DefaultReleaseName)
 
 		// Remove stock VMCluster - it would be recreated in vm* namespaces
-		kubeOpts := k8s.NewKubectlOptions("", "", k8sStackNamespace)
-		install.DeleteVMCluster(t, kubeOpts, releaseName)
+		kubeOpts := k8s.NewKubectlOptions("", "", consts.DefaultVMNamespace)
+		install.DeleteVMCluster(t, kubeOpts, consts.DefaultReleaseName)
 	}, func(ctx context.Context) {
 		t = tests.GetT()
-		namespace = fmt.Sprintf("vm%d", GinkgoParallelProcess())
+		namespace = tests.ParallelNamespace("vm")
 	},
 )
 
 var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 	BeforeEach(func(ctx context.Context) {
-		install.DiscoverIngressHost(ctx, t)
 		var err error
-
-		logger.Default.Logf(t, "Running overwatch at %s", consts.VMSingleUrl())
-		overwatch, err = promquery.NewPrometheusClient(fmt.Sprintf("%s/prometheus", consts.VMSingleUrl()))
+		overwatch, err = tests.SetupOverwatchClient(ctx, t)
 		require.NoError(t, err)
-		overwatch.Start = time.Now()
 
 		// Create new VMCluster object
 		kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 		vmclient := install.GetVMClient(t, kubeOpts)
 		install.InstallVMCluster(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{})
 
-		// Ensure VMAgent remote write URL is set up. vmagent already created in k8sStackNamespace namespace
-		remoteWriteURL := fmt.Sprintf("http://vminsert-%s.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write", namespace, namespace)
+		// Ensure VMAgent remote write URL is set up
+		remoteWriteURL := fmt.Sprintf(
+			"http://vminsert-%s.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write",
+			namespace, namespace,
+		)
 		logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
-		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, k8sStackNamespace, releaseName, remoteWriteURL)
+		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, consts.DefaultVMNamespace, consts.DefaultReleaseName, remoteWriteURL)
 	})
 
 	AfterEach(func(ctx context.Context) {
 		kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 
 		install.DeleteVMCluster(t, kubeOpts, namespace)
-		k8s.RunKubectl(t, kubeOpts, "delete", "namespace", namespace, "--ignore-not-found=true")
+		tests.CleanupNamespace(t, kubeOpts, namespace)
 
-		if CurrentSpecReport().Failed() {
-			gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, releaseName)
-			gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
-		}
+		tests.GatherOnFailure(ctx, t, consts.DefaultReleaseName)
 	})
 
+	// ChaosScenario represents a chaos test scenario configuration
+	type ChaosScenario struct {
+		UUID           string
+		ScenarioName   string
+		Category       string
+		ChaosType      string
+		ExpectedAlerts []string
+		CheckAlert     string
+	}
+
+	// Helper function to run a chaos scenario
+	runChaosScenario := func(ctx context.Context, scenario ChaosScenario) {
+		By(fmt.Sprintf("Running %s scenario", scenario.ScenarioName))
+		install.RunChaosScenario(ctx, t, namespace, scenario.Category, scenario.ScenarioName, scenario.ChaosType)
+
+		if scenario.CheckAlert != "" {
+			By(fmt.Sprintf("Only %s is firing", scenario.CheckAlert))
+			overwatch.CheckNoAlertsFiring(ctx, t, namespace, scenario.ExpectedAlerts)
+			overwatch.CheckAlertIsFiring(ctx, t, namespace, scenario.CheckAlert)
+		} else {
+			By("No alerts are firing")
+			overwatch.CheckNoAlertsFiring(ctx, t, namespace, scenario.ExpectedAlerts)
+		}
+	}
+
 	Describe("pod restarts", Label("kind", "gke", "chaos-pod-failure"), func() {
-		scenarios := map[string]string{
-			"17f2e31b-9249-4283-845b-aae0bc81e5f2": "vminsert-pod-failure",
-			"e340d25f-b14f-4f21-acb4-68c4fdf39a85": "vmstorage-pod-failure",
-			"38df1d4b-d38c-4064-8538-c0e03920255f": "vmselect-pod-failure",
-		}
-
-		for uuid, scenario := range scenarios {
-			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func(ctx context.Context) {
-				By("Run scenario")
-				install.RunChaosScenario(ctx, t, namespace, "pods", scenario, "podchaos")
-
-				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
-			})
-		}
+		DescribeTable("should handle pod failure scenarios",
+			func(ctx context.Context, scenario ChaosScenario) {
+				runChaosScenario(ctx, scenario)
+			},
+			Entry("vminsert pod failure",
+				Label("id=17f2e31b-9249-4283-845b-aae0bc81e5f2"),
+				ChaosScenario{
+					UUID:         "17f2e31b-9249-4283-845b-aae0bc81e5f2",
+					ScenarioName: "vminsert-pod-failure",
+					Category:     "pods",
+					ChaosType:    "podchaos",
+				},
+			),
+			Entry("vmstorage pod failure",
+				Label("id=e340d25f-b14f-4f21-acb4-68c4fdf39a85"),
+				ChaosScenario{
+					UUID:         "e340d25f-b14f-4f21-acb4-68c4fdf39a85",
+					ScenarioName: "vmstorage-pod-failure",
+					Category:     "pods",
+					ChaosType:    "podchaos",
+				},
+			),
+			Entry("vmselect pod failure",
+				Label("id=38df1d4b-d38c-4064-8538-c0e03920255f"),
+				ChaosScenario{
+					UUID:         "38df1d4b-d38c-4064-8538-c0e03920255f",
+					ScenarioName: "vmselect-pod-failure",
+					Category:     "pods",
+					ChaosType:    "podchaos",
+				},
+			),
+		)
 	})
 
 	Describe("cpu stress", Label("kind", "gke", "chaos-cpu-stress"), func() {
-		scenarios := map[string]string{
-			"4c571bca-2442-4a1b-8e54-4f9878f8dd6d": "vminsert-cpu-usage",
-			"d1ebdfd3-a0cf-4525-89b9-e998ec7b0c1e": "vmstorage-cpu-usage",
-			"f6637d83-be2a-44ab-b446-9c755bad4292": "vmselect-cpu-usage",
-		}
-
-		for uuid, scenario := range scenarios {
-			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func(ctx context.Context) {
-				By("Run scenario")
-				install.RunChaosScenario(ctx, t, namespace, "cpu", scenario, "stresschaos")
-
-				By("Only CPUThrottlingHigh is firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{"CPUThrottlingHigh"})
-				overwatch.CheckAlertIsFiring(ctx, t, namespace, "CPUThrottlingHigh")
-
-				// By("No alerts are firing")
-				// overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
-			})
-		}
+		DescribeTable("should handle CPU stress scenarios",
+			func(ctx context.Context, scenario ChaosScenario) {
+				runChaosScenario(ctx, scenario)
+			},
+			Entry("vminsert CPU stress",
+				Label("id=4c571bca-2442-4a1b-8e54-4f9878f8dd6d"),
+				ChaosScenario{
+					UUID:           "4c571bca-2442-4a1b-8e54-4f9878f8dd6d",
+					ScenarioName:   "vminsert-cpu-usage",
+					Category:       "cpu",
+					ChaosType:      "stresschaos",
+					ExpectedAlerts: []string{"CPUThrottlingHigh"},
+					CheckAlert:     "CPUThrottlingHigh",
+				},
+			),
+			Entry("vmstorage CPU stress",
+				Label("id=d1ebdfd3-a0cf-4525-89b9-e998ec7b0c1e"),
+				ChaosScenario{
+					UUID:           "d1ebdfd3-a0cf-4525-89b9-e998ec7b0c1e",
+					ScenarioName:   "vmstorage-cpu-usage",
+					Category:       "cpu",
+					ChaosType:      "stresschaos",
+					ExpectedAlerts: []string{"CPUThrottlingHigh"},
+					CheckAlert:     "CPUThrottlingHigh",
+				},
+			),
+			Entry("vmselect CPU stress",
+				Label("id=f6637d83-be2a-44ab-b446-9c755bad4292"),
+				ChaosScenario{
+					UUID:           "f6637d83-be2a-44ab-b446-9c755bad4292",
+					ScenarioName:   "vmselect-cpu-usage",
+					Category:       "cpu",
+					ChaosType:      "stresschaos",
+					ExpectedAlerts: []string{"CPUThrottlingHigh"},
+					CheckAlert:     "CPUThrottlingHigh",
+				},
+			),
+		)
 	})
 
 	Describe("memory stress", Label("kind", "gke", "chaos-memory-stress"), func() {
-		scenarios := map[string]string{
-			"47690837-45e5-4cae-9e60-abadf59e4e66": "vminsert-memory-usage",
-			"357cef7e-c2ce-4a76-8768-7b142a4e7997": "vmstorage-memory-usage",
-			"f9c922b8-104a-4baf-bad3-b00188ccddb1": "vmselect-memory-usage",
-		}
-
-		for uuid, scenario := range scenarios {
-			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func(ctx context.Context) {
-				By("Run scenario")
-				install.RunChaosScenario(ctx, t, namespace, "memory", scenario, "stresschaos")
-
-				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
-			})
-		}
+		DescribeTable("should handle memory stress scenarios",
+			func(ctx context.Context, scenario ChaosScenario) {
+				runChaosScenario(ctx, scenario)
+			},
+			Entry("vminsert memory stress",
+				Label("id=47690837-45e5-4cae-9e60-abadf59e4e66"),
+				ChaosScenario{
+					UUID:         "47690837-45e5-4cae-9e60-abadf59e4e66",
+					ScenarioName: "vminsert-memory-usage",
+					Category:     "memory",
+					ChaosType:    "stresschaos",
+				},
+			),
+			Entry("vmstorage memory stress",
+				Label("id=357cef7e-c2ce-4a76-8768-7b142a4e7997"),
+				ChaosScenario{
+					UUID:         "357cef7e-c2ce-4a76-8768-7b142a4e7997",
+					ScenarioName: "vmstorage-memory-usage",
+					Category:     "memory",
+					ChaosType:    "stresschaos",
+				},
+			),
+			Entry("vmselect memory stress",
+				Label("id=f9c922b8-104a-4baf-bad3-b00188ccddb1"),
+				ChaosScenario{
+					UUID:         "f9c922b8-104a-4baf-bad3-b00188ccddb1",
+					ScenarioName: "vmselect-memory-usage",
+					Category:     "memory",
+					ChaosType:    "stresschaos",
+				},
+			),
+		)
 	})
 
 	Describe("io stress", Label("kind", "gke", "chaos-io-stress"), func() {
-		scenarios := map[string]string{
-			"c70ce6cc-84fe-447d-8b5f-48871a2ebf99": "vminsert-io-usage",
-			"357cef7e-c2ce-4a76-8768-7b142a4e7997": "vmstorage-io-usage",
-			"f9c922b8-104a-4baf-bad3-b00188ccddb1": "vmselect-io-usage",
-		}
-
-		for uuid, scenario := range scenarios {
-			It(fmt.Sprintf("Run %s scenario", scenario), Label(fmt.Sprintf("id=%s", uuid)), func(ctx context.Context) {
-				By("Run scenario")
-				install.RunChaosScenario(ctx, t, namespace, "io", scenario, "stresschaos")
-
-				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
-			})
-		}
+		DescribeTable("should handle IO stress scenarios",
+			func(ctx context.Context, scenario ChaosScenario) {
+				runChaosScenario(ctx, scenario)
+			},
+			Entry("vminsert IO stress",
+				Label("id=c70ce6cc-84fe-447d-8b5f-48871a2ebf99"),
+				ChaosScenario{
+					UUID:         "c70ce6cc-84fe-447d-8b5f-48871a2ebf99",
+					ScenarioName: "vminsert-io-usage",
+					Category:     "io",
+					ChaosType:    "stresschaos",
+				},
+			),
+			Entry("vmstorage IO stress",
+				Label("id=8b3f1e4a-2c5d-4f67-9aab-123456abcdef"),
+				ChaosScenario{
+					UUID:         "8b3f1e4a-2c5d-4f67-9aab-123456abcdef",
+					ScenarioName: "vmstorage-io-usage",
+					Category:     "io",
+					ChaosType:    "stresschaos",
+				},
+			),
+			Entry("vmselect IO stress",
+				Label("id=9c4d2b3a-1f0e-4d6c-8b7a-abcdef123456"),
+				ChaosScenario{
+					UUID:         "9c4d2b3a-1f0e-4d6c-8b7a-abcdef123456",
+					ScenarioName: "vmselect-io-usage",
+					Category:     "io",
+					ChaosType:    "stresschaos",
+				},
+			),
+		)
 	})
 
 	Describe("network failure", Label("kind", "gke", "chaos-network-failure"), func() {
-		networkScenarios := map[string]string{
-			"ef3455cd-7687-49a4-b423-7c4541aa051c": "vminsert-to-vmstorage-packet-corrupt",
-			"e13108bd-00df-40f5-acc9-b134bc619dc8": "vmselect-to-vmstorage-packet-delay",
-			"490c384c-a995-4b46-a5c2-c37baa72beaf": "vmstorage-from-vminsert-packet-loss",
-			"260857d8-c49e-4ac3-92e4-220addcc4a53": "vmstorage-from-vmselect-packet-delay",
-		}
+		DescribeTable("should handle network chaos scenarios",
+			func(ctx context.Context, scenario ChaosScenario) {
+				runChaosScenario(ctx, scenario)
+			},
+			Entry("vminsert to vmstorage packet corrupt",
+				Label("gke", "id=ef3455cd-7687-49a4-b423-7c4541aa051c"),
+				ChaosScenario{
+					UUID:         "ef3455cd-7687-49a4-b423-7c4541aa051c",
+					ScenarioName: "vminsert-to-vmstorage-packet-corrupt",
+					Category:     "network",
+					ChaosType:    "networkchaos",
+				},
+			),
+			Entry("vmselect to vmstorage packet delay",
+				Label("gke", "id=e13108bd-00df-40f5-acc9-b134bc619dc8"),
+				ChaosScenario{
+					UUID:         "e13108bd-00df-40f5-acc9-b134bc619dc8",
+					ScenarioName: "vmselect-to-vmstorage-packet-delay",
+					Category:     "network",
+					ChaosType:    "networkchaos",
+				},
+			),
+			Entry("vmstorage from vminsert packet loss",
+				Label("gke", "id=490c384c-a995-4b46-a5c2-c37baa72beaf"),
+				ChaosScenario{
+					UUID:         "490c384c-a995-4b46-a5c2-c37baa72beaf",
+					ScenarioName: "vmstorage-from-vminsert-packet-loss",
+					Category:     "network",
+					ChaosType:    "networkchaos",
+				},
+			),
+			Entry("vmstorage from vmselect packet delay",
+				Label("gke", "id=260857d8-c49e-4ac3-92e4-220addcc4a53"),
+				ChaosScenario{
+					UUID:         "260857d8-c49e-4ac3-92e4-220addcc4a53",
+					ScenarioName: "vmstorage-from-vmselect-packet-delay",
+					Category:     "network",
+					ChaosType:    "networkchaos",
+				},
+			),
+		)
 
-		for uuid, scenarioName := range networkScenarios {
-			It(fmt.Sprintf("Run %s scenario", scenarioName), Label("gke", fmt.Sprintf("id=%s", uuid)), func(ctx context.Context) {
-				By("Run scenario")
-				install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")
-
-				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
-			})
-		}
-
-		httpScenarios := map[string]string{
-			"98f0368b-b200-4558-a09f-37e7ceaa3b1d": "vminsert-request-delay",
-			"d738fdd5-0076-4ddf-9358-2812a9cc3e2b": "vminsert-response-abort",
-			"3e1eff4c-dcda-442b-a477-85359ffc57b7": "vmselect-request-delay",
-			"b2807243-8528-4500-b630-822ed9fce73d": "vmselect-response-abort",
-		}
-
-		for uuid, scenarioName := range httpScenarios {
-			It(fmt.Sprintf("Run %s scenario", scenarioName), Label("gke", fmt.Sprintf("id=%s", uuid)), func(ctx context.Context) {
-				By("Run scenario")
-				install.RunChaosScenario(ctx, t, namespace, "http", scenarioName, "httpchaos")
-
-				By("No alerts are firing")
-				overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
-			})
-		}
+		DescribeTable("should handle HTTP chaos scenarios",
+			func(ctx context.Context, scenario ChaosScenario) {
+				runChaosScenario(ctx, scenario)
+			},
+			Entry("vminsert request delay",
+				Label("gke", "id=98f0368b-b200-4558-a09f-37e7ceaa3b1d"),
+				ChaosScenario{
+					UUID:         "98f0368b-b200-4558-a09f-37e7ceaa3b1d",
+					ScenarioName: "vminsert-request-delay",
+					Category:     "http",
+					ChaosType:    "httpchaos",
+				},
+			),
+			Entry("vminsert response abort",
+				Label("gke", "id=d738fdd5-0076-4ddf-9358-2812a9cc3e2b"),
+				ChaosScenario{
+					UUID:         "d738fdd5-0076-4ddf-9358-2812a9cc3e2b",
+					ScenarioName: "vminsert-response-abort",
+					Category:     "http",
+					ChaosType:    "httpchaos",
+				},
+			),
+			Entry("vmselect request delay",
+				Label("gke", "id=3e1eff4c-dcda-442b-a477-85359ffc57b7"),
+				ChaosScenario{
+					UUID:         "3e1eff4c-dcda-442b-a477-85359ffc57b7",
+					ScenarioName: "vmselect-request-delay",
+					Category:     "http",
+					ChaosType:    "httpchaos",
+				},
+			),
+			Entry("vmselect response abort",
+				Label("gke", "id=b2807243-8528-4500-b630-822ed9fce73d"),
+				ChaosScenario{
+					UUID:         "b2807243-8528-4500-b630-822ed9fce73d",
+					ScenarioName: "vmselect-response-abort",
+					Category:     "http",
+					ChaosType:    "httpchaos",
+				},
+			),
+		)
 	})
-
-	// Describe("rerouting", Label("kind", "gke", "chaos-rerouting"), func() {
-	// 	It("Emulate row rerouting when vmstorage-0 becomes unreachable", Label("gke", "id=3a9e309f-eec7-4d37-a7ee-918abd3a3d44"), func(ctx context.Context) {
-	// 		By("Run scenario")
-	// 		scenarioName := "vminsert-to-vmstorage0-3s-delay"
-	// 		install.RunChaosScenario(ctx, t, namespace, "network", scenarioName, "networkchaos")
-
-	// 		By("No alerts are firing")
-	// 		overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
-	// 	})
-	// })
 })

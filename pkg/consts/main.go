@@ -21,6 +21,110 @@ const (
 
 	// ChaosTestMaxDuration is the maximum allowed duration for a Chaos Mesh scenario.
 	ChaosTestMaxDuration = 30 * time.Minute
+
+	// HTTPClientTimeout is the default timeout for HTTP clients used in tests.
+	HTTPClientTimeout = 10 * time.Second
+
+	// DataPropagationDelay is the time to wait for data to propagate through the system.
+	DataPropagationDelay = 30 * time.Second
+
+	// AggregationWaitTime is the time to wait for streaming aggregation to complete.
+	AggregationWaitTime = 45 * time.Second
+)
+
+// Common namespace constants used across tests.
+const (
+	// DefaultVMNamespace is the default namespace for VictoriaMetrics deployments.
+	DefaultVMNamespace = "monitoring"
+
+	// OverwatchNamespace is the namespace for the overwatch monitoring stack.
+	OverwatchNamespace = "overwatch"
+
+	// K6OperatorNamespace is the namespace for the k6 operator.
+	K6OperatorNamespace = "k6-operator-system"
+
+	// K6TestsNamespace is the namespace for running k6 tests.
+	K6TestsNamespace = "k6-tests"
+
+	// BenchmarkNamespace is the namespace for prometheus benchmark.
+	BenchmarkNamespace = "vm-benchmark"
+
+	// ChaosMeshNamespace is the namespace for chaos mesh.
+	ChaosMeshNamespace = "chaos-mesh"
+)
+
+// Common release and resource names used across tests.
+const (
+	// DefaultReleaseName is the default Helm release name for VM k8s stack.
+	DefaultReleaseName = "vmks"
+
+	// DefaultVMClusterName is the default name for VMCluster resources.
+	DefaultVMClusterName = "vm"
+
+	// ChaosMeshReleaseName is the Helm release name for chaos mesh.
+	ChaosMeshReleaseName = "chaos-mesh"
+)
+
+// Helm chart references.
+const (
+	// VMK8sStackChart is the Helm chart for VictoriaMetrics k8s stack.
+	VMK8sStackChart = "vm/victoria-metrics-k8s-stack"
+
+	// VMDistributedChart is the Helm chart for VictoriaMetrics distributed deployment.
+	VMDistributedChart = "vm/victoria-metrics-distributed"
+
+	// ChaosMeshChart is the Helm chart for Chaos Mesh.
+	ChaosMeshChart = "chaos-mesh/chaos-mesh"
+)
+
+// Values file paths (relative to test directories).
+const (
+	// ManifestsRoot is the shared base path for manifest files used across the
+	// test helpers.
+	ManifestsRoot = "../../manifests"
+
+	// Overwatch manifests
+	OverwatchVMSingleYaml    = ManifestsRoot + "/overwatch/vmsingle.yaml"
+	OverwatchVMAgentYaml     = ManifestsRoot + "/overwatch/vmagent.yaml"
+	OverwatchVMSingleIngress = ManifestsRoot + "/overwatch/vmsingle-ingress.yaml"
+
+	// SmokeValuesFile is the values file for smoke tests.
+	SmokeValuesFile = ManifestsRoot + "/smoke.yaml"
+
+	// DistributedValuesFile is the values file for distributed chart tests.
+	DistributedValuesFile = ManifestsRoot + "/distributed.yaml"
+
+	// ChaosMeshValuesFile is the values file for chaos mesh.
+	ChaosMeshValuesFile = ManifestsRoot + "/chaos-mesh-operator/values.yaml"
+)
+
+// Common error messages.
+const (
+	// ErrNoDataReturned is the error message when a query returns no data.
+	ErrNoDataReturned = "no data returned"
+)
+
+// URL path patterns for VictoriaMetrics endpoints.
+const (
+	// PrometheusPathSuffix is the suffix for Prometheus-compatible endpoints.
+	PrometheusPathSuffix = "/prometheus"
+
+	// TenantInsertPathFormat is the format for tenant-specific insert URLs.
+	// Arguments: tenant ID
+	TenantInsertPathFormat = "/insert/%d/prometheus/api/v1/write"
+
+	// TenantSelectPathFormat is the format for tenant-specific select URLs.
+	// Arguments: tenant ID
+	TenantSelectPathFormat = "/select/%d/prometheus"
+
+	// MultitenantInsertPath is the path for multitenant insert endpoint.
+	MultitenantInsertPath = "/insert/multitenant/prometheus/api/v1/write"
+
+	// MultitenantSelectPath is the path for multitenant select endpoint.
+	MultitenantSelectPath = "/select/multitenant/prometheus"
+
+	// RemoteWritePath is the path for remote write API.
+	RemoteWritePath = "/api/v1/write"
 )
 
 var (

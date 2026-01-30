@@ -205,17 +205,17 @@ OuterLoop:
 // - ctx: context for the operation.
 // - t: terratest testing interface.
 // - namespace: Kubernetes namespace where overwatch is installed.
-func RestartOverwatchInstance(ctx context.Context, t testing.TestingT, namespace string) {
-	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
-	client, err := k8s.GetKubernetesClientE(t)
+func RestartOverwatchInstance(ctx context.Context, t testing.TestingT, kubeOpts *k8s.KubectlOptions, namespace string) {
+	client, err := k8s.GetKubernetesClientFromOptionsE(t, kubeOpts)
 	require.NoError(t, err, "failed to get Kubernetes client")
 
 	pods := k8s.ListPods(t, kubeOpts, metav1.ListOptions{
 		LabelSelector: "app.kubernetes.io/instance=overwatch",
 	})
+	require.NotEmpty(t, pods, "no overwatch pods found")
 	firstPod := pods[0]
 
-	// TODO: Implement logic to restart overwatch instance
+	// Delete the overwatch pod to trigger a restart
 	err = client.CoreV1().Pods(namespace).Delete(ctx, firstPod.Name, metav1.DeleteOptions{})
 	require.NoError(t, err, "failed to delete pod %s", firstPod.Name)
 

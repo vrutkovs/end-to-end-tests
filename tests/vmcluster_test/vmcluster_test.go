@@ -1,7 +1,9 @@
 package vmcluster_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -27,7 +29,7 @@ func TestVMClusterTests(t *testing.T) {
 	tests.Init()
 	RegisterFailHandler(Fail)
 	suiteConfig, reporterConfig := GinkgoConfiguration()
-	suiteConfig.FocusStrings = []string{"should ingest data via influxdb protocol"}
+	// suiteConfig.FocusStrings = []string{"should ingest data via datadog protocol to vmagent"}
 	RunSpecs(t, "VMCluster test Suite", suiteConfig, reporterConfig)
 }
 
@@ -430,53 +432,126 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 		})
 	})
 
-	Describe("InfluxDB ingestion", func() {
-		It("should ingest data via influxdb protocol to vmagent", Label("gke", "id=e5fba904-59b8-4440-97d5-9747dc78f959"), func(ctx context.Context) {
-			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
-			tests.EnsureNamespaceExists(t, kubeOpts, namespace)
-			vmclient := install.GetVMClient(t, kubeOpts)
+	Describe("Ingestion", func() {
+		Context("InfluxDB", func() {
+			It("should ingest data via influxdb protocol to vmagent", Label("gke", "id=e5fba904-59b8-4440-97d5-9747dc78f959"), func(ctx context.Context) {
+				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+				tests.EnsureNamespaceExists(t, kubeOpts, namespace)
+				vmclient := install.GetVMClient(t, kubeOpts)
 
-			By("Configure VMAgent to write to VMCluster")
-			vmInsertURL := fmt.Sprintf("http://%s/insert/0/prometheus/api/v1/write", consts.GetVMInsertSvc(consts.DefaultVMClusterName, namespace))
+				By("Configure VMAgent to write to VMCluster")
+				vmInsertURL := fmt.Sprintf("http://%s/insert/0/prometheus/api/v1/write", consts.GetVMInsertSvc(consts.DefaultVMClusterName, namespace))
 
-			patchOps := []install.PatchOp{
-				{
-					Op:   "add",
-					Path: "/spec/remoteWrite",
-					Value: []map[string]interface{}{
-						{
-							"url": vmInsertURL,
+				patchOps := []install.PatchOp{
+					{
+						Op:   "add",
+						Path: "/spec/remoteWrite",
+						Value: []map[string]interface{}{
+							{
+								"url": vmInsertURL,
+							},
 						},
 					},
-				},
-			}
-			patch, err := install.CreateJsonPatch(patchOps)
-			require.NoError(t, err)
+				}
+				patch, err := install.CreateJsonPatch(patchOps)
+				require.NoError(t, err)
 
-			install.InstallVMAgent(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{patch})
-			install.ExposeVMAgentAsIngress(ctx, t, kubeOpts, namespace)
+				install.InstallVMAgent(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{patch})
+				install.ExposeVMAgentAsIngress(ctx, t, kubeOpts, namespace)
 
-			By("Inserting data via InfluxDB protocol")
-			influxURL := fmt.Sprintf("http://%s/write", consts.VMAgentNamespacedHost(namespace))
-			data := "influx_test,foo=bar value=123"
-			resp, err := c.Post(influxURL, "", strings.NewReader(data))
-			require.NoError(t, err)
-			require.Equal(t, http.StatusNoContent, resp.StatusCode)
-			_ = resp.Body.Close()
+				By("Inserting data via InfluxDB protocol")
+				influxURL := fmt.Sprintf("http://%s/write", consts.VMAgentNamespacedHost(namespace))
+				data := "influx_test,foo=bar value=123"
+				resp, err := c.Post(influxURL, "", strings.NewReader(data))
+				require.NoError(t, err)
+				require.Equal(t, http.StatusNoContent, resp.StatusCode)
+				_ = resp.Body.Close()
 
-			tests.WaitForDataPropagation()
+				tests.WaitForDataPropagation()
 
-			By("Verifying data via Prometheus protocol")
-			prom := tests.NewPromClientBuilder().
-				WithNamespace(namespace).
-				WithTenant(0).
-				WithStartTime(overwatch.Start).
-				MustBuild()
+				By("Verifying data via Prometheus protocol")
+				prom := tests.NewPromClientBuilder().
+					WithNamespace(namespace).
+					WithTenant(0).
+					WithStartTime(overwatch.Start).
+					MustBuild()
 
-			labels, value, err := prom.VectorScan(ctx, "influx_test_value")
-			require.NoError(t, err)
-			require.Equal(t, value, model.SampleValue(123))
-			require.Equal(t, labels["foo"], model.LabelValue("bar"))
+				labels, value, err := prom.VectorScan(ctx, "influx_test_value")
+				require.NoError(t, err)
+				require.Equal(t, value, model.SampleValue(123))
+				require.Equal(t, labels["foo"], model.LabelValue("bar"))
+			})
+		})
+
+		Context("Datadog", func() {
+			It("should ingest data via datadog protocol to vmagent", Label("gke", "id=6862ebb3-0d9f-4af1-9359-08692c8dfc5c"), func(ctx context.Context) {
+				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+				tests.EnsureNamespaceExists(t, kubeOpts, namespace)
+				vmclient := install.GetVMClient(t, kubeOpts)
+
+				By("Configure VMAgent to write to VMCluster")
+				vmInsertURL := fmt.Sprintf("http://%s/insert/0/prometheus/api/v1/write", consts.GetVMInsertSvc(consts.DefaultVMClusterName, namespace))
+
+				patchOps := []install.PatchOp{
+					{
+						Op:   "add",
+						Path: "/spec/remoteWrite",
+						Value: []map[string]interface{}{
+							{
+								"url": vmInsertURL,
+							},
+						},
+					},
+				}
+				patch, err := install.CreateJsonPatch(patchOps)
+				require.NoError(t, err)
+
+				install.InstallVMAgent(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{patch})
+				install.ExposeVMAgentAsIngress(ctx, t, kubeOpts, namespace)
+
+				By("Inserting data via Datadog protocol")
+				datadogURL := fmt.Sprintf("http://%s/datadog/api/v1/series", consts.VMAgentNamespacedHost(namespace))
+				now := time.Now().Unix()
+				ddSeries := tests.DatadogSeries{
+					Series: []tests.DatadogMetric{
+						{
+							Metric: "datadog.test.metric",
+							Points: [][]interface{}{
+								{now, 123},
+							},
+							Tags: []string{
+								"env:test",
+								"foo:bar",
+							},
+							Host: "test-host",
+							Type: "gauge",
+						},
+					},
+				}
+				data, err := json.Marshal(ddSeries)
+				require.NoError(t, err)
+
+				resp, err := c.Post(datadogURL, "application/json", bytes.NewReader(data))
+				require.NoError(t, err)
+				require.Equal(t, resp.StatusCode, 202)
+				_ = resp.Body.Close()
+
+				tests.WaitForDataPropagation()
+
+				By("Verifying data via Prometheus protocol")
+				prom := tests.NewPromClientBuilder().
+					WithNamespace(namespace).
+					WithTenant(0).
+					WithStartTime(overwatch.Start).
+					MustBuild()
+
+				labels, value, err := prom.VectorScan(ctx, "datadog.test.metric")
+				require.NoError(t, err)
+				require.Equal(t, value, model.SampleValue(123))
+				require.Equal(t, labels["env"], model.LabelValue("test"))
+				require.Equal(t, labels["foo"], model.LabelValue("bar"))
+				require.Equal(t, labels["host"], model.LabelValue("test-host"))
+			})
 		})
 	})
 })

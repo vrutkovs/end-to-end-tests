@@ -395,6 +395,20 @@ func (b *RelabelConfigBuilder) build() (string, error) {
 	return string(data), nil
 }
 
+// DatadogSeries represents the top-level structure for Datadog ingestion.
+type DatadogSeries struct {
+	Series []DatadogMetric `json:"series"`
+}
+
+// DatadogMetric represents a single metric in Datadog format.
+type DatadogMetric struct {
+	Metric string          `json:"metric"`
+	Points [][]interface{} `json:"points"`
+	Tags   []string        `json:"tags,omitempty"`
+	Host   string          `json:"host,omitempty"`
+	Type   string          `json:"type,omitempty"`
+}
+
 // MustBuild generates the YAML configuration, panicking on error.
 func (b *RelabelConfigBuilder) MustBuild() string {
 	config, err := b.build()

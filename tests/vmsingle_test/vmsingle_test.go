@@ -15,6 +15,10 @@ import (
 	terratesting "github.com/gruntwork-io/terratest/modules/testing"
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
+	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
+	commonpb "go.opentelemetry.io/proto/otlp/common/v1"
+	metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
+	"google.golang.org/protobuf/proto"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -293,7 +297,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 
 				resp, err := c.Post(datadogURL, "application/json", bytes.NewReader(data))
 				require.NoError(t, err)
-				require.Equal(t, resp.StatusCode, 202)
+				require.Equal(t, resp.StatusCode, http.StatusAccepted)
 				_ = resp.Body.Close()
 
 				tests.WaitForDataPropagation()
@@ -310,6 +314,81 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 				require.Equal(t, labels["env"], model.LabelValue("test"))
 				require.Equal(t, labels["foo"], model.LabelValue("bar"))
 				require.Equal(t, labels["host"], model.LabelValue("test-host"))
+			})
+		})
+
+		Context("OpenTelemetry", func() {
+			It("should ingest data via opentelemetry protocol", Label("gke", "id=55ca0534-1111-2222-3333-444455556666"), func(ctx context.Context) {
+				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+				tests.EnsureNamespaceExists(t, kubeOpts, namespace)
+
+				vmclient := install.GetVMClient(t, kubeOpts)
+				install.InstallVMSingle(ctx, t, kubeOpts, namespace, vmclient, nil)
+
+				By("Inserting data via OpenTelemetry protocol")
+				otelURL := fmt.Sprintf("http://%s/opentelemetry/v1/metrics", consts.VMSingleNamespacedHost(namespace))
+
+				timestamp := time.Now().UnixNano()
+
+				// Construct OTLP Protobuf payload
+				req := &colmetricspb.ExportMetricsServiceRequest{
+					ResourceMetrics: []*metricspb.ResourceMetrics{
+						{
+							ScopeMetrics: []*metricspb.ScopeMetrics{
+								{
+									Metrics: []*metricspb.Metric{
+										{
+											Name: "otel_test_metric",
+											Data: &metricspb.Metric_Gauge{
+												Gauge: &metricspb.Gauge{
+													DataPoints: []*metricspb.NumberDataPoint{
+														{
+															TimeUnixNano: uint64(timestamp),
+															Value: &metricspb.NumberDataPoint_AsInt{
+																AsInt: 123,
+															},
+															Attributes: []*commonpb.KeyValue{
+																{
+																	Key: "foo",
+																	Value: &commonpb.AnyValue{
+																		Value: &commonpb.AnyValue_StringValue{
+																			StringValue: "bar",
+																		},
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+
+				data, err := proto.Marshal(req)
+				require.NoError(t, err)
+
+				resp, err := c.Post(otelURL, "application/x-protobuf", bytes.NewReader(data))
+				require.NoError(t, err)
+				require.Equal(t, http.StatusOK, resp.StatusCode)
+				_ = resp.Body.Close()
+
+				tests.WaitForDataPropagation()
+
+				By("Verifying data via Prometheus protocol")
+				prom := tests.NewPromClientBuilder().
+					ForVMSingle(namespace).
+					WithStartTime(overwatch.Start).
+					MustBuild()
+
+				labels, value, err := prom.VectorScan(ctx, "otel_test_metric")
+				require.NoError(t, err)
+				require.Equal(t, value, model.SampleValue(123))
+				require.Equal(t, labels["foo"], model.LabelValue("bar"))
 			})
 		})
 	})

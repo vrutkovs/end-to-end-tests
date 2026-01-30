@@ -400,43 +400,43 @@ parameters:
     default: "quay.io/victoriametrics/victoria-metrics"
   vm_vmsingledefault_version:
     type: string
-    default: "v1.134.0"
+    default: "v1.135.0-rc0"
   vm_vmclusterdefault_vmselectdefault_image:
     type: string
     default: "quay.io/victoriametrics/vmselect"
   vm_vmclusterdefault_vmselectdefault_version:
     type: string
-    default: "v1.134.0-cluster"
+    default: "v1.135.0-rc0-cluster"
   vm_vmclusterdefault_vmstoragedefault_image:
     type: string
     default: "quay.io/victoriametrics/vmstorage"
   vm_vmclusterdefault_vmstoragedefault_version:
     type: string
-    default: "v1.134.0-cluster"
+    default: "v1.135.0-rc0-cluster"
   vm_vmclusterdefault_vminsertdefault_image:
     type: string
     default: "quay.io/victoriametrics/vminsert"
   vm_vmclusterdefault_vminsertdefault_version:
     type: string
-    default: "v1.134.0-cluster"
+    default: "v1.135.0-rc0-cluster"
   vm_vmagentdefault_image:
     type: string
     default: "quay.io/victoriametrics/vmagent"
   vm_vmagentdefault_version:
     type: string
-    default: "v1.134.0"
+    default: "v1.135.0-rc0"
   vm_vmalertdefault_image:
     type: string
     default: "quay.io/victoriametrics/vmalert"
   vm_vmalertdefault_version:
     type: string
-    default: "v1.134.0"
+    default: "v1.135.0-rc0"
   vm_vmauthdefault_image:
     type: string
     default: "quay.io/victoriametrics/vmauth"
   vm_vmauthdefault_version:
     type: string
-    default: "v1.134.0"
+    default: "v1.135.0-rc0"
 
 common_params: &common_params
   operator_registry: << pipeline.parameters.operator_registry >>
@@ -460,7 +460,7 @@ common_params: &common_params
 workflows:
   version: 2
   pr-smoke-tests:
-    when: pipeline.git.branch != "main"
+    when: pipeline.git.branch != "v1.135.0-rc0"
     jobs:
       - unit-tests
       - gke-test:
@@ -484,7 +484,7 @@ workflows:
             - gke-distributed-cleanup
 
   main-branch-tests:
-    when: pipeline.git.branch == "main"
+    when: pipeline.git.branch == "v1.135.0-rc0"
     jobs:
       - unit-tests
       - kind-smoke-test:

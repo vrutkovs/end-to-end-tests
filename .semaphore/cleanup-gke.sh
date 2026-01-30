@@ -9,7 +9,7 @@ if [ -z "$TEST_SUITE" ]; then
     exit 1
 fi
 
-TF_DIR="terraform/gke_${TEST_SUITE}"
+TF_DIR="terraform/gke"
 CLUSTER_NAME="${TEST_SUITE}-${SEMAPHORE_WORKFLOW_ID}"
 
 # Terraform cleanup

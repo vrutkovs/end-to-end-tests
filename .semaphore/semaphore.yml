@@ -138,10 +138,3 @@ after_pipeline:
       - name: cleanup-gke-resources
         commands:
           - checkout
-          - |
-            # if [ "$SEMAPHORE_GIT_BRANCH" = "main" ]; then
-            suites="smoke load vmcluster vmsingle chaos distributed"
-            for suite in $suites; do
-              .semaphore/cleanup-gke.sh "$suite" || true
-            done
-            # fi

@@ -47,13 +47,11 @@ export GOOGLE_APPLICATION_CREDENTIALS="$HOME"/gcloud-service-key.json
 
 # Terraform Setup
 echo "Provisioning infrastructure with Terraform..."
-TF_DIR="terraform/gke_${TEST_SUITE}"
-cp -r terraform/gke "${TF_DIR}"
-echo "${TF_VAR_BASE64}" | base64 --decode > "${TF_DIR}/terraform.tfvars"
+echo "${TF_VAR_BASE64}" | base64 --decode > terraform/gke/terraform.tfvars
 
 CLUSTER_NAME="${TEST_SUITE}-${SEMAPHORE_WORKFLOW_NUMBER}"
 
-cd "${TF_DIR}"
+cd terraform/gke
 terraform init
 terraform apply -auto-approve -var="cluster_name=${CLUSTER_NAME}"
 cd -
@@ -102,4 +100,6 @@ ginkgo -v \
   -- \
   -env-k8s-distro=gke \
   $EXTRA_FLAGS \
-  -report="${REPORT_DIR}" || true
+  -report="${REPORT_DIR}"; rc=$?
+.semaphore/cleanup-gke.sh
+exit $rc

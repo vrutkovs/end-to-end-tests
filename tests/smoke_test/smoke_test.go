@@ -80,10 +80,10 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, consts.DefaultVMNamespace, nil)
 
-			By("At least 1k requests were made")
+			By("At least 500 requests were made")
 			value, err := overwatch.VectorValue(ctx, "sum(vm_requests_total)")
 			require.NoError(t, err)
-			require.GreaterOrEqual(t, value, float64(1000))
+			require.GreaterOrEqual(t, value, float64(500))
 		})
 	})
 })

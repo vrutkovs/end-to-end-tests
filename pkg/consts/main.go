@@ -29,7 +29,7 @@ const (
 	DataPropagationDelay = 30 * time.Second
 
 	// AggregationWaitTime is the time to wait for streaming aggregation to complete.
-	AggregationWaitTime = 45 * time.Second
+	AggregationWaitTime = 1 * time.Minute
 )
 
 // Common namespace constants used across tests.

@@ -3,6 +3,8 @@ name: VictoriaMetrics E2E Tests
 agent:
   machine:
     type: e1-standard-2
+execution_time_limit:
+  minutes: 90
 
 global_job_config:
   env_vars:

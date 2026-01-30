@@ -127,7 +127,7 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 			WithStartTime(overwatch.Start).
 			MustBuild()
 
-		value, err := globalProm.VectorValue(ctx, "foo_2")
+		_, value, err := globalProm.VectorScan(ctx, "foo_2")
 		require.NoError(t, err)
 		require.Equal(t, value, model.SampleValue(1))
 
@@ -138,7 +138,7 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			value, err := zoneProm.VectorValue(ctx, "foo_2")
+			_, value, err := zoneProm.VectorScan(ctx, "foo_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
 		}
@@ -177,26 +177,26 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 		install.WaitForK6JobsToComplete(ctx, t, consts.K6TestsNamespace, scenario, 3)
 
 		By("At least 50m rows were inserted")
-		value, err := overwatch.VectorValue(ctx, "sum (vm_rows_inserted_total)")
+		_, value, err := overwatch.VectorScan(ctx, "sum (vm_rows_inserted_total)")
 		require.NoError(t, err)
 		require.GreaterOrEqual(t, value, float64(2_500_000))
 
 		By("At least 400k merges were made")
-		value, err = overwatch.VectorValue(ctx, "sum(vm_rows_merged_total)")
+		_, value, err = overwatch.VectorScan(ctx, "sum(vm_rows_merged_total)")
 		require.NoError(t, err)
 		require.GreaterOrEqual(t, value, float64(400_000))
 
 		By("No rows were ignored")
-		value, err = overwatch.VectorValue(ctx, "sum (vm_rows_ignored_total)")
+		_, value, err = overwatch.VectorScan(ctx, "sum (vm_rows_ignored_total)")
 		require.NoError(t, err)
 		require.Equal(t, value, model.SampleValue(0))
 
-		value, err = overwatch.VectorValue(ctx, "sum (vm_rows_invalid_total)")
+		_, value, err = overwatch.VectorScan(ctx, "sum (vm_rows_invalid_total)")
 		require.NoError(t, err)
 		require.Equal(t, value, model.SampleValue(0))
 
 		By("At least 4k requests were made")
-		value, err = overwatch.VectorValue(ctx, "sum(vm_requests_total)")
+		_, value, err = overwatch.VectorScan(ctx, "sum(vm_requests_total)")
 		require.NoError(t, err)
 		require.GreaterOrEqual(t, value, float64(4_000))
 	})

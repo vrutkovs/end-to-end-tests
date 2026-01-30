@@ -120,11 +120,11 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			value, err := tenant0Prom.VectorValue(ctx, "foo_2")
+			_, value, err := tenant0Prom.VectorScan(ctx, "foo_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
 
-			value, err = tenant0Prom.VectorValue(ctx, "bar_2")
+			_, value, err = tenant0Prom.VectorScan(ctx, "bar_2")
 			require.EqualError(t, err, consts.ErrNoDataReturned)
 			require.Equal(t, value, model.SampleValue(0))
 
@@ -135,11 +135,11 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			value, err = tenant1Prom.VectorValue(ctx, "bar_2")
+			_, value, err = tenant1Prom.VectorScan(ctx, "bar_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
 
-			value, err = tenant1Prom.VectorValue(ctx, "foo_2")
+			_, value, err = tenant1Prom.VectorScan(ctx, "foo_2")
 			require.EqualError(t, err, consts.ErrNoDataReturned)
 			require.Equal(t, value, model.SampleValue(0))
 
@@ -150,11 +150,11 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			value, err = multitenantProm.VectorValue(ctx, "foo_2")
+			_, value, err = multitenantProm.VectorScan(ctx, "foo_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
 
-			value, err = multitenantProm.VectorValue(ctx, "bar_2")
+			_, value, err = multitenantProm.VectorScan(ctx, "bar_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
 		})
@@ -192,11 +192,11 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			value, err := tenant0Prom.VectorValue(ctx, "foo_2")
+			_, value, err := tenant0Prom.VectorScan(ctx, "foo_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
 
-			value, err = tenant0Prom.VectorValue(ctx, "bar_2")
+			_, value, err = tenant0Prom.VectorScan(ctx, "bar_2")
 			require.EqualError(t, err, consts.ErrNoDataReturned)
 			require.Equal(t, value, model.SampleValue(0))
 
@@ -207,11 +207,11 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			value, err = tenant1Prom.VectorValue(ctx, "bar_2")
+			_, value, err = tenant1Prom.VectorScan(ctx, "bar_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
 
-			value, err = tenant1Prom.VectorValue(ctx, "foo_2")
+			_, value, err = tenant1Prom.VectorScan(ctx, "foo_2")
 			require.EqualError(t, err, consts.ErrNoDataReturned)
 			require.Equal(t, value, model.SampleValue(0))
 		})
@@ -251,11 +251,11 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			value, err := multitenantProm.VectorValue(ctx, "foo_2")
+			_, value, err := multitenantProm.VectorScan(ctx, "foo_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
 
-			value, err = multitenantProm.VectorValue(ctx, "bar_2")
+			_, value, err = multitenantProm.VectorScan(ctx, "bar_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
 		})
@@ -329,17 +329,14 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			value, err := tenantProm.VectorValue(ctx, "foo_2")
+			labels, value, err := tenantProm.VectorScan(ctx, "foo_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
-
-			labels, err := tenantProm.VectorMetric(ctx, "foo_2")
-			require.NoError(t, err)
 			require.Contains(t, labels, model.LabelName("cluster"))
 			require.Equal(t, labels["cluster"], model.LabelValue("dev"))
 
 			By("bar_2 was removed")
-			value, err = tenantProm.VectorValue(ctx, "bar_2")
+			_, value, err = tenantProm.VectorScan(ctx, "bar_2")
 			require.EqualError(t, err, consts.ErrNoDataReturned)
 			require.Equal(t, value, model.SampleValue(0))
 		})
@@ -415,17 +412,17 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			value, err := prom.VectorValue(ctx, "sum_over_time(cluster_aggr_test_0:30s_without_bar_baz_foo_sum_samples[5m])")
+			_, value, err := prom.VectorScan(ctx, "sum_over_time(cluster_aggr_test_0:30s_without_bar_baz_foo_sum_samples[5m])")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
 
 			By("Verifying non-matching metrics are written as-is")
-			value, err = prom.VectorValue(ctx, "cluster_nonaggr_0")
+			_, value, err = prom.VectorScan(ctx, "cluster_nonaggr_0")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(100))
 
 			By("Verifying original aggr metrics are dropped")
-			value, err = prom.VectorValue(ctx, "cluster_aggr_test_0")
+			_, value, err = prom.VectorScan(ctx, "cluster_aggr_test_0")
 			require.EqualError(t, err, consts.ErrNoDataReturned)
 			require.Equal(t, value, model.SampleValue(0))
 		})

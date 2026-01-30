@@ -2,7 +2,9 @@ package vmsingle_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -135,17 +137,14 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			value, err := prom.VectorValue(ctx, "foo_2")
+			labels, value, err := prom.VectorScan(ctx, "foo_2")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
-
-			labels, err := prom.VectorMetric(ctx, "foo_2")
-			require.NoError(t, err)
 			require.Contains(t, labels, model.LabelName("cluster"))
 			require.Equal(t, labels["cluster"], model.LabelValue("dev"))
 
 			By("bar_2 was removed")
-			value, err = prom.VectorValue(ctx, "bar_2")
+			_, value, err = prom.VectorScan(ctx, "bar_2")
 			require.EqualError(t, err, consts.ErrNoDataReturned)
 			require.Equal(t, value, model.SampleValue(0))
 		})
@@ -212,17 +211,17 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			value, err := prom.VectorValue(ctx, "sum_over_time(aggr_test_0:30s_without_bar_baz_foo_sum_samples[5m])")
+			_, value, err := prom.VectorScan(ctx, "sum_over_time(aggr_test_0:30s_without_bar_baz_foo_sum_samples[5m])")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
 
 			By("Verifying non-matching metrics are written as-is")
-			value, err = prom.VectorValue(ctx, "nonaggr_0")
+			_, value, err = prom.VectorScan(ctx, "nonaggr_0")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(100))
 
 			By("Verifying original aggr metrics are dropped")
-			value, err = prom.VectorValue(ctx, "aggr_test_0")
+			_, value, err = prom.VectorScan(ctx, "aggr_test_0")
 			require.EqualError(t, err, consts.ErrNoDataReturned)
 			require.Equal(t, value, model.SampleValue(0))
 		})

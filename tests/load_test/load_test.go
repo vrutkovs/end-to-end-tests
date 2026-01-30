@@ -97,26 +97,26 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 			overwatch.CheckNoAlertsFiring(ctx, t, consts.DefaultVMNamespace, nil)
 
 			By("At least 50m rows were inserted")
-			value, err := overwatch.VectorValue(ctx, "sum (vm_rows_inserted_total)")
+			_, value, err := overwatch.VectorScan(ctx, "sum (vm_rows_inserted_total)")
 			require.NoError(t, err)
 			require.GreaterOrEqual(t, value, float64(40_000_000))
 
 			By("At least 400k merges were made")
-			value, err = overwatch.VectorValue(ctx, "sum(vm_rows_merged_total)")
+			_, value, err = overwatch.VectorScan(ctx, "sum(vm_rows_merged_total)")
 			require.NoError(t, err)
 			require.GreaterOrEqual(t, value, float64(400_000))
 
 			By("No rows were ignored")
-			value, err = overwatch.VectorValue(ctx, "sum (vm_rows_ignored_total)")
+			_, value, err = overwatch.VectorScan(ctx, "sum (vm_rows_ignored_total)")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(0))
 
-			value, err = overwatch.VectorValue(ctx, "sum (vm_rows_invalid_total)")
+			_, value, err = overwatch.VectorScan(ctx, "sum (vm_rows_invalid_total)")
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(0))
 
 			By("At least 100k requests were made")
-			value, err = overwatch.VectorValue(ctx, "sum(vm_requests_total)")
+			_, value, err = overwatch.VectorScan(ctx, "sum(vm_requests_total)")
 			require.NoError(t, err)
 			require.GreaterOrEqual(t, value, float64(10_000))
 		})

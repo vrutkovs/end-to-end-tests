@@ -26,15 +26,16 @@ func TestNewPrometheusClient(t *testing.T) {
 	assert.Error(t, err, "Expected error for invalid URL")
 }
 
-func TestVectorValue(t *testing.T) {
+func TestVectorScan(t *testing.T) {
 	t.Parallel()
 	// Create a mock server that returns different types of responses
 	tests := []struct {
-		name          string
-		response      string
-		expectedValue prommodel.SampleValue
-		expectedError bool
-		errorContains string
+		name           string
+		response       string
+		expectedMetric prommodel.Metric
+		expectedValue  prommodel.SampleValue
+		expectedError  bool
+		errorContains  string
 	}{
 		{
 			name: "valid vector response",
@@ -44,14 +45,15 @@ func TestVectorValue(t *testing.T) {
 					"resultType": "vector",
 					"result": [
 						{
-							"metric": {"__name__": "test_metric"},
+							"metric": {"__name__": "test_metric", "label1": "value1"},
 							"value": [1234567890, "42.5"]
 						}
 					]
 				}
 			}`,
-			expectedValue: 42.5,
-			expectedError: false,
+			expectedMetric: prommodel.Metric{"__name__": "test_metric", "label1": "value1"},
+			expectedValue:  42.5,
+			expectedError:  false,
 		},
 		{
 			name: "empty vector response",
@@ -62,7 +64,6 @@ func TestVectorValue(t *testing.T) {
 					"result": []
 				}
 			}`,
-			expectedValue: 0,
 			expectedError: true,
 			errorContains: "no data returned",
 		},
@@ -75,7 +76,6 @@ func TestVectorValue(t *testing.T) {
 					"result": []
 				}
 			}`,
-			expectedValue: 0,
 			expectedError: true,
 			errorContains: "unexpected result type: matrix",
 		},
@@ -96,8 +96,8 @@ func TestVectorValue(t *testing.T) {
 			client, err := NewPrometheusClient(server.URL)
 			require.NoError(t, err, "Failed to create client")
 
-			// Test VectorValue
-			value, err := client.VectorValue(context.Background(), "test_query")
+			// Test VectorScan
+			metric, value, err := client.VectorScan(context.Background(), "test_query")
 
 			if tt.expectedError {
 				require.Error(t, err, "Expected error but got none")
@@ -109,6 +109,7 @@ func TestVectorValue(t *testing.T) {
 
 			require.NoError(t, err, "Unexpected error")
 			assert.Equal(t, tt.expectedValue, value, "Expected value mismatch")
+			assert.Equal(t, tt.expectedMetric, metric, "Expected metric mismatch")
 		})
 	}
 }

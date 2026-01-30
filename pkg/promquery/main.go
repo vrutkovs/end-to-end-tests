@@ -54,38 +54,19 @@ func (p PrometheusClient) Query(ctx context.Context, query string) (prommodel.Va
 	return p.client.Query(ctx, query, time.Now())
 }
 
-// VectorValue executes an instant query and returns the first sample value from the result vector.
+// VectorScan executes an instant query and returns the first sample's metric and value from the result vector.
 // It returns an error if the query fails, returns no data, or returns a non-vector result.
-func (p PrometheusClient) VectorValue(ctx context.Context, query string) (prommodel.SampleValue, error) {
+func (p PrometheusClient) VectorScan(ctx context.Context, query string) (prommodel.Metric, prommodel.SampleValue, error) {
 	result, _, err := p.Query(ctx, query)
 	if err != nil {
-		return 0, err
+		return nil, 0, err
 	}
 	if result.Type() != prommodel.ValVector {
-		return 0, fmt.Errorf("unexpected result type: %s", result.Type())
+		return nil, 0, fmt.Errorf("unexpected result type: %s", result.Type())
 	}
 	vec := result.(prommodel.Vector)
 	if len(vec) == 0 {
-		return 0, fmt.Errorf("no data returned")
+		return nil, 0, fmt.Errorf("no data returned")
 	}
-	return vec[0].Value, nil
-
-}
-
-// VectorMetric executes an instant query and returns the first sample value from the result vector.
-// It returns an error if the query fails, returns no data, or returns a non-vector result.
-func (p PrometheusClient) VectorMetric(ctx context.Context, query string) (prommodel.Metric, error) {
-	result, _, err := p.Query(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	if result.Type() != prommodel.ValVector {
-		return nil, fmt.Errorf("unexpected result type: %s", result.Type())
-	}
-	vec := result.(prommodel.Vector)
-	if len(vec) == 0 {
-		return nil, fmt.Errorf("no data returned")
-	}
-	return vec[0].Metric, nil
-
+	return vec[0].Metric, vec[0].Value, nil
 }

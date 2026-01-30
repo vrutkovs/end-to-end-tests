@@ -148,7 +148,7 @@ jobs:
               -vm-vmalertdefault-version=<< parameters.vm_vmalertdefault_version >> \
               -vm-vmauthdefault-image=<< parameters.vm_vmauthdefault_image >> \
               -vm-vmauthdefault-version=<< parameters.vm_vmauthdefault_version >>"
-            ginkgo -v \
+            circleci tests run --command="ginkgo -v \
               -procs=1 \
               -timeout=60m \
               --label-filter=${LABEL_FILTER} \
@@ -156,10 +156,13 @@ jobs:
               -- \
               -env-k8s-distro=kind \
               $EXTRA_FLAGS \
-              -report="${REPORT_DIR}" || true
+              -junit-report=test-results/report.xml \
+              -report=\"${REPORT_DIR}\""
       - when:
           condition: always
           steps:
+          - store_test_results:
+              path: test-results
           - persist_to_workspace:
               root: /tmp
               paths:
@@ -320,7 +323,7 @@ jobs:
               -vm-vmalertdefault-version=<< parameters.vm_vmalertdefault_version >> \
               -vm-vmauthdefault-image=<< parameters.vm_vmauthdefault_image >> \
               -vm-vmauthdefault-version=<< parameters.vm_vmauthdefault_version >>"
-            ginkgo -v \
+            circleci tests run --command="ginkgo -v \
               -procs=<<parameters.procs>> \
               -timeout=<<parameters.timeout>> \
               --label-filter=${LABEL_FILTER} \
@@ -328,7 +331,7 @@ jobs:
               -- \
               -env-k8s-distro=gke \
               $EXTRA_FLAGS \
-              -report="${REPORT_DIR}" || true
+              -report=\"${REPORT_DIR}\"" || true
       - persist_to_workspace:
           root: /tmp
           paths:
@@ -463,25 +466,14 @@ workflows:
     when: pipeline.git.branch != "main"
     jobs:
       - unit-tests
-      - gke-test:
+      - kind-smoke-test:
           <<: *common_params
-          name: gke-distributed
-          test_suite: distributed
-          procs: 10
-          timeout: 90m
+          name: kind-smoke-test
           requires:
             - unit-tests
-      - cleanup:
-          name: gke-distributed-cleanup
-          test_suite: distributed
-          requires:
-            - gke-distributed:
-              - success
-              - failed
-              - canceled
       - deploy-report:
           requires:
-            - gke-distributed-cleanup
+            - kind-smoke-test
 
   main-branch-tests:
     when: pipeline.git.branch == "main"

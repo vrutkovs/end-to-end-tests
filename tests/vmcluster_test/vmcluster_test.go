@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,6 +27,7 @@ func TestVMClusterTests(t *testing.T) {
 	tests.Init()
 	RegisterFailHandler(Fail)
 	suiteConfig, reporterConfig := GinkgoConfiguration()
+	suiteConfig.FocusStrings = []string{"should ingest data via influxdb protocol"}
 	RunSpecs(t, "VMCluster test Suite", suiteConfig, reporterConfig)
 }
 
@@ -425,6 +427,56 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 			_, value, err = prom.VectorScan(ctx, "cluster_aggr_test_0")
 			require.EqualError(t, err, consts.ErrNoDataReturned)
 			require.Equal(t, value, model.SampleValue(0))
+		})
+	})
+
+	Describe("InfluxDB ingestion", func() {
+		It("should ingest data via influxdb protocol to vmagent", Label("gke", "id=e5fba904-59b8-4440-97d5-9747dc78f959"), func(ctx context.Context) {
+			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+			tests.EnsureNamespaceExists(t, kubeOpts, namespace)
+			vmclient := install.GetVMClient(t, kubeOpts)
+
+			By("Configure VMAgent to write to VMCluster")
+			vmInsertURL := fmt.Sprintf("http://%s/insert/0/prometheus/api/v1/write", consts.GetVMInsertSvc(consts.DefaultVMClusterName, namespace))
+
+			patchOps := []install.PatchOp{
+				{
+					Op:   "add",
+					Path: "/spec/remoteWrite",
+					Value: []map[string]interface{}{
+						{
+							"url": vmInsertURL,
+						},
+					},
+				},
+			}
+			patch, err := install.CreateJsonPatch(patchOps)
+			require.NoError(t, err)
+
+			install.InstallVMAgent(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{patch})
+			install.ExposeVMAgentAsIngress(ctx, t, kubeOpts, namespace)
+
+			By("Inserting data via InfluxDB protocol")
+			influxURL := fmt.Sprintf("http://%s/write", consts.VMAgentNamespacedHost(namespace))
+			data := "influx_test,foo=bar value=123"
+			resp, err := c.Post(influxURL, "", strings.NewReader(data))
+			require.NoError(t, err)
+			require.Equal(t, http.StatusNoContent, resp.StatusCode)
+			_ = resp.Body.Close()
+
+			tests.WaitForDataPropagation()
+
+			By("Verifying data via Prometheus protocol")
+			prom := tests.NewPromClientBuilder().
+				WithNamespace(namespace).
+				WithTenant(0).
+				WithStartTime(overwatch.Start).
+				MustBuild()
+
+			labels, value, err := prom.VectorScan(ctx, "influx_test_value")
+			require.NoError(t, err)
+			require.Equal(t, value, model.SampleValue(123))
+			require.Equal(t, labels["foo"], model.LabelValue("bar"))
 		})
 	})
 })

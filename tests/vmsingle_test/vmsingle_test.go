@@ -226,4 +226,35 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 			require.Equal(t, value, model.SampleValue(0))
 		})
 	})
+
+	Describe("InfluxDB ingestion", func() {
+		It("should ingest data via influxdb protocol", Label("gke", "id=b2c3d4e5-f6a7-8901-ba12-345678901234"), func(ctx context.Context) {
+			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+			tests.EnsureNamespaceExists(t, kubeOpts, namespace)
+
+			vmclient := install.GetVMClient(t, kubeOpts)
+			install.InstallVMSingle(ctx, t, kubeOpts, namespace, vmclient, nil)
+
+			By("Inserting data via InfluxDB protocol")
+			influxURL := fmt.Sprintf("http://%s/write", consts.VMSingleNamespacedHost(namespace))
+			data := "influx_test,foo=bar value=123"
+			resp, err := c.Post(influxURL, "", strings.NewReader(data))
+			require.NoError(t, err)
+			require.Equal(t, http.StatusNoContent, resp.StatusCode)
+			_ = resp.Body.Close()
+
+			tests.WaitForDataPropagation()
+
+			By("Verifying data via Prometheus protocol")
+			prom := tests.NewPromClientBuilder().
+				ForVMSingle(namespace).
+				WithStartTime(overwatch.Start).
+				MustBuild()
+
+			labels, value, err := prom.VectorScan(ctx, "influx_test_value")
+			require.NoError(t, err)
+			require.Equal(t, value, model.SampleValue(123))
+			require.Equal(t, labels["foo"], model.LabelValue("bar"))
+		})
+	})
 })

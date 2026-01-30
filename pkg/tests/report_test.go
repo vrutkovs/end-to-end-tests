@@ -121,7 +121,6 @@ func TestWriteEnvironmentProperties(t *testing.T) {
 	consts.SetEnvK8SDistro("test-distro")
 	consts.SetHelmChartVersion("test-chart-v1.0.0")
 	consts.SetOperatorVersion("test-op-v2.0.0")
-	consts.SetVMVersion("test-vm-v3.0.0")
 
 	// Test writeEnvironmentProperties
 	err = writeEnvironmentProperties(tempDir)
@@ -141,7 +140,6 @@ func TestWriteEnvironmentProperties(t *testing.T) {
 		"helm-chart=test-chart-v1.0.0",
 		"kube-distro=test-distro",
 		"operator-version=test-op-v2.0.0",
-		"vm-version=test-vm-v3.0.0",
 	}
 
 	lines := strings.Split(strings.TrimSpace(contentStr), "\n")
@@ -188,7 +186,6 @@ func TestWriteEnvironmentPropertiesWithEmptyValues(t *testing.T) {
 	consts.SetEnvK8SDistro("")
 	consts.SetHelmChartVersion("")
 	consts.SetOperatorVersion("")
-	consts.SetVMVersion("")
 
 	// Test writeEnvironmentProperties
 	err = writeEnvironmentProperties(tempDir)
@@ -204,7 +201,6 @@ func TestWriteEnvironmentPropertiesWithEmptyValues(t *testing.T) {
 		"helm-chart=",
 		"kube-distro=",
 		"operator-version=",
-		"vm-version=",
 	}
 
 	lines := strings.Split(strings.TrimSpace(contentStr), "\n")
@@ -223,29 +219,24 @@ func TestConstsIntegration(t *testing.T) {
 	originalDistro := consts.EnvK8SDistro()
 	originalChart := consts.HelmChartVersion()
 	originalOperator := consts.OperatorVersion()
-	originalVM := consts.VMVersion()
 
 	// Clean up after test
 	defer func() {
 		consts.SetEnvK8SDistro(originalDistro)
 		consts.SetHelmChartVersion(originalChart)
 		consts.SetOperatorVersion(originalOperator)
-		consts.SetVMVersion(originalVM)
 	}()
 
 	// Test setting and getting values
 	testDistro := "test-k8s-distro"
 	testChart := "test-helm-chart"
 	testOperator := "test-operator"
-	testVM := "test-vm"
 
 	consts.SetEnvK8SDistro(testDistro)
 	consts.SetHelmChartVersion(testChart)
 	consts.SetOperatorVersion(testOperator)
-	consts.SetVMVersion(testVM)
 
 	assert.Equal(t, testDistro, consts.EnvK8SDistro())
 	assert.Equal(t, testChart, consts.HelmChartVersion())
 	assert.Equal(t, testOperator, consts.OperatorVersion())
-	assert.Equal(t, testVM, consts.VMVersion())
 }

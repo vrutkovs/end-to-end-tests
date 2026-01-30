@@ -26,24 +26,39 @@ func buildVMK8StackValues(namespace string) map[string]string {
 		"vmcluster.ingress.insert.hosts[0]": consts.VMInsertHost(namespace),
 	}
 
-	// Add VM tag if provided
-	vmTag := consts.VMVersion()
-	if vmTag != "" {
-		setValues["vmsingle.spec.image.tag"] = vmTag
-
-		// For cluster components, add "-cluster" suffix unless using "latest" tag
-		clusterTag := vmTag
-		if vmTag != "latest" {
-			clusterTag = fmt.Sprintf("%s-cluster", vmTag)
-		}
-
-		setValues["vmcluster.spec.vmstorage.image.tag"] = clusterTag
-		setValues["vmcluster.spec.vmselect.image.tag"] = clusterTag
-		setValues["vmcluster.spec.vminsert.image.tag"] = clusterTag
-		setValues["vmalert.spec.image.tag"] = vmTag
-		setValues["vmagent.spec.image.tag"] = vmTag
-		setValues["vmauth.spec.image.tag"] = vmTag
+	if consts.OperatorImageRegistry() != "" {
+		setValues["victoria-metrics-operator.image.registry"] = consts.OperatorImageRegistry()
 	}
+	if consts.OperatorImageRepository() != "" {
+		setValues["victoria-metrics-operator.image.repository"] = consts.OperatorImageRepository()
+	}
+	if consts.OperatorImageTag() != "" {
+		setValues["victoria-metrics-operator.image.tag"] = consts.OperatorImageTag()
+	}
+
+	envIdx := 0
+	addEnv := func(name, value string) {
+		if value != "" {
+			setValues[fmt.Sprintf("victoria-metrics-operator.env[%d].name", envIdx)] = name
+			setValues[fmt.Sprintf("victoria-metrics-operator.env[%d].value", envIdx)] = value
+			envIdx++
+		}
+	}
+
+	addEnv("VM_VMSINGLEDEFAULT_IMAGE", consts.VMSingleDefaultImage())
+	addEnv("VM_VMSINGLEDEFAULT_VERSION", consts.VMSingleDefaultVersion())
+	addEnv("VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_IMAGE", consts.VMClusterVMSelectDefaultImage())
+	addEnv("VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_VERSION", consts.VMClusterVMSelectDefaultVersion())
+	addEnv("VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_IMAGE", consts.VMClusterVMStorageDefaultImage())
+	addEnv("VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_VERSION", consts.VMClusterVMStorageDefaultVersion())
+	addEnv("VM_VMCLUSTERDEFAULT_VMINSERTDEFAULT_IMAGE", consts.VMClusterVMInsertDefaultImage())
+	addEnv("VM_VMCLUSTERDEFAULT_VMINSERTDEFAULT_VERSION", consts.VMClusterVMInsertDefaultVersion())
+	addEnv("VM_VMAGENTDEFAULT_IMAGE", consts.VMAgentDefaultImage())
+	addEnv("VM_VMAGENTDEFAULT_VERSION", consts.VMAgentDefaultVersion())
+	addEnv("VM_VMALERTDEFAULT_IMAGE", consts.VMAlertDefaultImage())
+	addEnv("VM_VMALERTDEFAULT_VERSION", consts.VMAlertDefaultVersion())
+	addEnv("VM_VMAUTHDEFAULT_IMAGE", consts.VMAuthDefaultImage())
+	addEnv("VM_VMAUTHDEFAULT_VERSION", consts.VMAuthDefaultVersion())
 
 	return setValues
 }
@@ -99,7 +114,6 @@ func InstallVMK8StackWithHelm(ctx context.Context, helmChart, valuesFile string,
 	} else {
 		fmt.Printf("Found VM version label: %s\n", vmVersion)
 	}
-	consts.SetVMVersion(vmVersion)
 
 	helmChartVersion := vmOperator.Labels["helm.sh/chart"]
 	if helmChartVersion == "" {
@@ -122,23 +136,6 @@ func buildVMDistributedValues(namespace string) map[string]string {
 
 	// Set region-specific ingress hosts
 	setValues["zoneTpl.read.vmauth.spec.ingress.host"] = fmt.Sprintf("vmselect-{{ (.zone).name }}.%s.nip.io", consts.NginxHost())
-
-	// Add VM tag if provided
-	vmTag := consts.VMVersion()
-	if vmTag != "" {
-		// For cluster components, add "-cluster" suffix unless using "latest" tag
-		clusterTag := vmTag
-		if vmTag != "latest" {
-			clusterTag = fmt.Sprintf("%s-cluster", vmTag)
-		}
-
-		setValues["common.vmcluster.spec.vmstorage.image.tag"] = clusterTag
-		setValues["common.vmcluster.spec.vmselect.image.tag"] = clusterTag
-		setValues["common.vmcluster.spec.vminsert.image.tag"] = clusterTag
-		setValues["common.vmalert.spec.image.tag"] = vmTag
-		setValues["common.vmagent.spec.image.tag"] = vmTag
-		setValues["common.vmauth.spec.image.tag"] = vmTag
-	}
 
 	return setValues
 }

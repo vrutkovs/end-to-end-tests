@@ -33,7 +33,7 @@ func TestVMClusterTests(t *testing.T) {
 	tests.Init()
 	RegisterFailHandler(Fail)
 	suiteConfig, reporterConfig := GinkgoConfiguration()
-	// suiteConfig.FocusStrings = []string{"should ingest data via opentelemetry protocol to vminsert"}
+	// suiteConfig.FocusStrings = []string{"should relabel data sent via remote write"}
 	RunSpecs(t, "VMCluster test Suite", suiteConfig, reporterConfig)
 }
 

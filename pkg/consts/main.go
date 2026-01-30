@@ -143,8 +143,32 @@ var (
 	nginxHost string
 
 	helmChartVersion string
-	vmVersion        string
 	operatorVersion  string
+
+	operatorImageRegistry   string
+	operatorImageRepository string
+	operatorImageTag        string
+
+	vmSingleDefaultImage   string
+	vmSingleDefaultVersion string
+
+	vmClusterVMSelectDefaultImage   string
+	vmClusterVMSelectDefaultVersion string
+
+	vmClusterVMStorageDefaultImage   string
+	vmClusterVMStorageDefaultVersion string
+
+	vmClusterVMInsertDefaultImage   string
+	vmClusterVMInsertDefaultVersion string
+
+	vmAgentDefaultImage   string
+	vmAgentDefaultVersion string
+
+	vmAlertDefaultImage   string
+	vmAlertDefaultVersion string
+
+	vmAuthDefaultImage   string
+	vmAuthDefaultVersion string
 )
 
 // Setters
@@ -177,13 +201,6 @@ func SetHelmChartVersion(val string) {
 	helmChartVersion = val
 }
 
-// SetVMVersion sets the detected VictoriaMetrics version.
-func SetVMVersion(val string) {
-	mu.Lock()
-	defer mu.Unlock()
-	vmVersion = val
-}
-
 // SetOperatorVersion sets the detected VictoriaMetrics Operator version.
 func SetOperatorVersion(val string) {
 	mu.Lock()
@@ -191,11 +208,123 @@ func SetOperatorVersion(val string) {
 	operatorVersion = val
 }
 
-// SetVMTag sets the VictoriaMetrics image tag to use.
-func SetVMTag(val string) {
+// SetOperatorImageRegistry sets the operator image registry.
+func SetOperatorImageRegistry(val string) {
 	mu.Lock()
 	defer mu.Unlock()
-	vmVersion = val
+	operatorImageRegistry = val
+}
+
+// SetOperatorImageRepository sets the operator image repository.
+func SetOperatorImageRepository(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	operatorImageRepository = val
+}
+
+// SetOperatorImageTag sets the operator image tag.
+func SetOperatorImageTag(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	operatorImageTag = val
+}
+
+// SetVMSingleDefaultImage sets the default image for VMSingle.
+func SetVMSingleDefaultImage(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmSingleDefaultImage = val
+}
+
+// SetVMSingleDefaultVersion sets the default version for VMSingle.
+func SetVMSingleDefaultVersion(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmSingleDefaultVersion = val
+}
+
+// SetVMClusterVMSelectDefaultImage sets the default image for VMCluster VMSelect.
+func SetVMClusterVMSelectDefaultImage(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmClusterVMSelectDefaultImage = val
+}
+
+// SetVMClusterVMSelectDefaultVersion sets the default version for VMCluster VMSelect.
+func SetVMClusterVMSelectDefaultVersion(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmClusterVMSelectDefaultVersion = val
+}
+
+// SetVMClusterVMStorageDefaultImage sets the default image for VMCluster VMStorage.
+func SetVMClusterVMStorageDefaultImage(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmClusterVMStorageDefaultImage = val
+}
+
+// SetVMClusterVMStorageDefaultVersion sets the default version for VMCluster VMStorage.
+func SetVMClusterVMStorageDefaultVersion(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmClusterVMStorageDefaultVersion = val
+}
+
+// SetVMClusterVMInsertDefaultImage sets the default image for VMCluster VMInsert.
+func SetVMClusterVMInsertDefaultImage(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmClusterVMInsertDefaultImage = val
+}
+
+// SetVMClusterVMInsertDefaultVersion sets the default version for VMCluster VMInsert.
+func SetVMClusterVMInsertDefaultVersion(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmClusterVMInsertDefaultVersion = val
+}
+
+// SetVMAgentDefaultImage sets the default image for VMAgent.
+func SetVMAgentDefaultImage(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmAgentDefaultImage = val
+}
+
+// SetVMAgentDefaultVersion sets the default version for VMAgent.
+func SetVMAgentDefaultVersion(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmAgentDefaultVersion = val
+}
+
+// SetVMAlertDefaultImage sets the default image for VMAlert.
+func SetVMAlertDefaultImage(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmAlertDefaultImage = val
+}
+
+// SetVMAlertDefaultVersion sets the default version for VMAlert.
+func SetVMAlertDefaultVersion(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmAlertDefaultVersion = val
+}
+
+// SetVMAuthDefaultImage sets the default image for VMAuth.
+func SetVMAuthDefaultImage(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmAuthDefaultImage = val
+}
+
+// SetVMAuthDefaultVersion sets the default version for VMAuth.
+func SetVMAuthDefaultVersion(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmAuthDefaultVersion = val
 }
 
 // Getters
@@ -327,16 +456,128 @@ func HelmChartVersion() string {
 	return helmChartVersion
 }
 
-// VMVersion returns the stored VictoriaMetrics version.
-func VMVersion() string {
-	mu.Lock()
-	defer mu.Unlock()
-	return vmVersion
-}
-
 // OperatorVersion returns the stored Operator version.
 func OperatorVersion() string {
 	mu.Lock()
 	defer mu.Unlock()
 	return operatorVersion
+}
+
+// OperatorImageRegistry returns the stored operator image registry.
+func OperatorImageRegistry() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return operatorImageRegistry
+}
+
+// OperatorImageRepository returns the stored operator image repository.
+func OperatorImageRepository() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return operatorImageRepository
+}
+
+// OperatorImageTag returns the stored operator image tag.
+func OperatorImageTag() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return operatorImageTag
+}
+
+// VMSingleDefaultImage returns the stored VMSingle default image.
+func VMSingleDefaultImage() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmSingleDefaultImage
+}
+
+// VMSingleDefaultVersion returns the stored VMSingle default version.
+func VMSingleDefaultVersion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmSingleDefaultVersion
+}
+
+// VMClusterVMSelectDefaultImage returns the stored VMCluster VMSelect default image.
+func VMClusterVMSelectDefaultImage() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmClusterVMSelectDefaultImage
+}
+
+// VMClusterVMSelectDefaultVersion returns the stored VMCluster VMSelect default version.
+func VMClusterVMSelectDefaultVersion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmClusterVMSelectDefaultVersion
+}
+
+// VMClusterVMStorageDefaultImage returns the stored VMCluster VMStorage default image.
+func VMClusterVMStorageDefaultImage() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmClusterVMStorageDefaultImage
+}
+
+// VMClusterVMStorageDefaultVersion returns the stored VMCluster VMStorage default version.
+func VMClusterVMStorageDefaultVersion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmClusterVMStorageDefaultVersion
+}
+
+// VMClusterVMInsertDefaultImage returns the stored VMCluster VMInsert default image.
+func VMClusterVMInsertDefaultImage() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmClusterVMInsertDefaultImage
+}
+
+// VMClusterVMInsertDefaultVersion returns the stored VMCluster VMInsert default version.
+func VMClusterVMInsertDefaultVersion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmClusterVMInsertDefaultVersion
+}
+
+// VMAgentDefaultImage returns the stored VMAgent default image.
+func VMAgentDefaultImage() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmAgentDefaultImage
+}
+
+// VMAgentDefaultVersion returns the stored VMAgent default version.
+func VMAgentDefaultVersion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmAgentDefaultVersion
+}
+
+// VMAlertDefaultImage returns the stored VMAlert default image.
+func VMAlertDefaultImage() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmAlertDefaultImage
+}
+
+// VMAlertDefaultVersion returns the stored VMAlert default version.
+func VMAlertDefaultVersion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmAlertDefaultVersion
+}
+
+// VMAuthDefaultImage returns the stored VMAuth default image.
+func VMAuthDefaultImage() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmAuthDefaultImage
+}
+
+// VMAuthDefaultVersion returns the stored VMAuth default version.
+func VMAuthDefaultVersion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmAuthDefaultVersion
 }

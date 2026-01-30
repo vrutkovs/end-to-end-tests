@@ -31,8 +31,57 @@ jobs:
   kind-smoke-test:
     executor: machine-executor
     parameters:
-      vm_version:
+      operator_registry:
         type: string
+        default: ""
+      operator_repository:
+        type: string
+        default: ""
+      operator_tag:
+        type: string
+        default: ""
+      vm_vmsingledefault_image:
+        type: string
+        default: ""
+      vm_vmsingledefault_version:
+        type: string
+        default: ""
+      vm_vmclusterdefault_vmselectdefault_image:
+        type: string
+        default: ""
+      vm_vmclusterdefault_vmselectdefault_version:
+        type: string
+        default: ""
+      vm_vmclusterdefault_vmstoragedefault_image:
+        type: string
+        default: ""
+      vm_vmclusterdefault_vmstoragedefault_version:
+        type: string
+        default: ""
+      vm_vmclusterdefault_vminsertdefault_image:
+        type: string
+        default: ""
+      vm_vmclusterdefault_vminsertdefault_version:
+        type: string
+        default: ""
+      vm_vmagentdefault_image:
+        type: string
+        default: ""
+      vm_vmagentdefault_version:
+        type: string
+        default: ""
+      vm_vmalertdefault_image:
+        type: string
+        default: ""
+      vm_vmalertdefault_version:
+        type: string
+        default: ""
+      vm_vmauthdefault_image:
+        type: string
+        default: ""
+      vm_vmauthdefault_version:
+        type: string
+        default: ""
     environment:
       LABEL_FILTER: kind
     steps:
@@ -80,8 +129,25 @@ jobs:
             export PATH="$PATH:$(go env GOPATH)/bin"
             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
             kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
-            REPORT_DIR="/tmp/allure-results/kind-smoke-test-<<parameters.vm_version>>"
+            REPORT_DIR="/tmp/allure-results/kind-smoke-test"
             mkdir -p "${REPORT_DIR}"
+            EXTRA_FLAGS="-operator-registry=<< parameters.operator_registry >> \
+              -operator-repository=<< parameters.operator_repository >> \
+              -operator-tag=<< parameters.operator_tag >> \
+              -vm-vmsingledefault-image=<< parameters.vm_vmsingledefault_image >> \
+              -vm-vmsingledefault-version=<< parameters.vm_vmsingledefault_version >> \
+              -vm-vmclusterdefault-vmselectdefault-image=<< parameters.vm_vmclusterdefault_vmselectdefault_image >> \
+              -vm-vmclusterdefault-vmselectdefault-version=<< parameters.vm_vmclusterdefault_vmselectdefault_version >> \
+              -vm-vmclusterdefault-vmstoragedefault-image=<< parameters.vm_vmclusterdefault_vmstoragedefault_image >> \
+              -vm-vmclusterdefault-vmstoragedefault-version=<< parameters.vm_vmclusterdefault_vmstoragedefault_version >> \
+              -vm-vmclusterdefault-vminsertdefault-image=<< parameters.vm_vmclusterdefault_vminsertdefault_image >> \
+              -vm-vmclusterdefault-vminsertdefault-version=<< parameters.vm_vmclusterdefault_vminsertdefault_version >> \
+              -vm-vmagentdefault-image=<< parameters.vm_vmagentdefault_image >> \
+              -vm-vmagentdefault-version=<< parameters.vm_vmagentdefault_version >> \
+              -vm-vmalertdefault-image=<< parameters.vm_vmalertdefault_image >> \
+              -vm-vmalertdefault-version=<< parameters.vm_vmalertdefault_version >> \
+              -vm-vmauthdefault-image=<< parameters.vm_vmauthdefault_image >> \
+              -vm-vmauthdefault-version=<< parameters.vm_vmauthdefault_version >>"
             ginkgo -v \
               -procs=1 \
               -timeout=60m \
@@ -89,7 +155,7 @@ jobs:
               ./tests/smoke_test \
               -- \
               -env-k8s-distro=kind \
-              -vmtag=<< parameters.vm_version >> \
+              $EXTRA_FLAGS \
               -report="${REPORT_DIR}" || true
       - when:
           condition: always
@@ -104,12 +170,61 @@ jobs:
     parameters:
       test_suite:
         type: string
-      vm_version:
-        type: string
       procs:
         type: integer
       timeout:
         type: string
+      operator_registry:
+        type: string
+        default: ""
+      operator_repository:
+        type: string
+        default: ""
+      operator_tag:
+        type: string
+        default: ""
+      vm_vmsingledefault_image:
+        type: string
+        default: ""
+      vm_vmsingledefault_version:
+        type: string
+        default: ""
+      vm_vmclusterdefault_vmselectdefault_image:
+        type: string
+        default: ""
+      vm_vmclusterdefault_vmselectdefault_version:
+        type: string
+        default: ""
+      vm_vmclusterdefault_vmstoragedefault_image:
+        type: string
+        default: ""
+      vm_vmclusterdefault_vmstoragedefault_version:
+        type: string
+        default: ""
+      vm_vmclusterdefault_vminsertdefault_image:
+        type: string
+        default: ""
+      vm_vmclusterdefault_vminsertdefault_version:
+        type: string
+        default: ""
+      vm_vmagentdefault_image:
+        type: string
+        default: ""
+      vm_vmagentdefault_version:
+        type: string
+        default: ""
+      vm_vmalertdefault_image:
+        type: string
+        default: ""
+      vm_vmalertdefault_version:
+        type: string
+        default: ""
+      vm_vmauthdefault_image:
+        type: string
+        default: ""
+      vm_vmauthdefault_version:
+        type: string
+        default: ""
     environment:
       LABEL_FILTER: gke
     steps:
@@ -186,8 +301,25 @@ jobs:
           command: |
             export PATH="$PATH:$(go env GOPATH)/bin"
             export KUBECONFIG=/tmp/kubeconfig.yaml
-            REPORT_DIR="/tmp/allure-results/<<parameters.test_suite>>-<<parameters.vm_version>>"
+            REPORT_DIR="/tmp/allure-results/<<parameters.test_suite>>"
             mkdir -p "${REPORT_DIR}"
+            EXTRA_FLAGS="-operator-registry=<< parameters.operator_registry >> \
+              -operator-repository=<< parameters.operator_repository >> \
+              -operator-tag=<< parameters.operator_tag >> \
+              -vm-vmsingledefault-image=<< parameters.vm_vmsingledefault_image >> \
+              -vm-vmsingledefault-version=<< parameters.vm_vmsingledefault_version >> \
+              -vm-vmclusterdefault-vmselectdefault-image=<< parameters.vm_vmclusterdefault_vmselectdefault_image >> \
+              -vm-vmclusterdefault-vmselectdefault-version=<< parameters.vm_vmclusterdefault_vmselectdefault_version >> \
+              -vm-vmclusterdefault-vmstoragedefault-image=<< parameters.vm_vmclusterdefault_vmstoragedefault_image >> \
+              -vm-vmclusterdefault-vmstoragedefault-version=<< parameters.vm_vmclusterdefault_vmstoragedefault_version >> \
+              -vm-vmclusterdefault-vminsertdefault-image=<< parameters.vm_vmclusterdefault_vminsertdefault_image >> \
+              -vm-vmclusterdefault-vminsertdefault-version=<< parameters.vm_vmclusterdefault_vminsertdefault_version >> \
+              -vm-vmagentdefault-image=<< parameters.vm_vmagentdefault_image >> \
+              -vm-vmagentdefault-version=<< parameters.vm_vmagentdefault_version >> \
+              -vm-vmalertdefault-image=<< parameters.vm_vmalertdefault_image >> \
+              -vm-vmalertdefault-version=<< parameters.vm_vmalertdefault_version >> \
+              -vm-vmauthdefault-image=<< parameters.vm_vmauthdefault_image >> \
+              -vm-vmauthdefault-version=<< parameters.vm_vmauthdefault_version >>"
             ginkgo -v \
               -procs=<<parameters.procs>> \
               -timeout=<<parameters.timeout>> \
@@ -195,7 +327,7 @@ jobs:
               ./tests/<<parameters.test_suite>>_test \
               -- \
               -env-k8s-distro=gke \
-              -vmtag=<< parameters.vm_version >> \
+              $EXTRA_FLAGS \
               -report="${REPORT_DIR}" || true
       - persist_to_workspace:
           root: /tmp
@@ -252,13 +384,78 @@ jobs:
             done
       - run: echo "All required jobs have now completed"
 
+
 parameters:
-  default_vm_version:
+  operator_registry:
+    type: string
+    default: "quay.io"
+  operator_repository:
+    type: string
+    default: "victoriametrics/operator"
+  operator_tag:
+    type: string
+    default: "v0.67.0"
+  vm_vmsingledefault_image:
+    type: string
+    default: "quay.io/victoriametrics/victoria-metrics"
+  vm_vmsingledefault_version:
     type: string
     default: "v1.134.0"
-    #default: "v1.133.0-enterprise"
-    #default: "v1.122.10-enterprise"
-    #default: "v1.110.25-enterprise"
+  vm_vmclusterdefault_vmselectdefault_image:
+    type: string
+    default: "quay.io/victoriametrics/vmselect"
+  vm_vmclusterdefault_vmselectdefault_version:
+    type: string
+    default: "v1.134.0-cluster"
+  vm_vmclusterdefault_vmstoragedefault_image:
+    type: string
+    default: "quay.io/victoriametrics/vmstorage"
+  vm_vmclusterdefault_vmstoragedefault_version:
+    type: string
+    default: "v1.134.0-cluster"
+  vm_vmclusterdefault_vminsertdefault_image:
+    type: string
+    default: "quay.io/victoriametrics/vminsert"
+  vm_vmclusterdefault_vminsertdefault_version:
+    type: string
+    default: "v1.134.0-cluster"
+  vm_vmagentdefault_image:
+    type: string
+    default: "quay.io/victoriametrics/vmagent"
+  vm_vmagentdefault_version:
+    type: string
+    default: "v1.134.0"
+  vm_vmalertdefault_image:
+    type: string
+    default: "quay.io/victoriametrics/vmalert"
+  vm_vmalertdefault_version:
+    type: string
+    default: "v1.134.0"
+  vm_vmauthdefault_image:
+    type: string
+    default: "quay.io/victoriametrics/vmauth"
+  vm_vmauthdefault_version:
+    type: string
+    default: "v1.134.0"
+
+common_params: &common_params
+  operator_registry: << pipeline.parameters.operator_registry >>
+  operator_repository: << pipeline.parameters.operator_repository >>
+  operator_tag: << pipeline.parameters.operator_tag >>
+  vm_vmsingledefault_image: << pipeline.parameters.vm_vmsingledefault_image >>
+  vm_vmsingledefault_version: << pipeline.parameters.vm_vmsingledefault_version >>
+  vm_vmclusterdefault_vmselectdefault_image: << pipeline.parameters.vm_vmclusterdefault_vmselectdefault_image >>
+  vm_vmclusterdefault_vmselectdefault_version: << pipeline.parameters.vm_vmclusterdefault_vmselectdefault_version >>
+  vm_vmclusterdefault_vmstoragedefault_image: << pipeline.parameters.vm_vmclusterdefault_vmstoragedefault_image >>
+  vm_vmclusterdefault_vmstoragedefault_version: << pipeline.parameters.vm_vmclusterdefault_vmstoragedefault_version >>
+  vm_vmclusterdefault_vminsertdefault_image: << pipeline.parameters.vm_vmclusterdefault_vminsertdefault_image >>
+  vm_vmclusterdefault_vminsertdefault_version: << pipeline.parameters.vm_vmclusterdefault_vminsertdefault_version >>
+  vm_vmagentdefault_image: << pipeline.parameters.vm_vmagentdefault_image >>
+  vm_vmagentdefault_version: << pipeline.parameters.vm_vmagentdefault_version >>
+  vm_vmalertdefault_image: << pipeline.parameters.vm_vmalertdefault_image >>
+  vm_vmalertdefault_version: << pipeline.parameters.vm_vmalertdefault_version >>
+  vm_vmauthdefault_image: << pipeline.parameters.vm_vmauthdefault_image >>
+  vm_vmauthdefault_version: << pipeline.parameters.vm_vmauthdefault_version >>
 
 workflows:
   version: 2
@@ -267,11 +464,11 @@ workflows:
     jobs:
       - unit-tests
       - gke-test:
+          <<: *common_params
           name: gke-distributed
           test_suite: distributed
           procs: 10
           timeout: 90m
-          vm_version: << pipeline.parameters.default_vm_version >>
           requires:
             - unit-tests
       - cleanup:
@@ -291,16 +488,16 @@ workflows:
     jobs:
       - unit-tests
       - kind-smoke-test:
+          <<: *common_params
           name: kind-smoke-test
-          vm_version: << pipeline.parameters.default_vm_version >>
           requires:
             - unit-tests
       - gke-test:
+          <<: *common_params
           name: gke-smoke
           test_suite: smoke
           procs: 1
           timeout: 90m
-          vm_version: << pipeline.parameters.default_vm_version >>
           requires:
             - kind-smoke-test
       - cleanup:
@@ -312,11 +509,11 @@ workflows:
               - failed
               - canceled
       - gke-test:
+          <<: *common_params
           name: gke-load
           test_suite: load
           procs: 1
           timeout: 90m
-          vm_version: << pipeline.parameters.default_vm_version >>
           requires:
             - kind-smoke-test
       - cleanup:
@@ -328,11 +525,11 @@ workflows:
               - failed
               - canceled
       - gke-test:
+          <<: *common_params
           name: gke-vmcluster
           test_suite: vmcluster
           procs: 10
           timeout: 90m
-          vm_version: << pipeline.parameters.default_vm_version >>
           requires:
             - kind-smoke-test
       - cleanup:
@@ -344,11 +541,11 @@ workflows:
               - failed
               - canceled
       - gke-test:
+          <<: *common_params
           name: gke-chaos
           test_suite: chaos
           procs: 10
           timeout: 90m
-          vm_version: << pipeline.parameters.default_vm_version >>
           requires:
             - kind-smoke-test
       - cleanup:
@@ -360,11 +557,11 @@ workflows:
               - failed
               - canceled
       - gke-test:
+          <<: *common_params
           name: gke-distributed
           test_suite: distributed
           procs: 10
           timeout: 90m
-          vm_version: << pipeline.parameters.default_vm_version >>
           requires:
             - kind-smoke-test
       - cleanup:

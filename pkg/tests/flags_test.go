@@ -5,254 +5,153 @@ import (
 	"os"
 	"testing"
 
-	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 )
 
-func TestInit(t *testing.T) {
-	// Isolate global flag state so tests can run even if flags were parsed elsewhere.
-	origArgs := os.Args
-	origCommandLine := flag.CommandLine
-	defer func() {
-		os.Args = origArgs
-		flag.CommandLine = origCommandLine
-	}()
-	// Replace global command line with a fresh FlagSet for isolation.
-	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+func TestVMSingleDefaultImageFlag(t *testing.T) {
+	// Save original env var and restore after test
+	originalEnv := os.Getenv("VM_VMSINGLEDEFAULT_IMAGE")
+	defer os.Setenv("VM_VMSINGLEDEFAULT_IMAGE", originalEnv)
 
-	// Create a new flag set to avoid conflicts
-	testFlagSet := flag.NewFlagSet("test", flag.ContinueOnError)
-	var testReportLocation string
-	var testEnvK8SDistro string
-	testFlagSet.StringVar(&testReportLocation, "report", "/tmp/allure-results", "Report location")
-	testFlagSet.StringVar(&testEnvK8SDistro, "env-k8s-distro", "kind", "Kube distro name")
-
-	// Test with default values
-	err := testFlagSet.Parse([]string{})
-	require.NoError(t, err, "Failed to parse test flags")
-
-	assert.Equal(t, "/tmp/allure-results", testReportLocation, "Expected default report location to match")
-	assert.Equal(t, "kind", testEnvK8SDistro, "Expected default env k8s distro to match")
-}
-
-func TestInitWithCustomFlags(t *testing.T) {
-	// Isolate global flag state so tests can run even if flags were parsed elsewhere.
-	origArgs := os.Args
-	origCommandLine := flag.CommandLine
-	defer func() {
-		os.Args = origArgs
-		flag.CommandLine = origCommandLine
-	}()
-	// Replace global command line with a fresh FlagSet for isolation.
-	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
-
-	// Create a new flag set to test custom values
-	testFlagSet := flag.NewFlagSet("test", flag.ContinueOnError)
-	var testReportLocation string
-	var testEnvK8SDistro string
-	testFlagSet.StringVar(&testReportLocation, "report", "/tmp/allure-results", "Report location")
-	testFlagSet.StringVar(&testEnvK8SDistro, "env-k8s-distro", "kind", "Kube distro name")
-
-	// Test with custom values
-	err := testFlagSet.Parse([]string{"-report", "/custom/report/path", "-env-k8s-distro", "minikube"})
-	require.NoError(t, err, "Failed to parse test flags")
-
-	assert.Equal(t, "/custom/report/path", testReportLocation)
-	assert.Equal(t, "minikube", testEnvK8SDistro)
-}
-
-func TestInitAlreadyParsed(t *testing.T) {
-	// Test the logic when flags are already parsed
-	// Set initial values in consts
-	originalReport := consts.ReportLocation()
-	originalDistro := consts.EnvK8SDistro()
-
-	defer func() {
-		consts.SetReportLocation(originalReport)
-		consts.SetEnvK8SDistro(originalDistro)
-	}()
-
-	consts.SetReportLocation("/initial/path")
-	consts.SetEnvK8SDistro("initial-distro")
-
-	// Since we can't easily test Init with already parsed flags without side effects,
-	// we test that the consts package setter/getter work correctly
-	assert.Equal(t, "/initial/path", consts.ReportLocation())
-	assert.Equal(t, "initial-distro", consts.EnvK8SDistro())
-}
-
-func TestFlagDefaults(t *testing.T) {
-	// Save original command line arguments
-	origArgs := os.Args
-	defer func() {
-		os.Args = origArgs
-		flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-	}()
+	// Set env var to test default value from environment
+	testImage := "victoriametrics/victoria-metrics"
+	os.Setenv("VM_VMSINGLEDEFAULT_IMAGE", testImage)
 
 	// Create a new flag set to test defaults
 	testFlagSet := flag.NewFlagSet("test", flag.ContinueOnError)
-
-	var testReportLocation string
-	var testEnvK8SDistro string
-
-	testFlagSet.StringVar(&testReportLocation, "report", "/tmp/allure-results", "Report location")
-	testFlagSet.StringVar(&testEnvK8SDistro, "env-k8s-distro", "kind", "Kube distro name")
+	var testVMSingleImage string
+	testFlagSet.StringVar(&testVMSingleImage, "vm-vmsingledefault-image", os.Getenv("VM_VMSINGLEDEFAULT_IMAGE"), "Default image for VMSingle")
 
 	// Parse empty args to get defaults
 	err := testFlagSet.Parse([]string{})
-	require.NoError(t, err, "Failed to parse empty flags")
+	require.NoError(t, err)
 
-	assert.Equal(t, "/tmp/allure-results", testReportLocation)
-	assert.Equal(t, "kind", testEnvK8SDistro)
+	assert.Equal(t, testImage, testVMSingleImage, "Expected flag to pick up value from VM_VMSINGLEDEFAULT_IMAGE env var")
+
+	// Test overriding via flag
+	overrideImage := "my-custom/vmsingle"
+	err = testFlagSet.Parse([]string{"-vm-vmsingledefault-image", overrideImage})
+	require.NoError(t, err)
+
+	assert.Equal(t, overrideImage, testVMSingleImage, "Expected flag to override environment variable value")
 }
 
-func TestMultipleInits(t *testing.T) {
-	// Test that multiple calls to consts setters work correctly
-	originalReport := consts.ReportLocation()
-	originalDistro := consts.EnvK8SDistro()
+func TestVMSingleDefaultVersionFlag(t *testing.T) {
+	// Save original env var and restore after test
+	originalEnv := os.Getenv("VM_VMSINGLEDEFAULT_VERSION")
+	defer os.Setenv("VM_VMSINGLEDEFAULT_VERSION", originalEnv)
 
-	defer func() {
-		consts.SetReportLocation(originalReport)
-		consts.SetEnvK8SDistro(originalDistro)
-	}()
+	// Set env var to test default value from environment
+	testVersion := "v1.134.0"
+	os.Setenv("VM_VMSINGLEDEFAULT_VERSION", testVersion)
 
-	// Test multiple setter calls
-	consts.SetReportLocation("/first/path")
-	consts.SetEnvK8SDistro("first-distro")
-
-	firstReport := consts.ReportLocation()
-	firstDistro := consts.EnvK8SDistro()
-
-	// Call setters again with same values
-	consts.SetReportLocation("/first/path")
-	consts.SetEnvK8SDistro("first-distro")
-
-	assert.Equal(t, firstReport, consts.ReportLocation())
-	assert.Equal(t, firstDistro, consts.EnvK8SDistro())
-}
-
-func TestVMTagFlagDefault(t *testing.T) {
-	// Test that vmtag has the expected default value
 	// Create a new flag set to test defaults
 	testFlagSet := flag.NewFlagSet("test", flag.ContinueOnError)
-
-	var testVMTag string
-	testFlagSet.StringVar(&testVMTag, "vmtag", "", "VictoriaMetrics image tag to use for testing")
+	var testVMSingleVersion string
+	testFlagSet.StringVar(&testVMSingleVersion, "vm-vmsingledefault-version", os.Getenv("VM_VMSINGLEDEFAULT_VERSION"), "Default version for VMSingle")
 
 	// Parse empty args to get defaults
 	err := testFlagSet.Parse([]string{})
-	require.NoError(t, err, "Failed to parse empty flags")
+	require.NoError(t, err)
 
-	assert.Empty(t, testVMTag, "Expected default vmtag to be empty string")
+	assert.Equal(t, testVersion, testVMSingleVersion, "Expected flag to pick up value from VM_VMSINGLEDEFAULT_VERSION env var")
+
+	// Test overriding via flag
+	overrideVersion := "v1.99.9"
+	err = testFlagSet.Parse([]string{"-vm-vmsingledefault-version", overrideVersion})
+	require.NoError(t, err)
+
+	assert.Equal(t, overrideVersion, testVMSingleVersion, "Expected flag to override environment variable value")
 }
 
-func TestVMTagFlagCustomValue(t *testing.T) {
-	// Test that vmtag accepts custom values
+func TestVMSingleDefaultInitIntegration(t *testing.T) {
+	// Save original values
+	origImg := vmSingleDefaultImage
+	origVer := vmSingleDefaultVersion
+	defer func() {
+		vmSingleDefaultImage = origImg
+		vmSingleDefaultVersion = origVer
+	}()
+
+	testImg := "repo/image"
+	testVer := "v1.2.3"
+
+	// Mock the flag variables
+	vmSingleDefaultImage = testImg
+	vmSingleDefaultVersion = testVer
+
+	// Call Init to sync flags to consts
+	Init()
+
+	assert.Equal(t, testImg, consts.VMSingleDefaultImage())
+	assert.Equal(t, testVer, consts.VMSingleDefaultVersion())
+}
+
+func TestReportLocationFlag(t *testing.T) {
 	testFlagSet := flag.NewFlagSet("test", flag.ContinueOnError)
+	var testReport string
+	testFlagSet.StringVar(&testReport, "report", "/tmp/allure-results", "Report location")
 
-	var testVMTag string
-	testFlagSet.StringVar(&testVMTag, "vmtag", "", "VictoriaMetrics image tag to use for testing")
-
-	// Test with custom VM tag
-	err := testFlagSet.Parse([]string{"-vmtag", "v1.131.0"})
-	require.NoError(t, err, "Failed to parse vmtag flag")
-
-	assert.Equal(t, "v1.131.0", testVMTag)
+	err := testFlagSet.Parse([]string{"-report", "/custom/path"})
+	require.NoError(t, err)
+	assert.Equal(t, "/custom/path", testReport)
 }
 
-func TestVMTagSetterAndGetter(t *testing.T) {
-	// Test the SetVMTag and VMVersion functions work correctly
-	originalVMVersion := consts.VMVersion()
+func TestEnvK8SDistroFlag(t *testing.T) {
+	testFlagSet := flag.NewFlagSet("test", flag.ContinueOnError)
+	var testDistro string
+	testFlagSet.StringVar(&testDistro, "env-k8s-distro", "kind", "Kube distro name")
+
+	err := testFlagSet.Parse([]string{"-env-k8s-distro", "gke"})
+	require.NoError(t, err)
+	assert.Equal(t, "gke", testDistro)
+}
+
+func TestOperatorFlags(t *testing.T) {
+	testFlagSet := flag.NewFlagSet("test", flag.ContinueOnError)
+	var testRegistry, testRepository, testTag string
+	testFlagSet.StringVar(&testRegistry, "operator-registry", "", "Operator image registry")
+	testFlagSet.StringVar(&testRepository, "operator-repository", "", "Operator image repository")
+	testFlagSet.StringVar(&testTag, "operator-tag", "", "Operator image tag")
+
+	err := testFlagSet.Parse([]string{
+		"-operator-registry", "reg",
+		"-operator-repository", "repo",
+		"-operator-tag", "tag",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "reg", testRegistry)
+	assert.Equal(t, "repo", testRepository)
+	assert.Equal(t, "tag", testTag)
+}
+
+func TestOperatorInitIntegration(t *testing.T) {
+	// Save original values
+	origReg := operatorRegistry
+	origRepo := operatorRepository
+	origTag := operatorTag
 	defer func() {
-		consts.SetVMTag(originalVMVersion)
+		operatorRegistry = origReg
+		operatorRepository = origRepo
+		operatorTag = origTag
 	}()
 
-	// Test setting VM tag
-	testTag := "v1.130.0"
-	consts.SetVMTag(testTag)
+	testReg := "my-registry"
+	testRepo := "my-repo"
+	testTag := "v1.0.0"
 
-	retrievedTag := consts.VMVersion()
-	assert.Equal(t, testTag, retrievedTag)
-}
+	// Mock the flag variables
+	operatorRegistry = testReg
+	operatorRepository = testRepo
+	operatorTag = testTag
 
-func TestVMTagWithDifferentVersions(t *testing.T) {
-	// Test setting different VM tag versions
-	originalVMVersion := consts.VMVersion()
-	defer func() {
-		consts.SetVMTag(originalVMVersion)
-	}()
+	// Call Init to sync flags to consts
+	Init()
 
-	testVersions := []string{"v1.131.0", "v1.130.0", "v1.129.1", "v1.128.0"}
-
-	for _, version := range testVersions {
-		consts.SetVMTag(version)
-		retrievedVersion := consts.VMVersion()
-		assert.Equal(t, version, retrievedVersion)
-	}
-}
-
-func TestVMTagEmptyValue(t *testing.T) {
-	// Test setting empty VM tag
-	originalVMVersion := consts.VMVersion()
-	defer func() {
-		consts.SetVMTag(originalVMVersion)
-	}()
-
-	// Set empty tag
-	consts.SetVMTag("")
-	retrievedTag := consts.VMVersion()
-	assert.Empty(t, retrievedTag)
-}
-
-func TestGetVMTagFunction(t *testing.T) {
-	// Test reading the package variable vmTag directly
-	// Save original value
-	originalVMTag := vmTag
-
-	// Test with different values
-	testTag := "v1.129.1"
-	vmTag = testTag
-
-	retrievedTag := vmTag
-	assert.Equal(t, testTag, retrievedTag)
-
-	// Reset original value
-	vmTag = originalVMTag
-}
-
-func TestVMTagIntegrationWithInit(t *testing.T) {
-	// Test that vmtag integrates correctly with the Init function
-	originalVMVersion := consts.VMVersion()
-	defer func() {
-		consts.SetVMTag(originalVMVersion)
-	}()
-
-	// Simulate setting vmTag variable (as would happen during flag parsing)
-	testTag := "v1.131.0"
-	originalVMTag := vmTag
-	vmTag = testTag
-
-	defer func() {
-		vmTag = originalVMTag
-	}()
-
-	// Since flags are already parsed in the test environment, we'll test
-	// the SetVMTag functionality directly instead of calling Init()
-	consts.SetVMTag(vmTag)
-
-	// Verify that consts was updated
-	retrievedVersion := consts.VMVersion()
-	assert.Equal(t, testTag, retrievedVersion)
-}
-
-func TestVMTagFlagVariableExists(t *testing.T) {
-	// Test that the vmTag variable exists and is accessible
-	_ = vmTag // This should compile without error
-
-	// Test that we can read and write to it
-	originalValue := vmTag
-	vmTag = "test-value"
-	assert.Equal(t, "test-value", vmTag)
-	vmTag = originalValue
+	assert.Equal(t, testReg, consts.OperatorImageRegistry())
+	assert.Equal(t, testRepo, consts.OperatorImageRepository())
+	assert.Equal(t, testTag, consts.OperatorImageTag())
 }

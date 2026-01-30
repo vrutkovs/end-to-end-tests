@@ -217,7 +217,6 @@ func DefaultVMK8sStackConfig() VMK8sStackConfig {
 
 // PromBenchmarkConfig holds configuration for prometheus benchmark.
 type PromBenchmarkConfig struct {
-	VMTag             string
 	DisableMonitoring bool
 	TargetsCount      string
 	WriteURL          string
@@ -232,9 +231,7 @@ func (c PromBenchmarkConfig) ToHelmValues() map[string]string {
 		"remoteStorages.vm.writeURL": c.WriteURL,
 		"remoteStorages.vm.readURL":  c.ReadURL,
 	}
-	if c.VMTag != "" {
-		values["vmtag"] = c.VMTag
-	}
+
 	return values
 }
 

@@ -120,15 +120,6 @@ func TestHelmChartVersion(t *testing.T) {
 	assert.Equal(t, testValue, result)
 }
 
-func TestVMVersion(t *testing.T) {
-	testValue := "v1.95.0"
-
-	SetVMVersion(testValue)
-	result := VMVersion()
-
-	assert.Equal(t, testValue, result)
-}
-
 func TestOperatorVersion(t *testing.T) {
 	testValue := "v0.47.0"
 
@@ -136,6 +127,20 @@ func TestOperatorVersion(t *testing.T) {
 	result := OperatorVersion()
 
 	assert.Equal(t, testValue, result)
+}
+
+func TestOperatorImageSettings(t *testing.T) {
+	testRegistry := "test-registry"
+	testRepository := "test-repository"
+	testTag := "test-tag"
+
+	SetOperatorImageRegistry(testRegistry)
+	SetOperatorImageRepository(testRepository)
+	SetOperatorImageTag(testTag)
+
+	assert.Equal(t, testRegistry, OperatorImageRegistry())
+	assert.Equal(t, testRepository, OperatorImageRepository())
+	assert.Equal(t, testTag, OperatorImageTag())
 }
 
 func TestConcurrentAccess(t *testing.T) {
@@ -156,8 +161,12 @@ func TestConcurrentAccess(t *testing.T) {
 				SetEnvK8SDistro(testValue)
 				SetNginxHost(testValue)
 				SetHelmChartVersion(testValue)
-				SetVMVersion(testValue)
 				SetOperatorVersion(testValue)
+				SetOperatorImageRegistry(testValue)
+				SetOperatorImageRepository(testValue)
+				SetOperatorImageTag(testValue)
+				SetVMSingleDefaultImage(testValue)
+				SetVMSingleDefaultVersion(testValue)
 			}
 		}(i)
 	}
@@ -175,8 +184,12 @@ func TestConcurrentAccess(t *testing.T) {
 				_ = VMSingleHost()
 				_ = VMSelectHost("test")
 				_ = HelmChartVersion()
-				_ = VMVersion()
 				_ = OperatorVersion()
+				_ = OperatorImageRegistry()
+				_ = OperatorImageRepository()
+				_ = OperatorImageTag()
+				_ = VMSingleDefaultImage()
+				_ = VMSingleDefaultVersion()
 			}
 		}()
 	}
@@ -191,8 +204,12 @@ func TestInitialValues(t *testing.T) {
 	SetEnvK8SDistro("")
 	SetNginxHost("")
 	SetHelmChartVersion("")
-	SetVMVersion("")
 	SetOperatorVersion("")
+	SetOperatorImageRegistry("")
+	SetOperatorImageRepository("")
+	SetOperatorImageTag("")
+	SetVMSingleDefaultImage("")
+	SetVMSingleDefaultVersion("")
 
 	// Test that initial values are empty
 	assert.Empty(t, ReportLocation(), "Initial ReportLocation should be empty")
@@ -209,114 +226,63 @@ func TestInitialValues(t *testing.T) {
 	assert.Equal(t, expectedEmptyURL, VMSelectUrl("test"), "Initial VMSelectUrl should be http://")
 
 	assert.Empty(t, HelmChartVersion(), "Initial HelmChartVersion should be empty")
-	assert.Empty(t, VMVersion(), "Initial VMVersion should be empty")
 	assert.Empty(t, OperatorVersion(), "Initial OperatorVersion should be empty")
+	assert.Empty(t, OperatorImageRegistry(), "Initial OperatorImageRegistry should be empty")
+	assert.Empty(t, OperatorImageRepository(), "Initial OperatorImageRepository should be empty")
+	assert.Empty(t, OperatorImageTag(), "Initial OperatorImageTag should be empty")
+	assert.Empty(t, VMSingleDefaultImage(), "Initial VMSingleDefaultImage should be empty")
+	assert.Empty(t, VMSingleDefaultVersion(), "Initial VMSingleDefaultVersion should be empty")
 }
 
-func TestSetVMTag(t *testing.T) {
-	// Test that SetVMTag correctly sets the VM version
-	originalVMVersion := VMVersion()
-	defer SetVMTag(originalVMVersion) // Restore original value
+func TestVMSingleDefaultSettings(t *testing.T) {
+	testImage := "victoriametrics/victoria-metrics"
+	testVersion := "v1.134.0"
 
-	testTag := "v1.131.0"
-	SetVMTag(testTag)
-	result := VMVersion()
+	SetVMSingleDefaultImage(testImage)
+	SetVMSingleDefaultVersion(testVersion)
 
-	assert.Equal(t, testTag, result)
+	assert.Equal(t, testImage, VMSingleDefaultImage())
+	assert.Equal(t, testVersion, VMSingleDefaultVersion())
 }
 
-func TestSetVMTagWithDifferentVersions(t *testing.T) {
-	// Test setting various VM tag versions
-	originalVMVersion := VMVersion()
-	defer SetVMTag(originalVMVersion) // Restore original value
+func TestVMClusterDefaultSettings(t *testing.T) {
+	testImage := "victoriametrics/victoria-metrics"
+	testVersion := "v1.134.0-cluster"
 
-	testVersions := []string{
-		"v1.131.0",
-		"v1.130.0",
-		"v1.129.1",
-		"v1.128.0",
-		"latest",
-		"nightly",
-		"",
-	}
+	SetVMClusterVMSelectDefaultImage(testImage)
+	SetVMClusterVMSelectDefaultVersion(testVersion)
+	assert.Equal(t, testImage, VMClusterVMSelectDefaultImage())
+	assert.Equal(t, testVersion, VMClusterVMSelectDefaultVersion())
 
-	for _, version := range testVersions {
-		SetVMTag(version)
-		result := VMVersion()
-		assert.Equal(t, version, result, "VMVersion should match set version '%s'", version)
-	}
+	SetVMClusterVMStorageDefaultImage(testImage)
+	SetVMClusterVMStorageDefaultVersion(testVersion)
+	assert.Equal(t, testImage, VMClusterVMStorageDefaultImage())
+	assert.Equal(t, testVersion, VMClusterVMStorageDefaultVersion())
+
+	SetVMClusterVMInsertDefaultImage(testImage)
+	SetVMClusterVMInsertDefaultVersion(testVersion)
+	assert.Equal(t, testImage, VMClusterVMInsertDefaultImage())
+	assert.Equal(t, testVersion, VMClusterVMInsertDefaultVersion())
 }
 
-func TestSetVMTagEmptyString(t *testing.T) {
-	// Test setting VM tag to empty string
-	originalVMVersion := VMVersion()
-	defer SetVMTag(originalVMVersion) // Restore original value
+func TestVMComponentDefaultSettings(t *testing.T) {
+	testImage := "victoriametrics/vmagent"
+	testVersion := "v1.134.0"
 
-	SetVMTag("")
-	result := VMVersion()
+	SetVMAgentDefaultImage(testImage)
+	SetVMAgentDefaultVersion(testVersion)
+	assert.Equal(t, testImage, VMAgentDefaultImage())
+	assert.Equal(t, testVersion, VMAgentDefaultVersion())
 
-	assert.Empty(t, result)
-}
+	SetVMAlertDefaultImage(testImage)
+	SetVMAlertDefaultVersion(testVersion)
+	assert.Equal(t, testImage, VMAlertDefaultImage())
+	assert.Equal(t, testVersion, VMAlertDefaultVersion())
 
-func TestSetVMTagConcurrency(t *testing.T) {
-	// Test thread safety of SetVMTag
-	originalVMVersion := VMVersion()
-	defer SetVMTag(originalVMVersion) // Restore original value
-
-	const numGoroutines = 50
-	const numOperations = 20
-
-	var wg sync.WaitGroup
-	wg.Add(numGoroutines * 2)
-
-	// Run SetVMTag concurrently
-	for i := 0; i < numGoroutines; i++ {
-		go func(id int) {
-			defer wg.Done()
-			for j := 0; j < numOperations; j++ {
-				testTag := fmt.Sprintf("v1.130.%c", rune('0'+id%10))
-				SetVMTag(testTag)
-			}
-		}(i)
-	}
-
-	// Run VMVersion getter concurrently
-	for i := 0; i < numGoroutines; i++ {
-		go func() {
-			defer wg.Done()
-			for j := 0; j < numOperations; j++ {
-				_ = VMVersion()
-			}
-		}()
-	}
-
-	wg.Wait()
-	// If we get here without race conditions or panics, the test passes
-}
-
-func TestSetVMTagIntegration(t *testing.T) {
-	// Test integration between SetVMTag and other VM-related functions
-	originalVMVersion := VMVersion()
-	defer SetVMTag(originalVMVersion) // Restore original value
-
-	// Test that SetVMTag works independently of SetVMVersion
-	testTag := "v1.131.0"
-	SetVMTag(testTag)
-
-	// Verify it's set correctly
-	assert.Equal(t, testTag, VMVersion())
-
-	// Test that SetVMVersion still works after SetVMTag
-	differentTag := "v1.130.0"
-	SetVMVersion(differentTag)
-
-	assert.Equal(t, differentTag, VMVersion())
-
-	// Test that SetVMTag can override SetVMVersion
-	finalTag := "v1.129.1"
-	SetVMTag(finalTag)
-
-	assert.Equal(t, finalTag, VMVersion())
+	SetVMAuthDefaultImage(testImage)
+	SetVMAuthDefaultVersion(testVersion)
+	assert.Equal(t, testImage, VMAuthDefaultImage())
+	assert.Equal(t, testVersion, VMAuthDefaultVersion())
 }
 
 func TestNamespaceFormattingEdgeCases(t *testing.T) {
@@ -571,8 +537,10 @@ func TestConstantsValidity(t *testing.T) {
 		nonEmpty bool
 	}{
 		{"HelmChartVersion", HelmChartVersion(), false}, // May be empty in test environment
-		{"VMVersion", VMVersion(), false},               // May be empty in test environment
 		{"OperatorVersion", OperatorVersion(), false},   // May be empty in test environment
+		{"OperatorImageRegistry", OperatorImageRegistry(), false},
+		{"OperatorImageRepository", OperatorImageRepository(), false},
+		{"OperatorImageTag", OperatorImageTag(), false},
 	}
 
 	for _, tt := range tests {

@@ -101,5 +101,5 @@ ginkgo -v \
   -env-k8s-distro=gke \
   $EXTRA_FLAGS \
   -report="${REPORT_DIR}"; rc=$?
-.semaphore/cleanup-gke.sh
+.semaphore/cleanup-gke.sh ${TEST_SUITE}
 exit $rc

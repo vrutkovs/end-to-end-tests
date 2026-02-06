@@ -30,17 +30,17 @@ EXTRA_FLAGS="-operator-registry=${OPERATOR_REGISTRY} \
 echo "Installing dependencies..."
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-wget https://github.com/crust-gather/crust-gather/releases/download/v0.11.1/kubectl-crust-gather_0.11.1_linux_amd64.tar.gz
-tar -xvf kubectl-crust-gather_0.11.1_linux_amd64.tar.gz
+wget https://github.com/crust-gather/crust-gather/releases/download/${CRUST_GATHER_VERSION}/kubectl-crust-gather_${CRUST_GATHER_VERSION#v}_linux_amd64.tar.gz
+tar -xvf kubectl-crust-gather_${CRUST_GATHER_VERSION#v}_linux_amd64.tar.gz
 sudo mv kubectl-crust-gather /usr/local/bin/
 
-wget https://github.com/VictoriaMetrics/vmgather/releases/download/v1.5.0/vmgather-v1.5.0-linux-amd64
-sudo mv vmgather-v1.5.0-linux-amd64 /usr/local/bin/vmexporter
+wget https://github.com/VictoriaMetrics/vmgather/releases/download/${VMGATHER_VERSION}/vmgather-${VMGATHER_VERSION}-linux-amd64
+sudo mv vmgather-${VMGATHER_VERSION}-linux-amd64 /usr/local/bin/vmexporter
 sudo chmod +x /usr/local/bin/vmexporter
 
 # GKE Setup
 echo "Setting up GKE..."
-curl -LO "https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl"
+curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 gcloud auth activate-service-account --key-file="$HOME"/gcloud-service-key.json
 export GOOGLE_APPLICATION_CREDENTIALS="$HOME"/gcloud-service-key.json
@@ -90,7 +90,7 @@ REPORT_DIR="/tmp/allure-results/${TEST_SUITE}"
 mkdir -p "${REPORT_DIR}"
 
 export PATH="$PATH:$(go env GOPATH)/bin"
-go install github.com/onsi/ginkgo/v2/ginkgo@v2.27.4
+go install github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION}
 
 ginkgo -v \
   -procs="${PROCS}" \

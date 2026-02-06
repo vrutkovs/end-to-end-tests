@@ -37,7 +37,7 @@ REPORT_DIR="/tmp/allure-results/kind-smoke-test"
 mkdir -p "${REPORT_DIR}"
 
 export PATH="$PATH:$(go env GOPATH)/bin"
-go install github.com/onsi/ginkgo/v2/ginkgo@v2.27.4
+go install github.com/onsi/ginkgo/v2/ginkgo@${GINKGO_VERSION}
 
 ginkgo -v \
   -procs=1 \

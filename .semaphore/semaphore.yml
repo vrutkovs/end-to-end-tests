@@ -1,0 +1,119 @@
+version: v1.0
+name: VictoriaMetrics E2E Tests
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu2404
+execution_time_limit:
+  hours: 2
+auto_cancel:
+  queued:
+    when: 'true'
+global_job_config:
+  env_vars:
+    - name: OPERATOR_REGISTRY
+      value: quay.io
+    - name: OPERATOR_REPOSITORY
+      value: victoriametrics/operator
+    - name: OPERATOR_TAG
+      value: v0.67.0
+    - name: VM_VMSINGLEDEFAULT_IMAGE
+      value: quay.io/victoriametrics/victoria-metrics
+    - name: VM_VMSINGLEDEFAULT_VERSION
+      value: v1.135.0
+    - name: VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_IMAGE
+      value: quay.io/victoriametrics/vmselect
+    - name: VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_VERSION
+      value: v1.135.0-cluster
+    - name: VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_IMAGE
+      value: quay.io/victoriametrics/vmstorage
+    - name: VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_VERSION
+      value: v1.135.0-cluster
+    - name: VM_VMCLUSTERDEFAULT_VMINSERTDEFAULT_IMAGE
+      value: quay.io/victoriametrics/vminsert
+    - name: VM_VMCLUSTERDEFAULT_VMINSERTDEFAULT_VERSION
+      value: v1.135.0-cluster
+    - name: VM_VMAGENTDEFAULT_IMAGE
+      value: quay.io/victoriametrics/vmagent
+    - name: VM_VMAGENTDEFAULT_VERSION
+      value: v1.135.0
+    - name: VM_VMALERTDEFAULT_IMAGE
+      value: quay.io/victoriametrics/vmalert
+    - name: VM_VMALERTDEFAULT_VERSION
+      value: v1.135.0
+    - name: VM_VMAUTHDEFAULT_IMAGE
+      value: quay.io/victoriametrics/vmauth
+    - name: VM_VMAUTHDEFAULT_VERSION
+      value: v1.135.0
+blocks:
+  - name: Unit Tests
+    dependencies: []
+    task:
+      jobs:
+        - name: run-unit-tests
+          commands:
+            - checkout
+            - sem-version go 1.25.3
+            - go mod download
+            - go test ./pkg/... -v -failfast
+  - name: Smoke Test
+    dependencies:
+      - Unit Tests
+    task:
+      prologue:
+        commands:
+          - checkout
+          - sem-version go 1.25.3
+          - .semaphore/install-dependencies-kind.sh
+      jobs:
+        - name: smoke-test
+          commands:
+            - kind create cluster --config manifests/kind.yaml
+            - .semaphore/run-kind-test.sh
+      epilogue:
+        always:
+          commands:
+            - artifact push workflow /tmp/allure-results
+  - name: GKE Tests
+    dependencies:
+      - Smoke Test
+    task:
+      secrets:
+        - name: gcp-credentials
+      prologue:
+        commands:
+          - checkout
+          - sem-version go 1.25.3
+      jobs:
+        - name: Test matrix
+          commands:
+            - .semaphore/run-gke-test.sh $TEST 90m
+          matrix:
+            - env_var: TEST
+              values:
+                - "smoke 1"
+                - "load 1"
+                - "distributed 10"
+                - "vmsingle 10"
+                - "vmcluster 10"
+                - "chaos 10"
+      epilogue:
+        always:
+          commands:
+            - artifact push workflow /tmp/allure-results
+            - .semaphore/cleanup-gke.sh ${TEST}
+after_pipeline:
+  task:
+    secrets:
+      - name: gcp-credentials
+    jobs:
+      - name: deploy-report
+        commands:
+          - nvm install 18
+          - nvm use 18
+          - artifact pull workflow allure-results
+          - |
+            for dir in $(find ./allure-results -type d -maxdepth 1 -mindepth 1); do
+              npx allure awesome --single-file -o ./report-$dir $dir
+              artifact push workflow ./report-$dir
+            done

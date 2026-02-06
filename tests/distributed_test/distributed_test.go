@@ -160,7 +160,6 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 
 		By("Install Prometheus Benchmark")
 		prombenchConfig := tests.PromBenchmarkConfig{
-			VMTag:             "v1.133.0",
 			DisableMonitoring: true,
 			TargetsCount:      "500",
 			WriteURL:          globalWriteURL,

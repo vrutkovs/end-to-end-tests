@@ -61,6 +61,8 @@ func InstallVMSingle(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s
 	// Wait for VMSingle to become operational
 	WaitForVMSingleToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
 
+	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmsingle-vmsingle", consts.Retries, consts.PollingInterval)
+
 	// Expose VMSingle as ingress
 	ExposeVMSingleAsIngress(ctx, t, kubeOpts, namespace)
 }

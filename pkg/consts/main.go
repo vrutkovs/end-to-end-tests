@@ -169,6 +169,12 @@ var (
 
 	vmAuthDefaultImage   string
 	vmAuthDefaultVersion string
+
+	vmBackupDefaultImage   string
+	vmBackupDefaultVersion string
+
+	vmRestoreDefaultImage   string
+	vmRestoreDefaultVersion string
 )
 
 // Setters
@@ -325,6 +331,34 @@ func SetVMAuthDefaultVersion(val string) {
 	mu.Lock()
 	defer mu.Unlock()
 	vmAuthDefaultVersion = val
+}
+
+// SetVMBackupDefaultImage sets the default image for VMBackup.
+func SetVMBackupDefaultImage(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmBackupDefaultImage = val
+}
+
+// SetVMBackupDefaultVersion sets the default version for VMBackup.
+func SetVMBackupDefaultVersion(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmBackupDefaultVersion = val
+}
+
+// SetVMRestoreDefaultImage sets the default image for VMRestore.
+func SetVMRestoreDefaultImage(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmRestoreDefaultImage = val
+}
+
+// SetVMRestoreDefaultVersion sets the default version for VMRestore.
+func SetVMRestoreDefaultVersion(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmRestoreDefaultVersion = val
 }
 
 // Getters
@@ -580,4 +614,32 @@ func VMAuthDefaultVersion() string {
 	mu.Lock()
 	defer mu.Unlock()
 	return vmAuthDefaultVersion
+}
+
+// VMBackupDefaultImage returns the stored VMBackup default image.
+func VMBackupDefaultImage() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmBackupDefaultImage
+}
+
+// VMBackupDefaultVersion returns the stored VMBackup default version.
+func VMBackupDefaultVersion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmBackupDefaultVersion
+}
+
+// VMRestoreDefaultImage returns the stored VMRestore default image.
+func VMRestoreDefaultImage() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmRestoreDefaultImage
+}
+
+// VMRestoreDefaultVersion returns the stored VMRestore default version.
+func VMRestoreDefaultVersion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmRestoreDefaultVersion
 }

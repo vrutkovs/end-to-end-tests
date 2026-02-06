@@ -19,6 +19,7 @@ import (
 	commonpb "go.opentelemetry.io/proto/otlp/common/v1"
 	metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
 	"google.golang.org/protobuf/proto"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -33,7 +34,7 @@ func TestVMSingleTests(t *testing.T) {
 	tests.Init()
 	RegisterFailHandler(Fail)
 	suiteConfig, reporterConfig := GinkgoConfiguration()
-	// suiteConfig.FocusStrings = []string{"should ingest data via datadog protocol"}
+	// suiteConfig.FocusStrings = []string{"should backup and restore data via PVC"}
 	RunSpecs(t, "VMSingle test Suite", suiteConfig, reporterConfig)
 }
 
@@ -390,6 +391,183 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 				require.Equal(t, value, model.SampleValue(123))
 				require.Equal(t, labels["foo"], model.LabelValue("bar"))
 			})
+		})
+	})
+
+	Describe("Backup and Restore", func() {
+		It("should backup and restore data via PVC", Label("gke", "id=8576d108-7357-4555-b4fa-7e8649186c07"), func(ctx context.Context) {
+			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+			tests.EnsureNamespaceExists(t, kubeOpts, namespace)
+
+			vmclient := install.GetVMClient(t, kubeOpts)
+
+			By("Creating backup PVC")
+			backupPVCName := "backup-pvc"
+			k8s.KubectlApply(t, kubeOpts, "../../manifests/backup-pvc.yaml")
+
+			By("Installing VMSingle")
+			install.InstallVMSingle(ctx, t, kubeOpts, namespace, vmclient, nil)
+
+			By("Sending data")
+			remoteWriter := tests.NewRemoteWriteBuilder().
+				WithHTTPClient(c).
+				ForVMSingle(namespace)
+
+			ts := tests.NewTimeSeriesBuilder("backup_test").
+				WithCount(100).
+				WithValue(10).
+				Build()
+			err := remoteWriter.Send(ts)
+			require.NoError(t, err)
+
+			tests.WaitForDataPropagation()
+
+			By("Verifying data before backup")
+			prom := tests.NewPromClientBuilder().
+				ForVMSingle(namespace).
+				WithStartTime(overwatch.Start).
+				MustBuild()
+
+			_, value, err := prom.VectorScan(ctx, "backup_test_10")
+			require.NoError(t, err)
+			require.Equal(t, value, model.SampleValue(10))
+
+			By("Reconfiguring VMSingle with backup sidecar")
+			vmBackupImage := "victoriametrics/vmbackup:latest"
+			if consts.VMBackupDefaultImage() != "" {
+				vmBackupImage = fmt.Sprintf("%s:%s", consts.VMBackupDefaultImage(), consts.VMBackupDefaultVersion())
+			}
+			ops := []map[string]interface{}{
+				{
+					"op":   "add",
+					"path": "/spec/volumes",
+					"value": []map[string]interface{}{
+						{
+							"name": "backups",
+							"persistentVolumeClaim": map[string]string{
+								"claimName": backupPVCName,
+							},
+						},
+					},
+				},
+				{
+					"op":   "add",
+					"path": "/spec/containers",
+					"value": []map[string]interface{}{
+						{
+							"name":    "vmbackup",
+							"image":   vmBackupImage,
+							"command": []string{"tail", "-f", "/dev/null"},
+							"volumeMounts": []map[string]string{
+								{
+									"name":      "backups",
+									"mountPath": "/backups",
+								},
+								{
+									"name":      "data",
+									"mountPath": "/victoria-metrics-data",
+								},
+							},
+						},
+					},
+				},
+			}
+			patchBytes, err := json.Marshal(ops)
+			require.NoError(t, err)
+			patch, err := jsonpatch.DecodePatch(patchBytes)
+			require.NoError(t, err)
+
+			install.InstallVMSingle(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{patch})
+			k8s.WaitUntilNumPodsCreated(t, kubeOpts, metav1.ListOptions{LabelSelector: "app.kubernetes.io/name=vmsingle,app.kubernetes.io/instance=vmsingle"}, 1, consts.Retries, consts.PollingInterval)
+
+			By("Running vmbackup in sidecar")
+			cmd := []string{
+				"/vmbackup-prod",
+				"-dst=fs:///backups/backup1",
+				"-storageDataPath=/victoria-metrics-data",
+				"-snapshot.createURL=http://localhost:8429/snapshot/create",
+			}
+			backupContainerCmd := []string{
+				"exec", "deploy/vmsingle-vmsingle", "-c", "vmbackup", "--",
+				"sh", "-c", strings.Join(cmd, " "),
+			}
+			fmt.Println("Executing backup command:", backupContainerCmd)
+			k8s.RunKubectl(t, kubeOpts, backupContainerCmd...)
+
+			By("Destroying VMSingle")
+			install.DeleteVMSingle(t, kubeOpts, "vmsingle")
+			k8s.WaitUntilNumPodsCreated(t, kubeOpts, metav1.ListOptions{LabelSelector: "app.kubernetes.io/name=vmsingle,app.kubernetes.io/instance=vmsingle"}, 0, consts.Retries, consts.PollingInterval)
+
+			By("Restoring VMSingle from backup")
+			vmRestoreImage := "victoriametrics/vmrestore:latest"
+			if consts.VMRestoreDefaultImage() != "" {
+				vmRestoreImage = fmt.Sprintf("%s:%s", consts.VMRestoreDefaultImage(), consts.VMRestoreDefaultVersion())
+			}
+			restoreCmd := []string{
+				"/vmrestore-prod",
+				"-src=fs:///backups/backup1",
+				"-storageDataPath=/victoria-metrics-data",
+			}
+
+			initContainer := map[string]interface{}{
+				"name":    "restore",
+				"image":   vmRestoreImage,
+				"command": restoreCmd,
+				"volumeMounts": []map[string]string{
+					{
+						"name":      "backups",
+						"mountPath": "/backups",
+					},
+					{
+						"name":      "data",
+						"mountPath": "/victoria-metrics-data",
+					},
+				},
+			}
+
+			restoreOps := []map[string]interface{}{
+				{
+					"op":   "add",
+					"path": "/spec/volumes",
+					"value": []map[string]interface{}{
+						{
+							"name": "backups",
+							"persistentVolumeClaim": map[string]string{
+								"claimName": backupPVCName,
+							},
+						},
+					},
+				},
+				{
+					"op":   "add",
+					"path": "/spec/volumeMounts",
+					"value": []map[string]interface{}{
+						{
+							"name":      "backups",
+							"mountPath": "/backups",
+						},
+					},
+				},
+				{
+					"op":    "add",
+					"path":  "/spec/initContainers",
+					"value": []interface{}{initContainer},
+				},
+			}
+
+			patchBytes, err = json.Marshal(restoreOps)
+			require.NoError(t, err)
+			restorePatch, err := jsonpatch.DecodePatch(patchBytes)
+			require.NoError(t, err)
+
+			install.InstallVMSingle(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{restorePatch})
+
+			By("Verifying restored data")
+			time.Sleep(consts.DataPropagationDelay)
+
+			_, value, err = prom.VectorScan(ctx, "backup_test_10")
+			require.NoError(t, err)
+			require.Equal(t, value, model.SampleValue(10))
 		})
 	})
 })

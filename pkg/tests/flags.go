@@ -33,6 +33,12 @@ var (
 
 	vmAuthDefaultImage   string
 	vmAuthDefaultVersion string
+
+	vmBackupDefaultImage   string
+	vmBackupDefaultVersion string
+
+	vmRestoreDefaultImage   string
+	vmRestoreDefaultVersion string
 )
 
 func init() {
@@ -61,6 +67,12 @@ func init() {
 
 	flag.StringVar(&vmAuthDefaultImage, "vm-vmauthdefault-image", os.Getenv("VM_VMAUTHDEFAULT_IMAGE"), "Default image for VMAuth")
 	flag.StringVar(&vmAuthDefaultVersion, "vm-vmauthdefault-version", os.Getenv("VM_VMAUTHDEFAULT_VERSION"), "Default version for VMAuth")
+
+	flag.StringVar(&vmBackupDefaultImage, "vm-vmbackupdefault-image", os.Getenv("VM_VMBACKUPDEFAULT_IMAGE"), "Default image for VMBackup")
+	flag.StringVar(&vmBackupDefaultVersion, "vm-vmbackupdefault-version", os.Getenv("VM_VMBACKUPDEFAULT_VERSION"), "Default version for VMBackup")
+
+	flag.StringVar(&vmRestoreDefaultImage, "vm-vmrestoredefault-image", os.Getenv("VM_VMRESTOREDEFAULT_IMAGE"), "Default image for VMRestore")
+	flag.StringVar(&vmRestoreDefaultVersion, "vm-vmrestoredefault-version", os.Getenv("VM_VMRESTOREDEFAULT_VERSION"), "Default version for VMRestore")
 }
 
 // Init initializes test configuration by parsing flags and setting up constants.
@@ -93,4 +105,10 @@ func Init() {
 
 	consts.SetVMAuthDefaultImage(vmAuthDefaultImage)
 	consts.SetVMAuthDefaultVersion(vmAuthDefaultVersion)
+
+	consts.SetVMBackupDefaultImage(vmBackupDefaultImage)
+	consts.SetVMBackupDefaultVersion(vmBackupDefaultVersion)
+
+	consts.SetVMRestoreDefaultImage(vmRestoreDefaultImage)
+	consts.SetVMRestoreDefaultVersion(vmRestoreDefaultVersion)
 }

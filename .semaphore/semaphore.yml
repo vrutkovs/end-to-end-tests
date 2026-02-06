@@ -45,6 +45,14 @@ global_job_config:
       value: quay.io/victoriametrics/vmauth
     - name: VM_VMAUTHDEFAULT_VERSION
       value: v1.135.0
+    - name: VM_VMBACKUPDEFAULT_IMAGE
+      value: quay.io/victoriametrics/vmbackup
+    - name: VM_VMBACKUPDEFAULT_VERSION
+      value: v1.135.0
+    - name: VM_VMRESTOREDEFAULT_IMAGE
+      value: quay.io/victoriametrics/vmrestore
+    - name: VM_VMRESTOREDEFAULT_VERSION
+      value: v1.135.0
     - name: GO_VERSION
       value: 1.25.3
     - name: NODE_VERSION

@@ -13,8 +13,7 @@ global_job_config:
   env_vars:
     # Set LICENSE_FILE to /home/semaphore to enable passing the license file to VictoriaMetrics components
     - name: LICENSE_FILE
-      #value: "/home/semaphore/license.txt"
-      value: ""
+      value: "/home/semaphore/license.txt"
     - name: OPERATOR_REGISTRY
       value: quay.io
     - name: OPERATOR_REPOSITORY
@@ -24,39 +23,39 @@ global_job_config:
     - name: VM_VMSINGLEDEFAULT_IMAGE
       value: quay.io/victoriametrics/victoria-metrics
     - name: VM_VMSINGLEDEFAULT_VERSION
-      value: v1.135.0
+      value: v1.122.14-enterprise
     - name: VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmselect
     - name: VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_VERSION
-      value: v1.135.0-cluster
+      value: v1.122.14-enterprise-cluster
     - name: VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmstorage
     - name: VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_VERSION
-      value: v1.135.0-cluster
+      value: v1.122.14-enterprise-cluster
     - name: VM_VMCLUSTERDEFAULT_VMINSERTDEFAULT_IMAGE
       value: quay.io/victoriametrics/vminsert
     - name: VM_VMCLUSTERDEFAULT_VMINSERTDEFAULT_VERSION
-      value: v1.135.0-cluster
+      value: v1.122.14-enterprise-cluster
     - name: VM_VMAGENTDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmagent
     - name: VM_VMAGENTDEFAULT_VERSION
-      value: v1.135.0
+      value: v1.122.14-enterprise
     - name: VM_VMALERTDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmalert
     - name: VM_VMALERTDEFAULT_VERSION
-      value: v1.135.0
+      value: v1.122.14-enterprise
     - name: VM_VMAUTHDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmauth
     - name: VM_VMAUTHDEFAULT_VERSION
-      value: v1.135.0
+      value: v1.122.14-enterprise
     - name: VM_VMBACKUPDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmbackup
     - name: VM_VMBACKUPDEFAULT_VERSION
-      value: v1.135.0
+      value: v1.122.14-enterprise
     - name: VM_VMRESTOREDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmrestore
     - name: VM_VMRESTOREDEFAULT_VERSION
-      value: v1.135.0
+      value: v1.122.14-enterprise
     - name: GO_VERSION
       value: 1.25.3
     - name: NODE_VERSION

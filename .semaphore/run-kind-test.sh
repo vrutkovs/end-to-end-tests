@@ -51,4 +51,4 @@ ginkgo -v \
   -- \
   -env-k8s-distro=kind \
   $EXTRA_FLAGS \
-  -report="${REPORT_DIR}" || true
+  -report="${REPORT_DIR}"

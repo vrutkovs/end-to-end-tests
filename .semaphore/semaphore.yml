@@ -1,5 +1,6 @@
 version: v1.0
 name: VictoriaMetrics E2E Tests
+
 agent:
   machine:
     type: e1-standard-2
@@ -19,57 +20,62 @@ global_job_config:
     - name: OPERATOR_REPOSITORY
       value: victoriametrics/operator
     - name: OPERATOR_TAG
-      value: v0.67.0
+      value: "v0.67.0"
     - name: VM_VMSINGLEDEFAULT_IMAGE
       value: quay.io/victoriametrics/victoria-metrics
     - name: VM_VMSINGLEDEFAULT_VERSION
-      value: v1.122.14-enterprise
+      value: &vm-version "v1.135.0"
+      # LTS release
+      #value: &vm-version "v1.122.14-enterprise"
     - name: VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmselect
     - name: VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_VERSION
-      value: v1.122.14-enterprise-cluster
+      value: &vm-version-cluster "v1.135.0-cluster"
+      # LTS release
+      #value: &vm-version "v1.122.14-cluster-enterprise"
     - name: VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmstorage
     - name: VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_VERSION
-      value: v1.122.14-enterprise-cluster
+      value: *vm-version-cluster
     - name: VM_VMCLUSTERDEFAULT_VMINSERTDEFAULT_IMAGE
       value: quay.io/victoriametrics/vminsert
     - name: VM_VMCLUSTERDEFAULT_VMINSERTDEFAULT_VERSION
-      value: v1.122.14-enterprise-cluster
+      value: *vm-version-cluster
     - name: VM_VMAGENTDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmagent
     - name: VM_VMAGENTDEFAULT_VERSION
-      value: v1.122.14-enterprise
+      value: *vm-version
     - name: VM_VMALERTDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmalert
     - name: VM_VMALERTDEFAULT_VERSION
-      value: v1.122.14-enterprise
+      value: *vm-version
     - name: VM_VMAUTHDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmauth
     - name: VM_VMAUTHDEFAULT_VERSION
-      value: v1.122.14-enterprise
+      value: *vm-version
     - name: VM_VMBACKUPDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmbackup
     - name: VM_VMBACKUPDEFAULT_VERSION
-      value: v1.122.14-enterprise
+      value: *vm-version
     - name: VM_VMRESTOREDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmrestore
     - name: VM_VMRESTOREDEFAULT_VERSION
-      value: v1.122.14-enterprise
+      value: *vm-version
     - name: GO_VERSION
-      value: 1.25.3
+      value: "1.25.3"
     - name: NODE_VERSION
       value: "18"
     - name: KIND_VERSION
-      value: v0.31.0
+      value: "v0.31.0"
     - name: KUBECTL_VERSION
-      value: v1.35.0
+      value: "v1.35.0"
     - name: CRUST_GATHER_VERSION
-      value: v0.11.1
+      value: "v0.11.1"
     - name: VMGATHER_VERSION
-      value: v1.5.0
+      value: "v1.5.0"
     - name: GINKGO_VERSION
-      value: v2.27.4
+      value: "v2.27.4"
+
 blocks:
   - name: Unit Tests
     dependencies: []
@@ -85,6 +91,8 @@ blocks:
     dependencies:
       - Unit Tests
     task:
+      secrets:
+        - name: license
       prologue:
         commands:
           - checkout

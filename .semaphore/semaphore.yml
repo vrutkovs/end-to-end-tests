@@ -24,15 +24,15 @@ global_job_config:
     - name: VM_VMSINGLEDEFAULT_IMAGE
       value: quay.io/victoriametrics/victoria-metrics
     - name: VM_VMSINGLEDEFAULT_VERSION
-      value: &vm-version "v1.135.0"
+      #value: &vm-version "v1.135.0"
       # LTS release
-      #value: &vm-version "v1.122.14-enterprise"
+      value: &vm-version "v1.122.14-enterprise"
     - name: VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmselect
     - name: VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_VERSION
-      value: &vm-version-cluster "v1.135.0-cluster"
+      #value: &vm-version-cluster "v1.135.0-cluster"
       # LTS release
-      #value: &vm-version "v1.122.14-cluster-enterprise"
+      value: &vm-version-cluster "v1.122.14-cluster-enterprise"
     - name: VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_IMAGE
       value: quay.io/victoriametrics/vmstorage
     - name: VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_VERSION

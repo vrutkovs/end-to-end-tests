@@ -175,6 +175,7 @@ var (
 
 	vmRestoreDefaultImage   string
 	vmRestoreDefaultVersion string
+	licenseFile             string
 )
 
 // Setters
@@ -359,6 +360,13 @@ func SetVMRestoreDefaultVersion(val string) {
 	mu.Lock()
 	defer mu.Unlock()
 	vmRestoreDefaultVersion = val
+}
+
+// SetLicenseFile sets the license file path.
+func SetLicenseFile(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	licenseFile = val
 }
 
 // Getters
@@ -642,4 +650,11 @@ func VMRestoreDefaultVersion() string {
 	mu.Lock()
 	defer mu.Unlock()
 	return vmRestoreDefaultVersion
+}
+
+// LicenseFile returns the stored license file path.
+func LicenseFile() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return licenseFile
 }

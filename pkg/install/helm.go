@@ -78,10 +78,16 @@ func InstallVMK8StackWithHelm(ctx context.Context, helmChart, valuesFile string,
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 	setValues := buildVMK8StackValues(namespace)
 
+	setFiles := map[string]string{}
+	if consts.LicenseFile() != "" {
+		setFiles["global.license.key"] = consts.LicenseFile()
+	}
+
 	helmOpts := &helm.Options{
 		KubectlOptions: kubeOpts,
 		ValuesFiles:    []string{valuesFile},
 		SetValues:      setValues,
+		SetFiles:       setFiles,
 		ExtraArgs: map[string][]string{
 			"upgrade": {"--create-namespace", "--wait"},
 		},
@@ -154,10 +160,16 @@ func InstallVMDistributedWithHelm(ctx context.Context, helmChart, valuesFile str
 	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 	setValues := buildVMDistributedValues(namespace)
 
+	setFiles := map[string]string{}
+	if consts.LicenseFile() != "" {
+		setFiles["global.license.key"] = consts.LicenseFile()
+	}
+
 	helmOpts := &helm.Options{
 		KubectlOptions: kubeOpts,
 		ValuesFiles:    []string{valuesFile},
 		SetValues:      setValues,
+		SetFiles:       setFiles,
 		ExtraArgs: map[string][]string{
 			"upgrade": {"--create-namespace", "--wait"},
 		},
@@ -194,7 +206,8 @@ func InstallOverwatch(ctx context.Context, t terratesting.TestingT, namespace, v
 	vmclient := GetVMClient(t, kubeOpts)
 
 	By("Install VMSingle overwatch instance")
-	k8s.KubectlApply(t, kubeOpts, consts.OverwatchVMSingleYaml)
+
+	patchAndApplyVMSingleManifest(ctx, t, kubeOpts, namespace, consts.OverwatchVMSingleYaml, nil)
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmsingle-overwatch", consts.Retries, consts.PollingInterval)
 
 	By("Install VMSingle ingress")

@@ -39,6 +39,7 @@ var (
 
 	vmRestoreDefaultImage   string
 	vmRestoreDefaultVersion string
+	licenseFile             string
 )
 
 func init() {
@@ -73,6 +74,7 @@ func init() {
 
 	flag.StringVar(&vmRestoreDefaultImage, "vm-vmrestoredefault-image", os.Getenv("VM_VMRESTOREDEFAULT_IMAGE"), "Default image for VMRestore")
 	flag.StringVar(&vmRestoreDefaultVersion, "vm-vmrestoredefault-version", os.Getenv("VM_VMRESTOREDEFAULT_VERSION"), "Default version for VMRestore")
+	flag.StringVar(&licenseFile, "license-file", "", "Path to license file")
 }
 
 // Init initializes test configuration by parsing flags and setting up constants.
@@ -111,4 +113,6 @@ func Init() {
 
 	consts.SetVMRestoreDefaultImage(vmRestoreDefaultImage)
 	consts.SetVMRestoreDefaultVersion(vmRestoreDefaultVersion)
+
+	consts.SetLicenseFile(licenseFile)
 }

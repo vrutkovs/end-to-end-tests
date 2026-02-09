@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	jsonpatch "github.com/evanphx/json-patch/v5"
 	"sigs.k8s.io/yaml"
@@ -18,6 +19,47 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	watchtools "k8s.io/client-go/tools/watch"
 )
+
+func patchAndApplyVMSingleManifest(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace, vmsingleYamlPath string, jsonPatches []jsonpatch.Patch) {
+	if consts.LicenseFile() != "" {
+		licenseKey, err := os.ReadFile(consts.LicenseFile())
+		require.NoError(t, err)
+
+		secretName := "vm-license"
+		secretKey := "key"
+		secretYaml := fmt.Sprintf(`
+apiVersion: v1
+kind: Secret
+metadata:
+  name: %s
+  namespace: %s
+stringData:
+  %s: %q
+`, secretName, namespace, secretKey, strings.TrimSpace(string(licenseKey)))
+		k8s.KubectlApplyFromString(t, kubeOpts, secretYaml)
+
+		patchJSON := fmt.Sprintf(`[{"op": "add", "path": "/spec/license", "value": {"keyRef": {"name": "%s", "key": "%s"}}}]`, secretName, secretKey)
+		patch, err := jsonpatch.DecodePatch([]byte(patchJSON))
+		require.NoError(t, err)
+		jsonPatches = append(jsonPatches, patch)
+	}
+
+	// Read VMSingle manifest and patch it
+	vmsingleYaml, err := os.ReadFile(vmsingleYamlPath)
+	require.NoError(t, err, "failed to read VMSingle YAML")
+
+	vmsingleJson, err := yaml.YAMLToJSON(vmsingleYaml)
+	require.NoError(t, err, "failed to convert VMSingle YAML to JSON")
+
+	for _, patch := range jsonPatches {
+		vmsingleJson, err = patch.Apply(vmsingleJson)
+		require.NoError(t, err, "failed to apply patch")
+	}
+
+	// Apply the VMSingle manifest
+	fmt.Printf("Installing VMSingle in namespace %s\n", namespace)
+	k8s.KubectlApplyFromString(t, kubeOpts, string(vmsingleJson))
+}
 
 // InstallVMSingle installs a single-node VictoriaMetrics instance (VMSingle) into the specified namespace.
 //
@@ -41,22 +83,7 @@ func InstallVMSingle(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s
 		k8s.CreateNamespace(t, kubeOpts, namespace)
 	}
 
-	// Read VMSingle and patch it
-	vmsingleYamlPath := "../../manifests/vmsingle.yaml"
-	vmsingleYaml, err := os.ReadFile(vmsingleYamlPath)
-	require.NoError(t, err, "failed to read VMSingle YAML")
-
-	vmsingleJson, err := yaml.YAMLToJSON(vmsingleYaml)
-	require.NoError(t, err, "failed to convert VMSingle YAML to JSON")
-
-	for _, patch := range jsonPatches {
-		vmsingleJson, err = patch.Apply(vmsingleJson)
-		require.NoError(t, err, "failed to apply patch")
-	}
-
-	// Apply the VMSingle manifest
-	fmt.Printf("Installing VMSingle in namespace %s\n", namespace)
-	k8s.KubectlApplyFromString(t, kubeOpts, string(vmsingleJson))
+	patchAndApplyVMSingleManifest(ctx, t, kubeOpts, namespace, "../../manifests/vmsingle.yaml", jsonPatches)
 
 	// Wait for VMSingle to become operational
 	WaitForVMSingleToBeOperational(ctx, t, kubeOpts, namespace, vmclient)

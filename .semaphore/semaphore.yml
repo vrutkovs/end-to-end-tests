@@ -11,6 +11,10 @@ auto_cancel:
     when: 'true'
 global_job_config:
   env_vars:
+    # Set LICENSE_FILE to /home/semaphore to enable passing the license file to VictoriaMetrics components
+    - name: LICENSE_FILE
+      #value: "/home/semaphore/license.txt"
+      value: ""
     - name: OPERATOR_REGISTRY
       value: quay.io
     - name: OPERATOR_REPOSITORY
@@ -102,6 +106,7 @@ blocks:
     task:
       secrets:
         - name: gcp-credentials
+        - name: license
       prologue:
         commands:
           - checkout

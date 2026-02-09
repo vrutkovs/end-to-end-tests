@@ -26,6 +26,10 @@ EXTRA_FLAGS="-operator-registry=${OPERATOR_REGISTRY} \
   -vm-vmauthdefault-image=${VM_VMAUTHDEFAULT_IMAGE} \
   -vm-vmauthdefault-version=${VM_VMAUTHDEFAULT_VERSION}"
 
+if [ -n "${LICENSE_FILE}" ]; then
+  EXTRA_FLAGS="${EXTRA_FLAGS} --license-file=${LICENSE_FILE}"
+fi
+
 # Install dependencies
 echo "Installing dependencies..."
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash

@@ -74,7 +74,8 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 			k8s.DeleteNamespace(t, kubeOpts, consts.K6TestsNamespace)
 		}()
 
-		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
+		kubeOpts := k8s.NewKubectlOptions("", "", consts.DefaultVMNamespace)
+		gather.K8sAfterAll(ctx, t, kubeOpts, consts.ResourceWaitTimeout)
 		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, consts.DefaultReleaseName)
 	})
 

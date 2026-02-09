@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	jsonpatch "github.com/evanphx/json-patch/v5"
 	"sigs.k8s.io/yaml"
@@ -22,23 +21,12 @@ import (
 
 func patchAndApplyVMSingleManifest(ctx context.Context, t terratesting.TestingT, kubeOpts *k8s.KubectlOptions, namespace, vmsingleYamlPath string, jsonPatches []jsonpatch.Patch) {
 	if consts.LicenseFile() != "" {
-		licenseKey, err := os.ReadFile(consts.LicenseFile())
+		secretYaml, err := consts.PrepareLicenseSecret(namespace)
 		require.NoError(t, err)
 
-		secretName := "vm-license"
-		secretKey := "key"
-		secretYaml := fmt.Sprintf(`
-apiVersion: v1
-kind: Secret
-metadata:
-  name: %s
-  namespace: %s
-stringData:
-  %s: %q
-`, secretName, namespace, secretKey, strings.TrimSpace(string(licenseKey)))
 		k8s.KubectlApplyFromString(t, kubeOpts, secretYaml)
 
-		patchJSON := fmt.Sprintf(`[{"op": "add", "path": "/spec/license", "value": {"keyRef": {"name": "%s", "key": "%s"}}}]`, secretName, secretKey)
+		patchJSON := fmt.Sprintf(`[{"op": "add", "path": "/spec/license", "value": {"keyRef": {"name": "%s", "key": "%s"}}}]`, consts.LicenseSecretName, consts.LicenseSecretKey)
 		patch, err := jsonpatch.DecodePatch([]byte(patchJSON))
 		require.NoError(t, err)
 		jsonPatches = append(jsonPatches, patch)

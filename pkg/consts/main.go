@@ -2,6 +2,8 @@ package consts
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -96,6 +98,12 @@ const (
 
 	// ChaosMeshValuesFile is the values file for chaos mesh.
 	ChaosMeshValuesFile = ManifestsRoot + "/chaos-mesh-operator/values.yaml"
+
+	// LicenseSecretName is the name of the secret containing the license key.
+	LicenseSecretName = "vm-license"
+
+	// LicenseSecretKey is the key in the secret containing the license key.
+	LicenseSecretKey = "key"
 )
 
 // Common error messages.
@@ -657,4 +665,26 @@ func LicenseFile() string {
 	mu.Lock()
 	defer mu.Unlock()
 	return licenseFile
+}
+
+// PrepareLicenseSecret creates a Secret manifest for the license key.
+func PrepareLicenseSecret(namespace string) (string, error) {
+	if LicenseFile() == "" {
+		return "", nil
+	}
+	licenseKey, err := os.ReadFile(LicenseFile())
+	if err != nil {
+		return "", fmt.Errorf("failed to read license file: %w", err)
+	}
+
+	secretYaml := fmt.Sprintf(`
+apiVersion: v1
+kind: Secret
+metadata:
+  name: %s
+  namespace: %s
+stringData:
+  %s: %q
+`, LicenseSecretName, namespace, LicenseSecretKey, strings.TrimSpace(string(licenseKey)))
+	return secretYaml, nil
 }

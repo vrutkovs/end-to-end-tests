@@ -9,6 +9,10 @@ import (
 	"path/filepath"
 	"time"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
+	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/gruntwork-io/terratest/modules/testing"
 
@@ -18,16 +22,24 @@ import (
 
 // K8sAfterAll provides cleanup and data collection logic for Kubernetes resources.
 // It collects crust-gather information, archives it, and adds it to the report.
-func K8sAfterAll(ctx context.Context, t testing.TestingT, resourceWaitTimeout time.Duration) {
+func K8sAfterAll(ctx context.Context, t testing.TestingT, kubeOpts *k8s.KubectlOptions, resourceWaitTimeout time.Duration) {
 	timeBoundContext, cancel := context.WithTimeout(ctx, resourceWaitTimeout)
 	defer cancel()
+
+	// Delete license secret from cluster to avoid leaking it
+	logger.Default.Logf(t, "Deleting license secret %s from cluster", consts.LicenseSecretName)
+	secretYaml, err := consts.PrepareLicenseSecret(kubeOpts.Namespace)
+	require.NoError(t, err, "kubectl delete secret failed")
+	if err := k8s.KubectlDeleteFromStringE(t, kubeOpts, secretYaml); !k8serrors.IsNotFound(err) {
+		require.NoError(t, err, "kubectl delete secret failed")
+	}
 
 	// Collect crust-gather folder
 	cmd := exec.CommandContext(timeBoundContext, "kubectl-crust-gather", "collect", "-f", "../crust-gather")
 	var outb, errb bytes.Buffer
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		logger.Default.Logf(t, "crust-gather collect failed: %v, stdout: %s, stderr: %s", err, outb.String(), errb.String())
 		require.NoError(t, err, "crust-gather collect failed")

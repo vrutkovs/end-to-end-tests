@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/stretchr/testify/require"
 
@@ -48,7 +49,8 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 	})
 
 	AfterEach(func() {
-		gather.K8sAfterAll(ctx, t, consts.ResourceWaitTimeout)
+		kubeOpts := k8s.NewKubectlOptions("", "", consts.DefaultVMNamespace)
+		gather.K8sAfterAll(ctx, t, kubeOpts, consts.ResourceWaitTimeout)
 		gather.VMAfterAll(ctx, t, consts.ResourceWaitTimeout, consts.DefaultReleaseName)
 	})
 

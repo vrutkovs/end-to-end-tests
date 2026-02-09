@@ -97,7 +97,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		install.DeleteVMCluster(t, kubeOpts, namespace)
 		tests.CleanupNamespace(t, kubeOpts, namespace)
 
-		tests.GatherOnFailure(ctx, t, consts.DefaultReleaseName)
+		tests.GatherOnFailure(ctx, t, kubeOpts, namespace, consts.DefaultReleaseName)
 	})
 
 	// ChaosScenario represents a chaos test scenario configuration

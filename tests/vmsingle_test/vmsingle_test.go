@@ -84,7 +84,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 
 		install.DeleteVMSingle(t, kubeOpts, namespace)
 		tests.CleanupNamespace(t, kubeOpts, namespace)
-		tests.GatherOnFailure(ctx, t, consts.DefaultReleaseName)
+		tests.GatherOnFailure(ctx, t, kubeOpts, namespace, consts.DefaultReleaseName)
 	})
 
 	Describe("Relabeling", func() {

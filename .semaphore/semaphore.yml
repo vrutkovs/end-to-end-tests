@@ -63,8 +63,6 @@ global_job_config:
       value: *vm-version
     - name: GO_VERSION
       value: "1.25.3"
-    - name: NODE_VERSION
-      value: "18"
     - name: KIND_VERSION
       value: "v0.31.0"
     - name: KUBECTL_VERSION
@@ -143,8 +141,8 @@ after_pipeline:
     jobs:
       - name: deploy-report
         commands:
-          - nvm install $NODE_VERSION
-          - nvm use $NODE_VERSION
+          - nvm install 22
+          - nvm use 22
           - artifact pull workflow allure-results
           - |
             for dir in $(find ./allure-results -type d -maxdepth 1 -mindepth 1); do

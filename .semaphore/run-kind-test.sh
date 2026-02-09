@@ -22,6 +22,10 @@ EXTRA_FLAGS="-operator-registry=${OPERATOR_REGISTRY} \
   -vm-vmauthdefault-image=${VM_VMAUTHDEFAULT_IMAGE} \
   -vm-vmauthdefault-version=${VM_VMAUTHDEFAULT_VERSION}"
 
+if [ -n "${LICENSE_FILE}" ]; then
+  EXTRA_FLAGS="${EXTRA_FLAGS} --license-file=${LICENSE_FILE}"
+fi
+
 # Install Ingress NGINX for Kind
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission || true

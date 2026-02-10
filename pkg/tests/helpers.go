@@ -100,17 +100,6 @@ func NewTenantPromClient(t terratesting.TestingT, namespace string, tenantID int
 	return client, nil
 }
 
-// NewMultitenantPromClient creates a new Prometheus client for the multitenant endpoint.
-func NewMultitenantPromClient(t terratesting.TestingT, namespace string, startTime time.Time) (promquery.PrometheusClient, error) {
-	selectURL := MultitenantSelectURL(namespace)
-	client, err := promquery.NewPrometheusClient(selectURL)
-	if err != nil {
-		return promquery.PrometheusClient{}, err
-	}
-	client.Start = startTime
-	return client, nil
-}
-
 // NewPromClientWithURL creates a new Prometheus client with a custom URL.
 func NewPromClientWithURL(url string, startTime time.Time) (promquery.PrometheusClient, error) {
 	client, err := promquery.NewPrometheusClient(url)
@@ -119,6 +108,12 @@ func NewPromClientWithURL(url string, startTime time.Time) (promquery.Prometheus
 	}
 	client.Start = startTime
 	return client, nil
+}
+
+// NewMultitenantPromClient creates a new Prometheus client for the multitenant endpoint.
+func NewMultitenantPromClient(t terratesting.TestingT, namespace string, startTime time.Time) (promquery.PrometheusClient, error) {
+	selectURL := MultitenantSelectURL(namespace)
+	return NewPromClientWithURL(selectURL, startTime)
 }
 
 // URL building helpers

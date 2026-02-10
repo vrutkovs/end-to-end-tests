@@ -55,3 +55,6 @@ override.tf.json
 
 # Local .terraformignore (if used)
 .terraformignore
+
+# Local binari
+bin/

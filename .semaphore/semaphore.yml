@@ -82,8 +82,8 @@ blocks:
       epilogue:
         always:
           commands:
-            - artifact push workflow /tmp/allure-results
             - export SUITE=$(echo $TEST | cut -d' ' -f1); make clean-gke TEST_SUITE=$SUITE
+            - artifact push workflow /tmp/allure-results
 after_pipeline:
   task:
     secrets:

@@ -50,6 +50,16 @@ GOPATH_BIN := $(shell go env GOPATH)/bin
 export PATH := $(BIN_DIR):$(GOPATH_BIN):$(PATH)
 GCP_REGION ?= europe-central2
 
+OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
+ARCH := $(shell uname -m)
+
+ifeq ($(ARCH),x86_64)
+ARCH := amd64
+endif
+ifeq ($(ARCH),aarch64)
+ARCH := arm64
+endif
+
 # Test configuration
 TEST_SUITE ?= smoke
 PROCS ?= 1
@@ -89,50 +99,62 @@ install-dependencies: install-kubectl install-helm install-kind install-crust-ga
 .PHONY: install-kubectl
 install-kubectl:
 	@mkdir -p $(BIN_DIR)
-	curl -LO "https://dl.k8s.io/release/$(KUBECTL_VERSION)/bin/linux/amd64/kubectl"
-	chmod +x kubectl
-	mv kubectl $(BIN_DIR)/
+	@if [ ! -f $(BIN_DIR)/kubectl ]; then \
+		curl -LO "https://dl.k8s.io/release/$(KUBECTL_VERSION)/bin/$(OS)/$(ARCH)/kubectl"; \
+		chmod +x kubectl; \
+		mv kubectl $(BIN_DIR)/; \
+	fi
 
 .PHONY: install-helm
 install-helm:
 	@mkdir -p $(BIN_DIR)
-	curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR=$(BIN_DIR) bash -s -- --no-sudo
-	$(BIN_DIR)/helm repo add vm https://victoriametrics.github.io/helm-charts/
-	$(BIN_DIR)/helm repo add chaos-mesh https://charts.chaos-mesh.org
+	@if [ ! -f $(BIN_DIR)/helm ]; then \
+		curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR=$(BIN_DIR) bash -s -- --no-sudo; \
+		$(BIN_DIR)/helm repo add vm https://victoriametrics.github.io/helm-charts/; \
+		$(BIN_DIR)/helm repo add chaos-mesh https://charts.chaos-mesh.org; \
+	fi
 	$(BIN_DIR)/helm repo update
 
 .PHONY: install-kind
 install-kind:
 	@mkdir -p $(BIN_DIR)
-	curl -Lo ./kind https://kind.sigs.k8s.io/dl/$(KIND_VERSION)/kind-linux-amd64
-	chmod +x ./kind
-	mv ./kind $(BIN_DIR)/
+	@if [ ! -f $(BIN_DIR)/kind ]; then \
+		curl -Lo ./kind https://kind.sigs.k8s.io/dl/$(KIND_VERSION)/kind-$(OS)-$(ARCH); \
+		chmod +x ./kind; \
+		mv ./kind $(BIN_DIR)/; \
+	fi
 
 .PHONY: install-crust-gather
 install-crust-gather:
 	@mkdir -p $(BIN_DIR)
-	wget https://github.com/crust-gather/crust-gather/releases/download/$(CRUST_GATHER_VERSION)/kubectl-crust-gather_$(patsubst v%,%,$(CRUST_GATHER_VERSION))_linux_amd64.tar.gz
-	tar -xvf kubectl-crust-gather_$(patsubst v%,%,$(CRUST_GATHER_VERSION))_linux_amd64.tar.gz
-	mv kubectl-crust-gather $(BIN_DIR)/
-	rm kubectl-crust-gather_$(patsubst v%,%,$(CRUST_GATHER_VERSION))_linux_amd64.tar.gz
+	@if [ ! -f $(BIN_DIR)/kubectl-crust-gather ]; then \
+		curl -LO https://github.com/crust-gather/crust-gather/releases/download/$(CRUST_GATHER_VERSION)/kubectl-crust-gather_$(patsubst v%,%,$(CRUST_GATHER_VERSION))_$(OS)_$(ARCH).tar.gz; \
+		tar -xvf kubectl-crust-gather_$(patsubst v%,%,$(CRUST_GATHER_VERSION))_$(OS)_$(ARCH).tar.gz; \
+		mv kubectl-crust-gather $(BIN_DIR)/; \
+		rm kubectl-crust-gather_$(patsubst v%,%,$(CRUST_GATHER_VERSION))_$(OS)_$(ARCH).tar.gz; \
+	fi
 
 .PHONY: install-vmexporter
 install-vmexporter:
 	@mkdir -p $(BIN_DIR)
-	wget https://github.com/VictoriaMetrics/vmgather/releases/download/$(VMGATHER_VERSION)/vmgather-$(VMGATHER_VERSION)-linux-amd64
-	mv vmgather-$(VMGATHER_VERSION)-linux-amd64 $(BIN_DIR)/vmexporter
-	chmod +x $(BIN_DIR)/vmexporter
+	@if [ ! -f $(BIN_DIR)/vmexporter ]; then \
+		curl -LO https://github.com/VictoriaMetrics/vmgather/releases/download/$(VMGATHER_VERSION)/vmgather-$(VMGATHER_VERSION)-$(OS)-$(ARCH); \
+		mv vmgather-$(VMGATHER_VERSION)-$(OS)-$(ARCH) $(BIN_DIR)/vmexporter; \
+		chmod +x $(BIN_DIR)/vmexporter; \
+	fi
 
 .PHONY: install-ginkgo
 install-ginkgo:
-	go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
+	@if [ ! -f $(BIN_DIR)/ginkgo ]; then \
+		GOBIN=$(BIN_DIR) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION); \
+	fi
 
 .PHONY: install-ingress
 install-ingress: install-kubectl
-	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-	kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission || true
+	$(BIN_DIR)/kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+	$(BIN_DIR)/kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission || true
 	# Wait for ingress to be ready
-	kubectl wait --namespace ingress-nginx \
+	$(BIN_DIR)/kubectl wait --namespace ingress-nginx \
 	  --for=condition=ready pod \
 	  --selector=app.kubernetes.io/component=controller \
 	  --timeout=90s || true
@@ -146,17 +168,17 @@ test-unit:
 # Kind targets
 .PHONY: kind-create
 kind-create: install-kind
-	kind get clusters | grep -q kind || kind create cluster --config manifests/kind.yaml
+	$(BIN_DIR)/kind get clusters | grep -q kind || $(BIN_DIR)/kind create cluster --config manifests/kind.yaml
 
 .PHONY: kind-delete
 kind-delete:
-	kind delete cluster
+	$(BIN_DIR)/kind delete cluster
 
 .PHONY: test-kind
 test-kind: install-dependencies kind-create
 	$(MAKE) install-ingress
 	@mkdir -p $(REPORT_DIR)/kind-smoke-test
-	ginkgo -v \
+	$(BIN_DIR)/ginkgo -v \
 		-procs=1 \
 		-timeout=60m \
 		--label-filter=kind \
@@ -193,12 +215,12 @@ gke-provision: gcloud-auth
 gke-prepare-access: gcloud-auth
 	@if [ -z "$(PROJECT_ID)" ]; then echo "PROJECT_ID is not set"; exit 1; fi
 	gcloud container clusters get-credentials "$(TEST_SUITE)-$(SEMAPHORE_WORKFLOW_NUMBER)" --region=$(GCP_REGION) --project="$(PROJECT_ID)"
-	kubectl -n kube-system create serviceaccount cluster-admin || true
-	kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --serviceaccount=kube-system:cluster-admin || true
+	$(BIN_DIR)/kubectl -n kube-system create serviceaccount cluster-admin || true
+	$(BIN_DIR)/kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --serviceaccount=kube-system:cluster-admin || true
 	# Generate dedicated kubeconfig for test
-	kubectl -n kube-system create token --duration=24h cluster-admin > /tmp/token.txt
-	kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' | base64 -d > /tmp/ca.txt
-	kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}' > /tmp/server.txt
+	$(BIN_DIR)/kubectl -n kube-system create token --duration=24h cluster-admin > /tmp/token.txt
+	$(BIN_DIR)/kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' | base64 -d > /tmp/ca.txt
+	$(BIN_DIR)/kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}' > /tmp/server.txt
 
 .PHONY: gke-run-test
 gke-run-test:
@@ -206,12 +228,12 @@ gke-run-test:
 	# Setup isolated kubeconfig if files exist
 	if [ -f /tmp/token.txt ]; then \
 		export KUBECONFIG=/tmp/kubeconfig.yaml; \
-		kubectl config set-cluster gke --server=$$(cat /tmp/server.txt) --certificate-authority=/tmp/ca.txt --embed-certs=true; \
-		kubectl config set-credentials cluster-admin --token=$$(cat /tmp/token.txt); \
-		kubectl config set-context production --cluster gke --user cluster-admin; \
-		kubectl config use-context production; \
+		$(BIN_DIR)/kubectl config set-cluster gke --server=$$(cat /tmp/server.txt) --certificate-authority=/tmp/ca.txt --embed-certs=true; \
+		$(BIN_DIR)/kubectl config set-credentials cluster-admin --token=$$(cat /tmp/token.txt); \
+		$(BIN_DIR)/kubectl config set-context production --cluster gke --user cluster-admin; \
+		$(BIN_DIR)/kubectl config use-context production; \
 	fi; \
-	ginkgo -v \
+	$(BIN_DIR)/ginkgo -v \
 		-procs=$(PROCS) \
 		-timeout=$(TIMEOUT) \
 		--label-filter=gke \

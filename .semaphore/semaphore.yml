@@ -15,64 +15,14 @@ global_job_config:
     # Set LICENSE_FILE to /home/semaphore to enable passing the license file to VictoriaMetrics components
     - name: LICENSE_FILE
       value: "/home/semaphore/license.txt"
-    - name: OPERATOR_REGISTRY
-      value: quay.io
-    - name: OPERATOR_REPOSITORY
-      value: victoriametrics/operator
-    - name: OPERATOR_TAG
-      value: "v0.67.0"
-    - name: VM_VMSINGLEDEFAULT_IMAGE
-      value: quay.io/victoriametrics/victoria-metrics
+    # Set VMSingle version (image tag) here
     - name: VM_VMSINGLEDEFAULT_VERSION
-      #value: &vm-version "v1.135.0"
-      # LTS release
-      value: &vm-version "v1.122.14-enterprise"
-    - name: VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_IMAGE
-      value: quay.io/victoriametrics/vmselect
-    - name: VM_VMCLUSTERDEFAULT_VMSELECTDEFAULT_VERSION
-      #value: &vm-version-cluster "v1.135.0-cluster"
-      # LTS release
-      value: &vm-version-cluster "v1.122.14-cluster-enterprise"
-    - name: VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_IMAGE
-      value: quay.io/victoriametrics/vmstorage
-    - name: VM_VMCLUSTERDEFAULT_VMSTORAGEDEFAULT_VERSION
-      value: *vm-version-cluster
-    - name: VM_VMCLUSTERDEFAULT_VMINSERTDEFAULT_IMAGE
-      value: quay.io/victoriametrics/vminsert
-    - name: VM_VMCLUSTERDEFAULT_VMINSERTDEFAULT_VERSION
-      value: *vm-version-cluster
-    - name: VM_VMAGENTDEFAULT_IMAGE
-      value: quay.io/victoriametrics/vmagent
-    - name: VM_VMAGENTDEFAULT_VERSION
-      value: *vm-version
-    - name: VM_VMALERTDEFAULT_IMAGE
-      value: quay.io/victoriametrics/vmalert
-    - name: VM_VMALERTDEFAULT_VERSION
-      value: *vm-version
-    - name: VM_VMAUTHDEFAULT_IMAGE
-      value: quay.io/victoriametrics/vmauth
-    - name: VM_VMAUTHDEFAULT_VERSION
-      value: *vm-version
-    - name: VM_VMBACKUPDEFAULT_IMAGE
-      value: quay.io/victoriametrics/vmbackup
-    - name: VM_VMBACKUPDEFAULT_VERSION
-      value: *vm-version
-    - name: VM_VMRESTOREDEFAULT_IMAGE
-      value: quay.io/victoriametrics/vmrestore
-    - name: VM_VMRESTOREDEFAULT_VERSION
-      value: *vm-version
+      value: "v1.122.14-enterprise"
+    # Set VMCluster version (image tag) here
+    - name: VM_VMCLUSTERDEFAULT_VERSION
+      value: "v1.122.14-cluster-enterprise"
     - name: GO_VERSION
       value: "1.25.3"
-    - name: KIND_VERSION
-      value: "v0.31.0"
-    - name: KUBECTL_VERSION
-      value: "v1.35.0"
-    - name: CRUST_GATHER_VERSION
-      value: "v0.11.1"
-    - name: VMGATHER_VERSION
-      value: "v1.5.0"
-    - name: GINKGO_VERSION
-      value: "v2.27.4"
 
 blocks:
   - name: Unit Tests
@@ -116,7 +66,10 @@ blocks:
       jobs:
         - name: Test matrix
           commands:
-            - export SUITE=$(echo $TEST | cut -d' ' -f1); export PROCS=$(echo $TEST | cut -d' ' -f2); make test-gke TEST_SUITE=$SUITE PROCS=$PROCS TIMEOUT=90m
+            - |
+              export SUITE=$(echo $TEST | cut -d' ' -f1)
+              export PROCS=$(echo $TEST | cut -d' ' -f2)
+              make test-gke TEST_SUITE=$SUITE PROCS=$PROCS TIMEOUT=90m
           matrix:
             - env_var: TEST
               values:

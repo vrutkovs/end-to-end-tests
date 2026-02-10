@@ -75,6 +75,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 		var err error
 		overwatch, err = tests.SetupOverwatchClient(ctx, t)
 		require.NoError(t, err)
+		overwatch.CheckNoAlertsFiring(ctx, t, namespace, promquery.DefaultExceptions)
 
 		c = tests.NewHTTPClient()
 	})

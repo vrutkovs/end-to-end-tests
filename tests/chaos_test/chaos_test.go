@@ -76,6 +76,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		var err error
 		overwatch, err = tests.SetupOverwatchClient(ctx, t)
 		require.NoError(t, err)
+		overwatch.CheckNoAlertsFiring(ctx, t, namespace, promquery.DefaultExceptions)
 
 		// Create new VMCluster object
 		kubeOpts := k8s.NewKubectlOptions("", "", namespace)

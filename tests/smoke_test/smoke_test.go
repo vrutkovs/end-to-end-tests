@@ -32,10 +32,7 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 	var overwatch promquery.PrometheusClient
 
 	BeforeAll(func() {
-		var err error
-		overwatch, err = tests.SetupOverwatchClient(ctx, t)
-		require.NoError(t, err)
-
+		install.DiscoverIngressHost(ctx, t)
 		install.InstallVMGather(t)
 		install.InstallVMK8StackWithHelm(
 			ctx,
@@ -46,6 +43,12 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 			consts.DefaultReleaseName,
 		)
 		install.InstallOverwatch(ctx, t, consts.OverwatchNamespace, consts.DefaultVMNamespace, consts.DefaultReleaseName)
+
+		var err error
+		overwatch, err = tests.SetupOverwatchClient(ctx, t)
+		require.NoError(t, err)
+		// Wait for no alerts firing
+		overwatch.CheckNoAlertsFiring(ctx, t, consts.DefaultVMNamespace, nil)
 	})
 
 	AfterEach(func() {

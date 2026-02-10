@@ -33,10 +33,6 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 	var overwatch promquery.PrometheusClient
 
 	BeforeAll(func() {
-		var err error
-		overwatch, err = tests.SetupOverwatchClient(ctx, t)
-		require.NoError(t, err)
-
 		install.InstallVMGather(t)
 		install.InstallVMK8StackWithHelm(
 			ctx,
@@ -47,6 +43,11 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 			consts.DefaultReleaseName,
 		)
 		install.InstallOverwatch(ctx, t, consts.OverwatchNamespace, consts.DefaultVMNamespace, consts.DefaultReleaseName)
+
+		var err error
+		overwatch, err = tests.SetupOverwatchClient(ctx, t)
+		require.NoError(t, err)
+		overwatch.CheckNoAlertsFiring(ctx, t, consts.OverwatchNamespace, promquery.DefaultExceptions)
 
 		// Install k6 operator
 		install.InstallK6(ctx, t, consts.K6OperatorNamespace)

@@ -238,4 +238,5 @@ func InstallOverwatch(ctx context.Context, t terratesting.TestingT, namespace, v
 
 	By("Wait for overwatch VMSingle to become operational")
 	WaitForVMSingleToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
+
 }

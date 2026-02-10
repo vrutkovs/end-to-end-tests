@@ -8,34 +8,69 @@ import (
 	"github.com/gruntwork-io/terratest/modules/testing"
 	prommodel "github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
+
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 )
 
-func (p PrometheusClient) CheckNoAlertsFiring(ctx context.Context, t testing.TestingT, namespace string, exceptions []string) {
-	defaultExceptions := []string{
+var (
+	DefaultExceptions = []string{
 		"InfoInhibitor", "Watchdog",
 	}
-	allExceptions := append(defaultExceptions, exceptions...)
+)
+
+// CheckNoAlertsFiring verifies that no alerts are firing in the given namespace,
+// except for the ones specified in exceptions.
+func (p PrometheusClient) CheckNoAlertsFiring(ctx context.Context, t testing.TestingT, namespace string, exceptions []string) {
+	firing, err := p.getFiringAlerts(ctx, namespace, exceptions)
+	if err != nil {
+		// Handle query errors gracefully - just return without failing the test
+		if strings.Contains(err.Error(), "failed to execute query") {
+			return
+		}
+		require.NoError(t, err)
+		return
+	}
+	for _, f := range firing {
+		require.Fail(t, fmt.Sprintf("Unexpected alert firing for namespace %s: %s", namespace, f))
+	}
+}
+
+// WaitUntilNoAlertsFiring waits until no alerts are firing.
+func (p PrometheusClient) WaitUntilNoAlertsFiring(ctx context.Context, t testing.TestingT, namespace string, exceptions []string) {
+	require.Eventually(t, func() bool {
+		firing, err := p.getFiringAlerts(ctx, namespace, exceptions)
+		if err != nil || len(firing) > 0 {
+			return false
+		}
+		return true
+	}, consts.PollingTimeout, consts.PollingInterval, "Alerts are still firing in namespace %s", namespace)
+}
+
+func (p PrometheusClient) getFiringAlerts(ctx context.Context, namespace string, exceptions []string) ([]string, error) {
+	allExceptions := append(DefaultExceptions, exceptions...)
 	query := fmt.Sprintf(`sum by (alertname) (vmalert_alerts_firing{namespace="%s", alertname!~"%s"})`, namespace, strings.Join(allExceptions, "|"))
 
 	result, _, err := p.Query(ctx, query)
 	if err != nil {
-		// Handle query errors gracefully - just return without failing the test
-		return
+		return nil, fmt.Errorf("failed to execute query %s: %w", query, err)
 	}
 
 	if result.Type() != prommodel.ValVector {
-		require.Fail(t, fmt.Sprintf("Expected vector result, got %s", result.Type()))
-		return
+		return nil, fmt.Errorf("expected vector result, got %s", result.Type())
 	}
 	vec, ok := result.(prommodel.Vector)
 	if !ok {
-		require.Fail(t, "Failed to cast result to prommodel.Vector")
-		return
+		return nil, fmt.Errorf("failed to cast result to prommodel.Vector")
 	}
-	// No results expected here, so throw errors if there alerts firing
+
+	var firing []string
 	for _, alert := range vec {
-		require.Equal(t, prommodel.SampleValue(0), alert.Value, "Unexpected alert firing for namespace %s: %s", namespace, alert.Metric)
+		if alert.Value != 0 {
+			firing = append(firing, fmt.Sprintf("%s (value: %s)", alert.Metric, alert.Value))
+		}
 	}
+
+	return firing, nil
 }
 
 // CheckAlertIsFiring verifies that a specific alert is currently firing (value > 0)

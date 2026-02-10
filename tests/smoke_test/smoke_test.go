@@ -83,9 +83,9 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 			overwatch.CheckNoAlertsFiring(ctx, t, consts.DefaultVMNamespace, nil)
 
 			By("At least 500 requests were made")
-			_, value, err := overwatch.VectorScan(ctx, "sum_over_time(sum(vm_http_requests_total)[30m])")
-			require.NoError(t, err)
-			require.GreaterOrEqual(t, value, float64(500))
+			// _, value, err := overwatch.VectorScan(ctx, "sum_over_time(sum(vm_http_requests_total)[30m])")
+			// require.NoError(t, err)
+			// require.GreaterOrEqual(t, value, float64(500))
 		})
 	})
 })

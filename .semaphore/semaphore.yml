@@ -83,8 +83,7 @@ blocks:
           commands:
             - checkout
             - sem-version go $GO_VERSION
-            - go mod download
-            - go test ./pkg/... -v -failfast
+            - make test-unit
   - name: Smoke Test
     dependencies:
       - Unit Tests
@@ -95,12 +94,10 @@ blocks:
         commands:
           - checkout
           - sem-version go $GO_VERSION
-          - .semaphore/install-dependencies-kind.sh
       jobs:
         - name: smoke-test
           commands:
-            - kind create cluster --config manifests/kind.yaml
-            - .semaphore/run-kind-test.sh
+            - make test-kind
       epilogue:
         always:
           commands:
@@ -119,7 +116,7 @@ blocks:
       jobs:
         - name: Test matrix
           commands:
-            - .semaphore/run-gke-test.sh $TEST 90m
+            - export SUITE=$(echo $TEST | cut -d' ' -f1); export PROCS=$(echo $TEST | cut -d' ' -f2); make test-gke TEST_SUITE=$SUITE PROCS=$PROCS TIMEOUT=90m
           matrix:
             - env_var: TEST
               values:
@@ -133,7 +130,7 @@ blocks:
         always:
           commands:
             - artifact push workflow /tmp/allure-results
-            - .semaphore/cleanup-gke.sh ${TEST}
+            - export SUITE=$(echo $TEST | cut -d' ' -f1); make clean-gke TEST_SUITE=$SUITE
 after_pipeline:
   task:
     secrets:

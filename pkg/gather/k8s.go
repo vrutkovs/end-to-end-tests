@@ -10,6 +10,7 @@ import (
 	"time"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	"github.com/gruntwork-io/terratest/modules/k8s"
@@ -28,10 +29,22 @@ func K8sAfterAll(ctx context.Context, t testing.TestingT, kubeOpts *k8s.KubectlO
 
 	// Delete license secret from cluster to avoid leaking it
 	logger.Default.Logf(t, "Deleting license secret %s from cluster", consts.LicenseSecretName)
-	secretYaml, err := consts.PrepareLicenseSecret(kubeOpts.Namespace)
-	require.NoError(t, err, "kubectl delete secret failed")
-	if err := k8s.KubectlDeleteFromStringE(t, kubeOpts, secretYaml); !k8serrors.IsNotFound(err) {
-		require.NoError(t, err, "kubectl delete secret failed")
+	if consts.LicenseFile() != "" {
+		namespaces := k8s.ListNamespaces(t, kubeOpts, metav1.ListOptions{})
+		for _, ns := range namespaces {
+			nsKubeOpts := k8s.KubectlOptions{
+				Namespace: ns.Name,
+			}
+			if _, err := k8s.GetSecretE(t, &nsKubeOpts, consts.LicenseSecretName); k8serrors.IsNotFound(err) {
+				continue
+			}
+			cmd := exec.CommandContext(timeBoundContext, "kubectl", "delete", "secret", consts.LicenseSecretName, "-n", ns.Name)
+			var outb, errb bytes.Buffer
+			cmd.Stdout = &outb
+			cmd.Stderr = &errb
+			err := cmd.Run()
+			require.NoError(t, err, "kubectl delete secret from namespace %s failed: %v, stdout: %s, stderr: %s", ns.Name, err, outb.String(), errb.String())
+		}
 	}
 
 	// Collect crust-gather folder
@@ -39,7 +52,7 @@ func K8sAfterAll(ctx context.Context, t testing.TestingT, kubeOpts *k8s.KubectlO
 	var outb, errb bytes.Buffer
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb
-	err = cmd.Run()
+	err := cmd.Run()
 	if err != nil {
 		logger.Default.Logf(t, "crust-gather collect failed: %v, stdout: %s, stderr: %s", err, outb.String(), errb.String())
 		require.NoError(t, err, "crust-gather collect failed")

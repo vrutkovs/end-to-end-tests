@@ -62,3 +62,10 @@ func WaitForVMAlertToBeOperational(ctx context.Context, t terratesting.TestingT,
 	})
 	require.NoError(t, err)
 }
+
+// AddCustomAlertRules creates a VMRule with custom alerts
+func AddCustomAlertRules(ctx context.Context, t terratesting.TestingT, namespace string) {
+	manifestPath := "../../manifests/custom-alerts.yaml"
+	kubeOpts := k8s.NewKubectlOptions("", "", consts.DefaultVMNamespace)
+	k8s.KubectlApply(t, kubeOpts, manifestPath)
+}

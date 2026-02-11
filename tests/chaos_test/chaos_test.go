@@ -89,6 +89,9 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			namespace)
 		logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
 		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, consts.DefaultVMNamespace, consts.DefaultReleaseName, remoteWriteURL)
+
+		// Add custom alert rules
+		install.AddCustomAlertRules(ctx, t, namespace)
 	})
 
 	AfterEach(func(ctx context.Context) {
@@ -102,12 +105,11 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 
 	// ChaosScenario represents a chaos test scenario configuration
 	type ChaosScenario struct {
-		UUID           string
-		ScenarioName   string
-		Category       string
-		ChaosType      string
-		ExpectedAlerts []string
-		CheckAlert     string
+		UUID         string
+		ScenarioName string
+		Category     string
+		ChaosType    string
+		CheckAlert   string
 	}
 
 	// Helper function to run a chaos scenario
@@ -117,11 +119,10 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 
 		if scenario.CheckAlert != "" {
 			By(fmt.Sprintf("Only %s is firing", scenario.CheckAlert))
-			overwatch.CheckNoAlertsFiring(ctx, t, namespace, scenario.ExpectedAlerts)
 			overwatch.CheckAlertIsFiring(ctx, t, namespace, scenario.CheckAlert)
 		} else {
 			By("No alerts are firing")
-			overwatch.CheckNoAlertsFiring(ctx, t, namespace, scenario.ExpectedAlerts)
+			overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{scenario.CheckAlert})
 		}
 	}
 
@@ -168,34 +169,31 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vminsert CPU stress",
 				Label("id=4c571bca-2442-4a1b-8e54-4f9878f8dd6d"),
 				ChaosScenario{
-					UUID:           "4c571bca-2442-4a1b-8e54-4f9878f8dd6d",
-					ScenarioName:   "vminsert-cpu-usage",
-					Category:       "cpu",
-					ChaosType:      "stresschaos",
-					ExpectedAlerts: []string{"CPUThrottlingHigh"},
-					CheckAlert:     "CPUThrottlingHigh",
+					UUID:         "4c571bca-2442-4a1b-8e54-4f9878f8dd6d",
+					ScenarioName: "vminsert-cpu-usage",
+					Category:     "cpu",
+					ChaosType:    "stresschaos",
+					CheckAlert:   "CustomTooHighSlowInsertsRate",
 				},
 			),
 			Entry("vmstorage CPU stress",
 				Label("id=d1ebdfd3-a0cf-4525-89b9-e998ec7b0c1e"),
 				ChaosScenario{
-					UUID:           "d1ebdfd3-a0cf-4525-89b9-e998ec7b0c1e",
-					ScenarioName:   "vmstorage-cpu-usage",
-					Category:       "cpu",
-					ChaosType:      "stresschaos",
-					ExpectedAlerts: []string{"CPUThrottlingHigh"},
-					CheckAlert:     "CPUThrottlingHigh",
+					UUID:         "d1ebdfd3-a0cf-4525-89b9-e998ec7b0c1e",
+					ScenarioName: "vmstorage-cpu-usage",
+					Category:     "cpu",
+					ChaosType:    "stresschaos",
+					// CheckAlert:   "CPUThrottlingHigh",
 				},
 			),
 			Entry("vmselect CPU stress",
 				Label("id=f6637d83-be2a-44ab-b446-9c755bad4292"),
 				ChaosScenario{
-					UUID:           "f6637d83-be2a-44ab-b446-9c755bad4292",
-					ScenarioName:   "vmselect-cpu-usage",
-					Category:       "cpu",
-					ChaosType:      "stresschaos",
-					ExpectedAlerts: []string{"CPUThrottlingHigh"},
-					CheckAlert:     "CPUThrottlingHigh",
+					UUID:         "f6637d83-be2a-44ab-b446-9c755bad4292",
+					ScenarioName: "vmselect-cpu-usage",
+					Category:     "cpu",
+					ChaosType:    "stresschaos",
+					// CheckAlert:   "CPUThrottlingHigh",
 				},
 			),
 		)

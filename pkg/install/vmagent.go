@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	watchtools "k8s.io/client-go/tools/watch"
+	"k8s.io/client-go/util/retry"
 )
 
 // InstallVMAgent installs a single-node VictoriaMetrics instance (VMAgent) into the specified namespace.
@@ -155,13 +156,26 @@ func EnsureVMAgentRemoteWriteURL(ctx context.Context, t terratesting.TestingT, v
 		}
 	}
 	if !found {
-		// Get the fresh VMAgent resource version as it may have been updated by another test
-		vmAgent, err := vmclient.OperatorV1beta1().VMAgents(namespace).Get(ctx, vmAgentName, metav1.GetOptions{})
-		require.NoError(t, err)
-		vmAgent.Spec.RemoteWrite = append(vmAgent.Spec.RemoteWrite, vmv1beta1.VMAgentRemoteWriteSpec{
-			URL: url,
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			// Get the fresh VMAgent resource version as it may have been updated by another test
+			vmAgent, err := vmclient.OperatorV1beta1().VMAgents(namespace).Get(ctx, vmAgentName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			// Check again if the URL is already present to avoid duplicates during retries
+			for _, rw := range vmAgent.Spec.RemoteWrite {
+				if rw.URL == url {
+					return nil
+				}
+			}
+
+			vmAgent.Spec.RemoteWrite = append(vmAgent.Spec.RemoteWrite, vmv1beta1.VMAgentRemoteWriteSpec{
+				URL: url,
+			})
+			_, err = vmclient.OperatorV1beta1().VMAgents(namespace).Update(ctx, vmAgent, metav1.UpdateOptions{})
+			return err
 		})
-		_, err = vmclient.OperatorV1beta1().VMAgents(namespace).Update(ctx, vmAgent, metav1.UpdateOptions{})
 		require.NoError(t, err)
 		WaitForVMAgentToBeOperational(ctx, t, kubeOpts, namespace, vmclient)
 	}

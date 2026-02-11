@@ -3,6 +3,7 @@ kind: VMAgent
 metadata:
   name: vmagent
 spec:
+  enforcedNamespaceLabel: namespace_origin
   resources:
     limits:
       cpu: 50m

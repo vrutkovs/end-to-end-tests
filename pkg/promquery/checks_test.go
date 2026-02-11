@@ -114,7 +114,7 @@ func TestCheckNoAlertsFiring_NoAlerts(t *testing.T) {
 		require.NoError(t, err)
 
 		query := r.Form.Get("query")
-		expectedSubstring := `sum by (alertname) (vmalert_alerts_firing{namespace="ns", alertname!~"InfoInhibitor|Watchdog"})`
+		expectedSubstring := `sum by (alertname) (ALERTS{namespace="ns", alertname!~"InfoInhibitor|Watchdog|RecordingRulesNoData|NodeMemoryMajorPagesFaults", alertstate="firing"})`
 		assert.Equal(t, expectedSubstring, query)
 
 		w.Header().Set("Content-Type", "application/json")
@@ -153,7 +153,7 @@ func TestCheckNoAlertsFiring_WithCustomExceptions(t *testing.T) {
 
 		query := r.Form.Get("query")
 		// Should include custom exception "CustomAlert"
-		expectedSubstring := `alertname!~"InfoInhibitor|Watchdog|CustomAlert"`
+		expectedSubstring := `alertname!~"InfoInhibitor|Watchdog|RecordingRulesNoData|NodeMemoryMajorPagesFaults|CustomAlert"`
 		assert.Contains(t, query, expectedSubstring)
 
 		w.Header().Set("Content-Type", "application/json")

@@ -49,7 +49,7 @@ func (p PrometheusClient) WaitUntilNoAlertsFiring(ctx context.Context, t testing
 
 func (p PrometheusClient) getFiringAlerts(ctx context.Context, namespace string, exceptions []string) ([]string, error) {
 	allExceptions := append(DefaultExceptions, exceptions...)
-	query := fmt.Sprintf(`sum by (alertname) (vmalert_alerts_firing{namespace="%s", alertname!~"%s"})`, namespace, strings.Join(allExceptions, "|"))
+	query := fmt.Sprintf(`sum by (alertname) (ALERTS{namespace="%s", alertname!~"%s", alertstate="firing"})`, namespace, strings.Join(allExceptions, "|"))
 
 	result, _, err := p.Query(ctx, query)
 	if err != nil {
@@ -76,7 +76,7 @@ func (p PrometheusClient) getFiringAlerts(ctx context.Context, namespace string,
 
 // CheckAlertIsFiring verifies that a specific alert is currently firing (value > 0)
 func (p PrometheusClient) CheckAlertIsFiring(ctx context.Context, t testing.TestingT, namespace, alertName string) {
-	query := fmt.Sprintf(`vmalert_alerts_firing{namespace="%s", alertname="%s"}`, namespace, alertName)
+	query := fmt.Sprintf(`ALERTS{namespace="%s", alertname="%s", alertstate="firing"}`, namespace, alertName)
 
 	result, _, err := p.Query(ctx, query)
 	if err != nil {

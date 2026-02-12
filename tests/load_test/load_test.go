@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
+	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 
@@ -33,6 +34,7 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 	var overwatch promquery.PrometheusClient
 
 	BeforeAll(func() {
+		install.DiscoverIngressHost(ctx, t)
 		install.InstallVMGather(t)
 		install.InstallVMK8StackWithHelm(
 			ctx,
@@ -64,8 +66,20 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 		}
 		install.InstallPrometheusBenchmark(ctx, t, consts.BenchmarkNamespace, prombenchConfig.ToHelmValues())
 
+		// Ensure VMAgent remote write URL is set up
+		kubeOpts := k8s.NewKubectlOptions("", "", consts.DefaultVMNamespace)
+		vmclient := install.GetVMClient(t, kubeOpts)
+		remoteWriteURL := fmt.Sprintf(
+			"http://vminsert-vm.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write",
+			consts.DefaultVMNamespace)
+		logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
+		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, consts.DefaultVMNamespace, consts.DefaultReleaseName, remoteWriteURL)
+
+		// Add custom alert rules
+		install.AddCustomAlertRules(ctx, t, consts.DefaultVMNamespace)
+
 		// Prepare namespace for k6 tests
-		kubeOpts := k8s.NewKubectlOptions("", "", consts.K6TestsNamespace)
+		kubeOpts = k8s.NewKubectlOptions("", "", consts.K6TestsNamespace)
 		k8s.CreateNamespace(t, kubeOpts, consts.K6TestsNamespace)
 	})
 

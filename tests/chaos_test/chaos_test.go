@@ -134,7 +134,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vminsert pod failure",
 				Label("id=17f2e31b-9249-4283-845b-aae0bc81e5f2"),
 				ChaosScenario{
-					UUID:         "17f2e31b-9249-4283-845b-aae0bc81e5f2",
 					ScenarioName: "vminsert-pod-failure",
 					Category:     "pods",
 					ChaosType:    "podchaos",
@@ -143,7 +142,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vmstorage pod failure",
 				Label("id=e340d25f-b14f-4f21-acb4-68c4fdf39a85"),
 				ChaosScenario{
-					UUID:         "e340d25f-b14f-4f21-acb4-68c4fdf39a85",
 					ScenarioName: "vmstorage-pod-failure",
 					Category:     "pods",
 					ChaosType:    "podchaos",
@@ -152,7 +150,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vmselect pod failure",
 				Label("id=38df1d4b-d38c-4064-8538-c0e03920255f"),
 				ChaosScenario{
-					UUID:         "38df1d4b-d38c-4064-8538-c0e03920255f",
 					ScenarioName: "vmselect-pod-failure",
 					Category:     "pods",
 					ChaosType:    "podchaos",
@@ -169,7 +166,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vminsert CPU stress",
 				Label("id=4c571bca-2442-4a1b-8e54-4f9878f8dd6d"),
 				ChaosScenario{
-					UUID:         "4c571bca-2442-4a1b-8e54-4f9878f8dd6d",
 					ScenarioName: "vminsert-cpu-usage",
 					Category:     "cpu",
 					ChaosType:    "stresschaos",
@@ -179,7 +175,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vmstorage CPU stress",
 				Label("id=d1ebdfd3-a0cf-4525-89b9-e998ec7b0c1e"),
 				ChaosScenario{
-					UUID:         "d1ebdfd3-a0cf-4525-89b9-e998ec7b0c1e",
 					ScenarioName: "vmstorage-cpu-usage",
 					Category:     "cpu",
 					ChaosType:    "stresschaos",
@@ -189,7 +184,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vmselect CPU stress",
 				Label("id=f6637d83-be2a-44ab-b446-9c755bad4292"),
 				ChaosScenario{
-					UUID:         "f6637d83-be2a-44ab-b446-9c755bad4292",
 					ScenarioName: "vmselect-cpu-usage",
 					Category:     "cpu",
 					ChaosType:    "stresschaos",
@@ -207,7 +201,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vminsert memory stress",
 				Label("id=47690837-45e5-4cae-9e60-abadf59e4e66"),
 				ChaosScenario{
-					UUID:         "47690837-45e5-4cae-9e60-abadf59e4e66",
 					ScenarioName: "vminsert-memory-usage",
 					Category:     "memory",
 					ChaosType:    "stresschaos",
@@ -216,7 +209,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vmstorage memory stress",
 				Label("id=357cef7e-c2ce-4a76-8768-7b142a4e7997"),
 				ChaosScenario{
-					UUID:         "357cef7e-c2ce-4a76-8768-7b142a4e7997",
 					ScenarioName: "vmstorage-memory-usage",
 					Category:     "memory",
 					ChaosType:    "stresschaos",
@@ -225,7 +217,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vmselect memory stress",
 				Label("id=f9c922b8-104a-4baf-bad3-b00188ccddb1"),
 				ChaosScenario{
-					UUID:         "f9c922b8-104a-4baf-bad3-b00188ccddb1",
 					ScenarioName: "vmselect-memory-usage",
 					Category:     "memory",
 					ChaosType:    "stresschaos",
@@ -242,7 +233,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vminsert IO stress",
 				Label("id=c70ce6cc-84fe-447d-8b5f-48871a2ebf99"),
 				ChaosScenario{
-					UUID:         "c70ce6cc-84fe-447d-8b5f-48871a2ebf99",
 					ScenarioName: "vminsert-io-usage",
 					Category:     "io",
 					ChaosType:    "stresschaos",
@@ -251,7 +241,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vmstorage IO stress",
 				Label("id=8b3f1e4a-2c5d-4f67-9aab-123456abcdef"),
 				ChaosScenario{
-					UUID:         "8b3f1e4a-2c5d-4f67-9aab-123456abcdef",
 					ScenarioName: "vmstorage-io-usage",
 					Category:     "io",
 					ChaosType:    "stresschaos",
@@ -277,7 +266,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vminsert to vmstorage packet corrupt",
 				Label("gke", "id=ef3455cd-7687-49a4-b423-7c4541aa051c"),
 				ChaosScenario{
-					UUID:         "ef3455cd-7687-49a4-b423-7c4541aa051c",
 					ScenarioName: "vminsert-to-vmstorage-packet-corrupt",
 					Category:     "network",
 					ChaosType:    "networkchaos",
@@ -286,7 +274,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vmselect to vmstorage packet delay",
 				Label("gke", "id=e13108bd-00df-40f5-acc9-b134bc619dc8"),
 				ChaosScenario{
-					UUID:         "e13108bd-00df-40f5-acc9-b134bc619dc8",
 					ScenarioName: "vmselect-to-vmstorage-packet-delay",
 					Category:     "network",
 					ChaosType:    "networkchaos",
@@ -295,7 +282,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vmstorage from vminsert packet loss",
 				Label("gke", "id=490c384c-a995-4b46-a5c2-c37baa72beaf"),
 				ChaosScenario{
-					UUID:         "490c384c-a995-4b46-a5c2-c37baa72beaf",
 					ScenarioName: "vmstorage-from-vminsert-packet-loss",
 					Category:     "network",
 					ChaosType:    "networkchaos",
@@ -304,7 +290,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vmstorage from vmselect packet delay",
 				Label("gke", "id=260857d8-c49e-4ac3-92e4-220addcc4a53"),
 				ChaosScenario{
-					UUID:         "260857d8-c49e-4ac3-92e4-220addcc4a53",
 					ScenarioName: "vmstorage-from-vmselect-packet-delay",
 					Category:     "network",
 					ChaosType:    "networkchaos",
@@ -319,7 +304,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vminsert request delay",
 				Label("gke", "id=98f0368b-b200-4558-a09f-37e7ceaa3b1d"),
 				ChaosScenario{
-					UUID:         "98f0368b-b200-4558-a09f-37e7ceaa3b1d",
 					ScenarioName: "vminsert-request-delay",
 					Category:     "http",
 					ChaosType:    "httpchaos",
@@ -328,7 +312,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vminsert response abort",
 				Label("gke", "id=d738fdd5-0076-4ddf-9358-2812a9cc3e2b"),
 				ChaosScenario{
-					UUID:         "d738fdd5-0076-4ddf-9358-2812a9cc3e2b",
 					ScenarioName: "vminsert-response-abort",
 					Category:     "http",
 					ChaosType:    "httpchaos",
@@ -337,7 +320,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vmselect request delay",
 				Label("gke", "id=3e1eff4c-dcda-442b-a477-85359ffc57b7"),
 				ChaosScenario{
-					UUID:         "3e1eff4c-dcda-442b-a477-85359ffc57b7",
 					ScenarioName: "vmselect-request-delay",
 					Category:     "http",
 					ChaosType:    "httpchaos",
@@ -346,7 +328,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			Entry("vmselect response abort",
 				Label("gke", "id=b2807243-8528-4500-b630-822ed9fce73d"),
 				ChaosScenario{
-					UUID:         "b2807243-8528-4500-b630-822ed9fce73d",
 					ScenarioName: "vmselect-response-abort",
 					Category:     "http",
 					ChaosType:    "httpchaos",

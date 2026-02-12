@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/gruntwork-io/terratest/modules/testing"
 	prommodel "github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,7 @@ var (
 // CheckNoAlertsFiring verifies that no alerts are firing in the given namespace,
 // except for the ones specified in exceptions.
 func (p PrometheusClient) CheckNoAlertsFiring(ctx context.Context, t testing.TestingT, namespace string, exceptions []string) {
-	firing, err := p.getFiringAlerts(ctx, namespace, exceptions)
+	firing, err := p.getFiringAlerts(ctx, t, namespace, exceptions)
 	if err != nil {
 		// Handle query errors gracefully - just return without failing the test
 		if strings.Contains(err.Error(), "failed to execute query") {
@@ -39,7 +40,7 @@ func (p PrometheusClient) CheckNoAlertsFiring(ctx context.Context, t testing.Tes
 // WaitUntilNoAlertsFiring waits until no alerts are firing.
 func (p PrometheusClient) WaitUntilNoAlertsFiring(ctx context.Context, t testing.TestingT, namespace string, exceptions []string) {
 	require.Eventually(t, func() bool {
-		firing, err := p.getFiringAlerts(ctx, namespace, exceptions)
+		firing, err := p.getFiringAlerts(ctx, t, namespace, exceptions)
 		if err != nil || len(firing) > 0 {
 			return false
 		}
@@ -47,10 +48,11 @@ func (p PrometheusClient) WaitUntilNoAlertsFiring(ctx context.Context, t testing
 	}, consts.PollingTimeout, consts.PollingInterval, "Alerts are still firing in namespace %s", namespace)
 }
 
-func (p PrometheusClient) getFiringAlerts(ctx context.Context, namespace string, exceptions []string) ([]string, error) {
+func (p PrometheusClient) getFiringAlerts(ctx context.Context, t testing.TestingT, namespace string, exceptions []string) ([]string, error) {
 	allExceptions := append(DefaultExceptions, exceptions...)
 	query := fmt.Sprintf(`sum by (alertname) (ALERTS{namespace="%s", alertname!~"%s", alertstate="firing"})`, namespace, strings.Join(allExceptions, "|"))
 
+	logger.Default.Logf(t, "running query %s", query)
 	result, _, err := p.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query %s: %w", query, err)

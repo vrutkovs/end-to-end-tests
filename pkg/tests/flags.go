@@ -83,6 +83,10 @@ func Init() {
 		flag.Parse()
 	}
 	consts.SetReportLocation(reportLocation)
+	if err := os.Setenv("ALLURE_RESULTS_PATH", reportLocation); err != nil {
+		panic(err)
+	}
+
 	consts.SetEnvK8SDistro(envK8SDistro)
 	consts.SetOperatorImageRegistry(operatorRegistry)
 	consts.SetOperatorImageRepository(operatorRepository)

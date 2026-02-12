@@ -7,11 +7,8 @@ import (
 	"strings"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/tests/allure"
 	terratesting "github.com/gruntwork-io/terratest/modules/testing"
-
-	"github.com/Moon1706/ginkgo2allure/pkg/convert"
-	fmngr "github.com/Moon1706/ginkgo2allure/pkg/convert/file_manager"
-	"github.com/Moon1706/ginkgo2allure/pkg/convert/parser"
 	. "github.com/onsi/ginkgo/v2" //nolint
 	"github.com/onsi/ginkgo/v2/types"
 )
@@ -35,25 +32,22 @@ func (mt *myTestingT) Name() string {
 }
 
 var _ = ReportAfterSuite("allure report", func(report types.Report) {
-	allureReports, err := convert.GinkgoToAllureReport([]types.Report{report}, parser.NewDefaultParser, parser.Config{})
-	if err != nil {
-		panic(err)
-	}
-
 	reportPath, err := filepath.Abs(consts.ReportLocation())
 	if err != nil {
 		panic(err)
 	}
 
-	if err := writeEnvironmentProperties(reportPath); err != nil {
+	// Set ALLURE_RESULTS_PATH to reportPath so that allure package writes to the correct location
+	if err := os.Setenv("ALLURE_RESULTS_PATH", reportPath); err != nil {
 		panic(err)
 	}
 
-	fileManager := fmngr.NewFileManager(reportPath)
+	if err := allure.FromGinkgoReport(report); err != nil {
+		panic(err)
+	}
 
-	errs := convert.PrintAllureReports(allureReports, fileManager)
-	if len(errs) > 0 {
-		panic(errs)
+	if err := writeEnvironmentProperties(reportPath); err != nil {
+		panic(err)
 	}
 	GinkgoLogr.Info("Allure report generated", "path", reportPath)
 })

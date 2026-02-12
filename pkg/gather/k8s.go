@@ -9,10 +9,12 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/cespare/xxhash/v2"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
+	"github.com/VictoriaMetrics/end-to-end-tests/pkg/tests/allure"
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/gruntwork-io/terratest/modules/testing"
@@ -47,8 +49,13 @@ func K8sAfterAll(ctx context.Context, t testing.TestingT, kubeOpts *k8s.KubectlO
 		}
 	}
 
+	reportsLocation := "/tmp/crust-gather"
+	report := ginkgo.CurrentSpecReport()
+	reportHash := fmt.Sprintf("%016x", xxhash.Sum64([]byte(report.FullText())))
+	reportDir := filepath.Join(reportsLocation, reportHash)
+
 	// Collect crust-gather folder
-	cmd := exec.CommandContext(timeBoundContext, "kubectl-crust-gather", "collect", "-f", "../crust-gather")
+	cmd := exec.CommandContext(timeBoundContext, "kubectl-crust-gather", "collect", "-f", reportDir)
 	var outb, errb bytes.Buffer
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb
@@ -63,8 +70,10 @@ func K8sAfterAll(ctx context.Context, t testing.TestingT, kubeOpts *k8s.KubectlO
 	}
 
 	// Archive crust-gather folder
-	tarGzFileName := "/tmp/crust-gather.tar.gz"
-	cmd = exec.CommandContext(timeBoundContext, "tar", "-czvf", tarGzFileName, "../crust-gather")
+	archiveName := reportHash + ".tar.gz"
+	archivePath := filepath.Join(reportsLocation, archiveName)
+	cmd = exec.CommandContext(timeBoundContext, "tar", "-czvf", archiveName, reportHash)
+	cmd.Dir = reportsLocation
 	outb.Reset()
 	errb.Reset()
 	cmd.Stdout = &outb
@@ -80,13 +89,12 @@ func K8sAfterAll(ctx context.Context, t testing.TestingT, kubeOpts *k8s.KubectlO
 	}
 
 	// Add crust-gather.tar.gz to report
-	tarGzFileContent, err := os.ReadFile(tarGzFileName)
+	tarGzFileContent, err := os.ReadFile(archivePath)
 	if err != nil {
-		logger.Default.Logf(t, "failed to read %s: %v", tarGzFileName, err)
-		require.NoError(t, err, fmt.Sprintf("failed to read %s", tarGzFileName))
+		logger.Default.Logf(t, "failed to read %s: %v", archivePath, err)
+		require.NoError(t, err, fmt.Sprintf("failed to read %s", archivePath))
 	} else {
-		baseName := filepath.Base(tarGzFileName)
-		logger.Default.Logf(t, "Saved crust-gather.tar.gz to %s", tarGzFileName)
-		ginkgo.AddReportEntry(baseName, string(tarGzFileContent), ginkgo.ReportEntryVisibilityNever)
+		logger.Default.Logf(t, "Saved crust-gather.tar.gz to %s", archivePath)
+		allure.AddAttachment("crust-gather.tar.gz", allure.MimeTypeGZIP, tarGzFileContent)
 	}
 }

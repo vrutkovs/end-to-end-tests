@@ -80,6 +80,39 @@ func (p PrometheusClient) getFiringAlerts(ctx context.Context, t testing.Testing
 func (p PrometheusClient) CheckAlertIsFiring(ctx context.Context, t testing.TestingT, namespace, alertName string) {
 	query := fmt.Sprintf(`ALERTS{namespace="%s", alertname="%s", alertstate="firing"}`, namespace, alertName)
 
+	logger.Default.Logf(t, "running query %s", query)
+	result, _, err := p.Query(ctx, query)
+	if err != nil {
+		require.NoError(t, err, "Failed to query for alert %s for namespace %s", alertName, namespace)
+		return
+	}
+
+	if result.Type() != prommodel.ValVector {
+		require.Fail(t, fmt.Sprintf("Expected vector result for alert query, got %s", result.Type()))
+		return
+	}
+	vec, ok := result.(prommodel.Vector)
+	if !ok {
+		require.Fail(t, "Failed to cast result to prommodel.Vector")
+		return
+	}
+	require.GreaterOrEqual(t, len(vec), 1, "Alert %s should be present in results for namespace %s", alertName, namespace)
+
+	// Check that at least one alert is firing (value > 0)
+	firingCount := 0
+	for _, alert := range vec {
+		if alert.Value > 0 {
+			firingCount++
+		}
+	}
+	require.Greater(t, firingCount, 0, "Alert %s should be firing (value > 0) in namespace %s", alertName, namespace)
+}
+
+// CheckAlertWasFiring verifies that a specific alert was firing (value > 0) at some point in the past
+func (p PrometheusClient) CheckAlertWasFiringSince(ctx context.Context, t testing.TestingT, namespace, alertName, lookbackTime string) {
+	query := fmt.Sprintf(`sum_over_time(sum by (alertname,namespace) (ALERTS{namespace="%s", alertname="%s", alertstate="firing"})[%s]) > 0`, namespace, alertName, lookbackTime)
+
+	logger.Default.Logf(t, "running query %s", query)
 	result, _, err := p.Query(ctx, query)
 	if err != nil {
 		require.NoError(t, err, "Failed to query for alert %s for namespace %s", alertName, namespace)

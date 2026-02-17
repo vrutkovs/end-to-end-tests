@@ -116,6 +116,13 @@ func (b *JSONPatchBuilder) WithVMSingleConfig(cfgMapName, extraArgKey, configFil
 		add("/spec/configMaps/-", cfgMapName)
 }
 
+// WithExtraArg adds an extra argument to the VMSingle configuration.
+func (b *JSONPatchBuilder) WithExtraArg(key, value string) *JSONPatchBuilder {
+	return b.
+		add("/spec/extraArgs", map[string]string{}).
+		add("/spec/extraArgs/"+key, value)
+}
+
 func (b *JSONPatchBuilder) build() (jsonpatch.Patch, error) {
 	patchBytes, err := json.Marshal(b.operations)
 	if err != nil {
@@ -249,6 +256,12 @@ func (b *TimeSeriesBuilder) WithCount(count int) *TimeSeriesBuilder {
 // WithValue sets the value for the time series.
 func (b *TimeSeriesBuilder) WithValue(value float64) *TimeSeriesBuilder {
 	b.value = value
+	return b
+}
+
+// WithLabel adds a custom label to the time series.
+func (b *TimeSeriesBuilder) WithLabel(name, value string) *TimeSeriesBuilder {
+	b.labels[name] = value
 	return b
 }
 

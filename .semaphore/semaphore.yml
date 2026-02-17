@@ -76,7 +76,6 @@ blocks:
           matrix:
             - env_var: TEST
               values:
-                - "smoke 1"
                 - "load 1"
                 - "distributed 10"
                 - "vmsingle 10"

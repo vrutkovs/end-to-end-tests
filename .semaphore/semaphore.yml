@@ -17,10 +17,10 @@ global_job_config:
       value: "/home/semaphore/license.txt"
     # Set VMSingle version (image tag) here
     - name: VM_VMSINGLEDEFAULT_VERSION
-      value: "v1.122.14-enterprise"
+      value: "v1.122.15-enterprise"
     # Set VMCluster version (image tag) here
     - name: VM_VMCLUSTERDEFAULT_VERSION
-      value: "v1.122.14-cluster-enterprise"
+      value: "v1.122.15-cluster-enterprise"
     - name: GO_VERSION
       value: "1.25.3"
 

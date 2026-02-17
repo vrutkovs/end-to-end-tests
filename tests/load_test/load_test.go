@@ -95,7 +95,7 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 	})
 
 	Describe("Inner", func() {
-		It("Default installation should handle 50vus-30mins load test scenario", Label("kind", "gke", "id=d37b1987-a9e7-4d13-87b7-f2ded679c249"), func() {
+		It("Default installation should handle 50vus-30mins load test scenario", Label("kind", "id=d37b1987-a9e7-4d13-87b7-f2ded679c249"), func() {
 			By("Run 50vus-30mins scenario")
 			scenario := "vmselect-50vus-30mins"
 

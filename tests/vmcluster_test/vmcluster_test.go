@@ -94,7 +94,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 	})
 
 	Describe("Multitenancy", func() {
-		It("should not mix data sent to different tenants", Label("gke", "id=66618081-b150-4b48-8180-ae1f53512117"), func(ctx context.Context) {
+		It("should not mix data sent to different tenants", Label("id=66618081-b150-4b48-8180-ae1f53512117"), func(ctx context.Context) {
 			// Build remote write helpers for each tenant
 			tenant0Writer := tests.NewRemoteWriteBuilder().
 				WithHTTPClient(c).
@@ -168,7 +168,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 			require.Equal(t, value, model.SampleValue(5))
 		})
 
-		It("should accept data via multitenant URL", Label("gke", "id=16c08934-9e25-45ed-a94b-4fbbbe3170ef"), func(ctx context.Context) {
+		It("should accept data via multitenant URL", Label("id=16c08934-9e25-45ed-a94b-4fbbbe3170ef"), func(ctx context.Context) {
 			// Build remote write helper for multitenant endpoint
 			multitenantWriter := tests.NewRemoteWriteBuilder().
 				WithHTTPClient(c).
@@ -225,7 +225,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 			require.Equal(t, value, model.SampleValue(0))
 		})
 
-		It("should retrieve data from different tenants via multitenant URL", Label("gke", "id=7e075898-f6c4-49d5-9d7f-8a6163759065"), func(ctx context.Context) {
+		It("should retrieve data from different tenants via multitenant URL", Label("id=7e075898-f6c4-49d5-9d7f-8a6163759065"), func(ctx context.Context) {
 			// Build remote write helpers for each tenant
 			tenant0Writer := tests.NewRemoteWriteBuilder().
 				WithHTTPClient(c).
@@ -271,7 +271,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 	})
 
 	Describe("Relabeling", func() {
-		It("should relabel data sent via remote write", Label("gke", "id=e72f26ba-c1b7-4671-9c7e-7cfa630c33a9"), func(ctx context.Context) {
+		It("should relabel data sent via remote write", Label("id=e72f26ba-c1b7-4671-9c7e-7cfa630c33a9"), func(ctx context.Context) {
 			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 			tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 			vmclient := install.GetVMClient(t, kubeOpts)
@@ -352,7 +352,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 	})
 
 	Describe("Streaming Aggregation", func() {
-		It("should aggregate data with sum_samples output via VMAgent", Label("gke", "id=c3d4e5f6-a7b8-9012-cdef-345678901234"), func(ctx context.Context) {
+		It("should aggregate data with sum_samples output via VMAgent", Label("id=c3d4e5f6-a7b8-9012-cdef-345678901234"), func(ctx context.Context) {
 			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 			tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 			vmclient := install.GetVMClient(t, kubeOpts)
@@ -439,7 +439,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 
 	Describe("Ingestion", func() {
 		Context("InfluxDB", func() {
-			It("should ingest data via influxdb protocol to vmagent", Label("gke", "id=e5fba904-59b8-4440-97d5-9747dc78f959"), func(ctx context.Context) {
+			It("should ingest data via influxdb protocol to vmagent", Label("id=e5fba904-59b8-4440-97d5-9747dc78f959"), func(ctx context.Context) {
 				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 				tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 				vmclient := install.GetVMClient(t, kubeOpts)
@@ -487,7 +487,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				require.Equal(t, labels["foo"], model.LabelValue("bar"))
 			})
 
-			It("should ingest data via influxdb protocol to vminsert", Label("gke", "id=11223344-5566-7788-9900-aabbccddeeff"), func(ctx context.Context) {
+			It("should ingest data via influxdb protocol to vminsert", Label("id=11223344-5566-7788-9900-aabbccddeeff"), func(ctx context.Context) {
 				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 				tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 
@@ -516,7 +516,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 		})
 
 		Context("Datadog", func() {
-			It("should ingest data via datadog protocol to vmagent", Label("gke", "id=6862ebb3-0d9f-4af1-9359-08692c8dfc5c"), func(ctx context.Context) {
+			It("should ingest data via datadog protocol to vmagent", Label("id=6862ebb3-0d9f-4af1-9359-08692c8dfc5c"), func(ctx context.Context) {
 				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 				tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 				vmclient := install.GetVMClient(t, kubeOpts)
@@ -585,7 +585,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				require.Equal(t, labels["host"], model.LabelValue("test-host"))
 			})
 
-			It("should ingest data via datadog protocol to vminsert", Label("gke", "id=aabbccdd-1122-3344-5566-77889900aabb"), func(ctx context.Context) {
+			It("should ingest data via datadog protocol to vminsert", Label("id=aabbccdd-1122-3344-5566-77889900aabb"), func(ctx context.Context) {
 				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 				tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 
@@ -635,7 +635,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 		})
 
 		Context("OpenTelemetry", func() {
-			It("should ingest data via opentelemetry protocol to vminsert", Label("gke", "id=4e7c8581-2c93-4796-9817-219586111111"), func(ctx context.Context) {
+			It("should ingest data via opentelemetry protocol to vminsert", Label("id=4e7c8581-2c93-4796-9817-219586111111"), func(ctx context.Context) {
 				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 				tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 
@@ -706,7 +706,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				require.Equal(t, labels["foo"], model.LabelValue("bar"))
 			})
 
-			It("should ingest data via opentelemetry protocol to vmagent", Label("gke", "id=55667788-9900-aabb-ccdd-eeff11223344"), func(ctx context.Context) {
+			It("should ingest data via opentelemetry protocol to vmagent", Label("id=55667788-9900-aabb-ccdd-eeff11223344"), func(ctx context.Context) {
 				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 				tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 				vmclient := install.GetVMClient(t, kubeOpts)

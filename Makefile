@@ -44,6 +44,8 @@ VM_VMRESTOREDEFAULT_VERSION ?= $(VM_VMSINGLEDEFAULT_VERSION)
 
 LICENSE_FILE ?=
 
+VM_ENTERPRISE ?=
+
 # Configuration
 BIN_DIR := $(shell pwd)/bin
 GOPATH_BIN := $(shell go env GOPATH)/bin
@@ -87,6 +89,14 @@ EXTRA_FLAGS := -operator-registry=$(OPERATOR_REGISTRY) \
 
 ifneq ($(LICENSE_FILE),)
 	EXTRA_FLAGS += --license-file=$(LICENSE_FILE)
+endif
+
+GINKGO_FLAGS := -procs=$(PROCS) \
+	-timeout=$(TIMEOUT)
+ifneq ($(VM_ENTERPRISE),)
+	GINKGO_FLAGS += --label-filter='(enterprise||!enterprise)'
+else
+	GINKGO_FLAGS += --label-filter='!enterprise'
 endif
 
 # Targets
@@ -234,9 +244,7 @@ gke-run-test:
 		$(BIN_DIR)/kubectl config use-context production; \
 	fi; \
 	$(BIN_DIR)/ginkgo -v \
-		-procs=$(PROCS) \
-		-timeout=$(TIMEOUT) \
-		--label-filter=gke \
+	    $(GINKGO_FLAGS) \
 		"./tests/$(TEST_SUITE)_test" \
 		-- \
 		-env-k8s-distro=gke \

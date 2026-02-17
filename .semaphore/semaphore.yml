@@ -21,6 +21,9 @@ global_job_config:
     # Set VMCluster version (image tag) here
     - name: VM_VMCLUSTERDEFAULT_VERSION
       value: "v1.122.15-cluster-enterprise"
+    # Set to non-empty value if enterprise features are enabled
+    - name: VM_ENTERPRISE
+      value: "true"
     - name: GO_VERSION
       value: "1.25.3"
 

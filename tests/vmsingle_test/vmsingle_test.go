@@ -89,7 +89,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 	})
 
 	Describe("Relabeling", func() {
-		It("should relabel data sent via remote write", Label("gke", "id=aabbccdd-eeff-0011-2233-445566778899"), func(ctx context.Context) {
+		It("should relabel data sent via remote write", Label("id=aabbccdd-eeff-0011-2233-445566778899"), func(ctx context.Context) {
 			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 			tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 
@@ -159,7 +159,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 	})
 
 	Describe("Streaming Aggregation", func() {
-		It("should aggregate data with sum_samples output", Label("gke", "id=a1b2c3d4-e5f6-7890-abcd-ef1234567890"), func(ctx context.Context) {
+		It("should aggregate data with sum_samples output", Label("id=a1b2c3d4-e5f6-7890-abcd-ef1234567890"), func(ctx context.Context) {
 			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 			tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 
@@ -237,7 +237,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 
 	Describe("Ingestion", func() {
 		Context("InfluxDB", func() {
-			It("should ingest data via influxdb protocol", Label("gke", "id=b2c3d4e5-f6a7-8901-ba12-345678901234"), func(ctx context.Context) {
+			It("should ingest data via influxdb protocol", Label("id=b2c3d4e5-f6a7-8901-ba12-345678901234"), func(ctx context.Context) {
 				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 				tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 
@@ -268,7 +268,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 		})
 
 		Context("Datadog", func() {
-			It("should ingest data via datadog protocol", Label("gke", "id=905d5353-b40f-4822-a2ab-decd29f1ac12"), func(ctx context.Context) {
+			It("should ingest data via datadog protocol", Label("id=905d5353-b40f-4822-a2ab-decd29f1ac12"), func(ctx context.Context) {
 				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 				tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 
@@ -320,7 +320,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 		})
 
 		Context("OpenTelemetry", func() {
-			It("should ingest data via opentelemetry protocol", Label("gke", "id=55ca0534-1111-2222-3333-444455556666"), func(ctx context.Context) {
+			It("should ingest data via opentelemetry protocol", Label("id=55ca0534-1111-2222-3333-444455556666"), func(ctx context.Context) {
 				kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 				tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 
@@ -396,7 +396,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 	})
 
 	Describe("Backup and Restore", func() {
-		It("should backup and restore data via PVC", Label("gke", "id=8576d108-7357-4555-b4fa-7e8649186c07"), func(ctx context.Context) {
+		It("should backup and restore data via PVC", Label("id=8576d108-7357-4555-b4fa-7e8649186c07"), func(ctx context.Context) {
 			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 			tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 
@@ -573,7 +573,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 	})
 
 	Describe("Downsampling", func() {
-		It("should downsample data", Label("gke", "id=6028448d-69e3-4c55-83f2-111122223333"), func(ctx context.Context) {
+		It("should downsample data", Label("enterprise", "id=6028448d-69e3-4c55-83f2-111122223333"), func(ctx context.Context) {
 			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 			tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 
@@ -621,7 +621,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 	})
 
 	Describe("Retention Filters", func() {
-		It("should apply retention filters", Label("gke", "id=7028448d-69e3-4c55-83f2-111122223333"), func(ctx context.Context) {
+		It("should apply retention filters", Label("enterprise", "id=7028448d-69e3-4c55-83f2-111122223333"), func(ctx context.Context) {
 			kubeOpts := k8s.NewKubectlOptions("", "", namespace)
 			tests.EnsureNamespaceExists(t, kubeOpts, namespace)
 

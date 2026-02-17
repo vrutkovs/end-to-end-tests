@@ -128,7 +128,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 	}
 
-	Describe("pod restarts", Label("kind", "gke", "chaos-pod-failure"), func() {
+	Describe("pod restarts", Label("kind", "chaos-pod-failure"), func() {
 		DescribeTable("should handle pod failure scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)
@@ -160,7 +160,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		)
 	})
 
-	Describe("cpu stress", Label("kind", "gke", "chaos-cpu-stress"), func() {
+	Describe("cpu stress", Label("kind", "chaos-cpu-stress"), func() {
 		DescribeTable("should handle CPU stress scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)
@@ -195,7 +195,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		)
 	})
 
-	Describe("memory stress", Label("kind", "gke", "chaos-memory-stress"), func() {
+	Describe("memory stress", Label("kind", "chaos-memory-stress"), func() {
 		DescribeTable("should handle memory stress scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)
@@ -227,7 +227,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		)
 	})
 
-	Describe("io stress", Label("kind", "gke", "chaos-io-stress"), func() {
+	Describe("io stress", Label("kind", "chaos-io-stress"), func() {
 		DescribeTable("should handle IO stress scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)
@@ -260,13 +260,13 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		)
 	})
 
-	Describe("network failure", Label("kind", "gke", "chaos-network-failure"), func() {
+	Describe("network failure", Label("kind", "chaos-network-failure"), func() {
 		DescribeTable("should handle network chaos scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)
 			},
 			Entry("vminsert to vmstorage packet corrupt",
-				Label("gke", "id=ef3455cd-7687-49a4-b423-7c4541aa051c"),
+				Label("id=ef3455cd-7687-49a4-b423-7c4541aa051c"),
 				ChaosScenario{
 					ScenarioName: "vminsert-to-vmstorage-packet-corrupt",
 					Category:     "network",
@@ -274,7 +274,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				},
 			),
 			Entry("vmselect to vmstorage packet delay",
-				Label("gke", "id=e13108bd-00df-40f5-acc9-b134bc619dc8"),
+				Label("id=e13108bd-00df-40f5-acc9-b134bc619dc8"),
 				ChaosScenario{
 					ScenarioName: "vmselect-to-vmstorage-packet-delay",
 					Category:     "network",
@@ -282,7 +282,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				},
 			),
 			Entry("vmstorage from vminsert packet loss",
-				Label("gke", "id=490c384c-a995-4b46-a5c2-c37baa72beaf"),
+				Label("id=490c384c-a995-4b46-a5c2-c37baa72beaf"),
 				ChaosScenario{
 					ScenarioName: "vmstorage-from-vminsert-packet-loss",
 					Category:     "network",
@@ -290,7 +290,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				},
 			),
 			Entry("vmstorage from vmselect packet delay",
-				Label("gke", "id=260857d8-c49e-4ac3-92e4-220addcc4a53"),
+				Label("id=260857d8-c49e-4ac3-92e4-220addcc4a53"),
 				ChaosScenario{
 					ScenarioName: "vmstorage-from-vmselect-packet-delay",
 					Category:     "network",
@@ -304,7 +304,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				runChaosScenario(ctx, scenario)
 			},
 			Entry("vminsert request delay",
-				Label("gke", "id=98f0368b-b200-4558-a09f-37e7ceaa3b1d"),
+				Label("id=98f0368b-b200-4558-a09f-37e7ceaa3b1d"),
 				ChaosScenario{
 					ScenarioName: "vminsert-request-delay",
 					Category:     "http",
@@ -312,7 +312,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				},
 			),
 			Entry("vminsert response abort",
-				Label("gke", "id=d738fdd5-0076-4ddf-9358-2812a9cc3e2b"),
+				Label("id=d738fdd5-0076-4ddf-9358-2812a9cc3e2b"),
 				ChaosScenario{
 					ScenarioName: "vminsert-response-abort",
 					Category:     "http",
@@ -320,7 +320,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				},
 			),
 			Entry("vmselect request delay",
-				Label("gke", "id=3e1eff4c-dcda-442b-a477-85359ffc57b7"),
+				Label("id=3e1eff4c-dcda-442b-a477-85359ffc57b7"),
 				ChaosScenario{
 					ScenarioName: "vmselect-request-delay",
 					Category:     "http",
@@ -328,7 +328,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 				},
 			),
 			Entry("vmselect response abort",
-				Label("gke", "id=b2807243-8528-4500-b630-822ed9fce73d"),
+				Label("id=b2807243-8528-4500-b630-822ed9fce73d"),
 				ChaosScenario{
 					ScenarioName: "vmselect-response-abort",
 					Category:     "http",

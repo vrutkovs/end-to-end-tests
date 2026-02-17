@@ -58,7 +58,7 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 	})
 
 	Describe("Inner", func() {
-		It("Default installation should handle select requests for 5 mins", Label("kind", "gke", "id=37076a52-94ca-4de1-b1c8-029f8ce56bb7"), func() {
+		It("Default installation should handle select requests for 5 mins", Label("kind", "id=37076a52-94ca-4de1-b1c8-029f8ce56bb7"), func() {
 			By("Send requests for 5 minutes")
 			tickerPeriod := time.Second
 

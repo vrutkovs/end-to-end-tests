@@ -13,17 +13,20 @@ auto_cancel:
 global_job_config:
   env_vars:
     # Set LICENSE_FILE to /home/semaphore to enable passing the license file to VictoriaMetrics components
-    - name: LICENSE_FILE
-      value: "/home/semaphore/license.txt"
+    # - name: LICENSE_FILE
+    #   value: "/home/semaphore/license.txt"
     # Set VMSingle version (image tag) here
     - name: VM_VMSINGLEDEFAULT_VERSION
-      value: "v1.122.15-enterprise"
+      # value: "v1.122.15-enterprise"
+      value: "v1.136.0"
     # Set VMCluster version (image tag) here
     - name: VM_VMCLUSTERDEFAULT_VERSION
-      value: "v1.122.15-cluster-enterprise"
+      # value: "v1.122.15-cluster-enterprise"
+      value: "v1.136.0-cluster"
     # Set to non-empty value if enterprise features are enabled
     - name: VM_ENTERPRISE
-      value: "true"
+      # value: "true"
+      value: ""
     - name: GO_VERSION
       value: "1.25.3"
 

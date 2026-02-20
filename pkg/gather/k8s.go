@@ -55,7 +55,7 @@ func K8sAfterAll(ctx context.Context, t testing.TestingT, kubeOpts *k8s.KubectlO
 	reportDir := filepath.Join(reportsLocation, reportHash)
 
 	// Collect crust-gather folder
-	cmd := exec.CommandContext(timeBoundContext, "kubectl-crust-gather", "collect", "-f", reportDir)
+	cmd := exec.CommandContext(timeBoundContext, "kubectl-crust-gather", "collect", "-v", "WARN", "-f", reportDir)
 	var outb, errb bytes.Buffer
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb

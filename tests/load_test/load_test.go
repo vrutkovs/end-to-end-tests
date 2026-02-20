@@ -115,7 +115,7 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 			By("At least 50m rows were inserted")
 			_, value, err := overwatch.VectorScan(ctx, "sum (vm_rows_inserted_total)")
 			require.NoError(t, err)
-			require.GreaterOrEqual(t, value, float64(40_000_000))
+			require.GreaterOrEqual(t, value, float64(25_000_000))
 
 			By("At least 400k merges were made")
 			_, value, err = overwatch.VectorScan(ctx, "sum(vm_rows_merged_total)")

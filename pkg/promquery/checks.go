@@ -16,7 +16,7 @@ import (
 var (
 	DefaultExceptions = []string{
 		"InfoInhibitor", "Watchdog",
-		"RecordingRulesNoData", "NodeMemoryMajorPagesFaults",
+		"NodeMemoryMajorPagesFaults",
 	}
 )
 

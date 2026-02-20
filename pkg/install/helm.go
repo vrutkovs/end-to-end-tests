@@ -129,6 +129,10 @@ func InstallVMK8StackWithHelm(ctx context.Context, helmChart, valuesFile string,
 		fmt.Printf("Found helm.sh/chart label: %s\n", helmChartVersion)
 	}
 	consts.SetHelmChartVersion(helmChartVersion)
+
+	// Setup VMNodeScrape to get cadvisor metrics
+	manifestPath := "../../manifests/node-scrape.yaml"
+	k8s.KubectlApply(t, kubeOpts, manifestPath)
 }
 
 // buildVMDistributedValues creates Helm set values for VM component image tags based on the configured VM version.

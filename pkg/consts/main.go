@@ -184,6 +184,8 @@ var (
 	vmRestoreDefaultImage   string
 	vmRestoreDefaultVersion string
 	licenseFile             string
+	distributedRegion       string
+	distributedZones        string
 )
 
 // Setters
@@ -380,6 +382,18 @@ func SetLicenseFile(val string) {
 // Getters
 
 // ReportLocation returns the configured report location.
+func SetDistributedRegion(region string) {
+	mu.Lock()
+	defer mu.Unlock()
+	distributedRegion = region
+}
+
+func SetDistributedZones(zones string) {
+	mu.Lock()
+	defer mu.Unlock()
+	distributedZones = zones
+}
+
 func ReportLocation() string {
 	mu.Lock()
 	defer mu.Unlock()
@@ -665,6 +679,18 @@ func LicenseFile() string {
 	mu.Lock()
 	defer mu.Unlock()
 	return licenseFile
+}
+
+func DistributedRegion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return distributedRegion
+}
+
+func DistributedZones() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return distributedZones
 }
 
 // PrepareLicenseSecret creates a Secret manifest for the license key.

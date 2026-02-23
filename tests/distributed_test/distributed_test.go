@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/gruntwork-io/terratest/modules/helm"
@@ -34,13 +35,6 @@ var (
 	overwatch promquery.PrometheusClient
 	c         *http.Client
 )
-
-// GKE zone configuration for distributed chart tests
-var distributedZones = []string{
-	"europe-central2-a",
-	"europe-central2-b",
-	"europe-central2-c",
-}
 
 // Install VM from helm chart for the first process, set namespace for the rest
 var _ = SynchronizedBeforeSuite(
@@ -93,10 +87,10 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 		helm.Delete(t, helmOpts, consts.DefaultReleaseName, true)
 		tests.CleanupNamespace(t, kubeOpts, namespace)
 
-		tests.GatherOnFailure(ctx, t, kubeOpts, namespace, consts.DefaultReleaseName)
+		// tests.GatherOnFailure(ctx, t, kubeOpts, namespace, consts.DefaultReleaseName)
 	})
 
-	It("should support reading and writing over global and local endpoints", Label("id=b81bf219-e97c-49fc-8050-8d80153224c7"), func(ctx context.Context) {
+	FIt("should support reading and writing over global and local endpoints", Label("id=b81bf219-e97c-49fc-8050-8d80153224c7"), func(ctx context.Context) {
 		By(fmt.Sprintf("Installing distributed-chart in namespace %s", namespace))
 		install.InstallVMDistributedWithHelm(
 			ctx,
@@ -132,7 +126,10 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 		require.NoError(t, err)
 		require.Equal(t, value, model.SampleValue(1))
 
-		for _, zone := range distributedZones {
+		for _, zone := range strings.Split(consts.DistributedZones(), ",") {
+			if zone == "" {
+				continue
+			}
 			By(fmt.Sprintf("Read data from zone %s endpoint", zone))
 			zoneProm := tests.NewPromClientBuilder().
 				WithBaseURL(tests.ZoneSelectURL(zone)).

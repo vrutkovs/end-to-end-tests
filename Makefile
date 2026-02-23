@@ -51,6 +51,7 @@ BIN_DIR := $(shell pwd)/bin
 GOPATH_BIN := $(shell go env GOPATH)/bin
 export PATH := $(BIN_DIR):$(GOPATH_BIN):$(PATH)
 GCP_REGION ?= europe-central2
+DISTRIBUTED_ZONES ?= $(GCP_REGION)-a,$(GCP_REGION)-b,$(GCP_REGION)-c
 
 OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 ARCH := $(shell uname -m)
@@ -85,7 +86,9 @@ EXTRA_FLAGS := -operator-registry=$(OPERATOR_REGISTRY) \
 	-vm-vmalertdefault-image=$(VM_VMALERTDEFAULT_IMAGE) \
 	-vm-vmalertdefault-version=$(VM_VMALERTDEFAULT_VERSION) \
 	-vm-vmauthdefault-image=$(VM_VMAUTHDEFAULT_IMAGE) \
-	-vm-vmauthdefault-version=$(VM_VMAUTHDEFAULT_VERSION)
+	-vm-vmauthdefault-version=$(VM_VMAUTHDEFAULT_VERSION) \
+	-distributed-region=$(GCP_REGION) \
+	-distributed-zones=$(DISTRIBUTED_ZONES)
 
 ifneq ($(LICENSE_FILE),)
 	EXTRA_FLAGS += --license-file=$(LICENSE_FILE)
@@ -219,7 +222,7 @@ gke-provision: gcloud-auth
 	cd terraform/gke && \
 		export GOOGLE_APPLICATION_CREDENTIALS="$(HOME)/gcloud-service-key.json" && \
 		terraform init && \
-		terraform apply -auto-approve -var="cluster_name=$(TEST_SUITE)-$(SEMAPHORE_WORKFLOW_NUMBER)"
+		terraform apply -auto-approve -var="cluster_name=$(TEST_SUITE)-$(SEMAPHORE_WORKFLOW_NUMBER)" -var="region=$(GCP_REGION)"
 
 .PHONY: gke-prepare-access
 gke-prepare-access: gcloud-auth
@@ -256,7 +259,7 @@ clean-gke: gcloud-auth
 	cd terraform/gke && \
 		export GOOGLE_APPLICATION_CREDENTIALS="$(HOME)/gcloud-service-key.json" && \
 		terraform init && \
-		terraform destroy -auto-approve -var="cluster_name=$(TEST_SUITE)-$(SEMAPHORE_WORKFLOW_NUMBER)"
+		terraform destroy -auto-approve -var="cluster_name=$(TEST_SUITE)-$(SEMAPHORE_WORKFLOW_NUMBER)" -var="region=$(GCP_REGION)"
 	# Disk cleanup
 	@echo "Cleaning up unused disks in $(GCP_REGION)..."
 	@for zone_suffix in a b c; do \

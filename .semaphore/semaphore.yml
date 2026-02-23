@@ -29,6 +29,10 @@ global_job_config:
       value: ""
     - name: GO_VERSION
       value: "1.25.3"
+    - name: GCP_REGION
+      value: "europe-central2"
+    - name: DISTRIBUTED_ZONES
+      value: "europe-central2-a,europe-central2-b,europe-central2-c"
 
 blocks:
   - name: Unit Tests

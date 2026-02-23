@@ -40,6 +40,8 @@ var (
 	vmRestoreDefaultImage   string
 	vmRestoreDefaultVersion string
 	licenseFile             string
+	distributedRegion       string
+	distributedZones        string
 )
 
 func init() {
@@ -75,6 +77,8 @@ func init() {
 	flag.StringVar(&vmRestoreDefaultImage, "vm-vmrestoredefault-image", os.Getenv("VM_VMRESTOREDEFAULT_IMAGE"), "Default image for VMRestore")
 	flag.StringVar(&vmRestoreDefaultVersion, "vm-vmrestoredefault-version", os.Getenv("VM_VMRESTOREDEFAULT_VERSION"), "Default version for VMRestore")
 	flag.StringVar(&licenseFile, "license-file", "", "Path to license file")
+	flag.StringVar(&distributedRegion, "distributed-region", "europe-central2", "Region for distributed tests")
+	flag.StringVar(&distributedZones, "distributed-zones", "europe-central2-a,europe-central2-b,europe-central2-c", "Zones for distributed tests")
 }
 
 // Init initializes test configuration by parsing flags and setting up constants.
@@ -119,4 +123,6 @@ func Init() {
 	consts.SetVMRestoreDefaultVersion(vmRestoreDefaultVersion)
 
 	consts.SetLicenseFile(licenseFile)
+	consts.SetDistributedRegion(distributedRegion)
+	consts.SetDistributedZones(distributedZones)
 }

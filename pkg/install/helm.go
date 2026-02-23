@@ -147,6 +147,13 @@ func buildVMDistributedValues(namespace string) map[string]string {
 	// Set region-specific ingress hosts
 	setValues["zoneTpl.read.vmauth.spec.ingress.host"] = fmt.Sprintf("vmselect-{{ (.zone).name }}.%s.nip.io", consts.NginxHost())
 
+	zones := strings.Split(consts.DistributedZones(), ",")
+	for i, zone := range zones {
+		if trimmedZone := strings.TrimSpace(zone); trimmedZone != "" {
+			setValues[fmt.Sprintf("availabilityZones[%d].name", i)] = trimmedZone
+		}
+	}
+
 	return setValues
 }
 

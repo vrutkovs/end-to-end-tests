@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/gruntwork-io/terratest/modules/logger"
@@ -120,8 +119,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 
 		if scenario.CheckAlert != "" {
 			By(fmt.Sprintf("Only %s is firing", scenario.CheckAlert))
-			lookbackWindow := time.Since(overwatch.Start)
-			overwatch.CheckAlertWasFiringSince(ctx, t, namespace, scenario.CheckAlert, lookbackWindow.String())
+			overwatch.CheckAlertIsFiring(ctx, t, namespace, scenario.CheckAlert)
 		} else {
 			By("No alerts are firing")
 			overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{scenario.CheckAlert})

@@ -485,6 +485,20 @@ func VMInsertHost(namespace string) string {
 	return fmt.Sprintf("vminsert-%s.%s.nip.io", namespace, host)
 }
 
+// AlertManagerHost returns the hostname for AlertManager in the given namespace.
+func AlertManagerHost(namespace string) string {
+	mu.Lock()
+	host := nginxHost
+	mu.Unlock()
+	if host == "" {
+		return ""
+	}
+	if namespace == "" {
+		return fmt.Sprintf("alert.%s.nip.io", host)
+	}
+	return fmt.Sprintf("alert-%s.%s.nip.io", namespace, host)
+}
+
 // VMGatherHost returns the hostname for VMGather.
 func VMGatherHost() string {
 	mu.Lock()

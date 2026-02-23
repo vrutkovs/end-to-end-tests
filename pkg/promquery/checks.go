@@ -3,11 +3,17 @@ package promquery
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"regexp"
 	"strings"
 
+	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/gruntwork-io/terratest/modules/testing"
-	prommodel "github.com/prometheus/common/model"
+	amclient "github.com/prometheus/alertmanager/api/v2/client"
+	"github.com/prometheus/alertmanager/api/v2/client/alert"
+	"github.com/prometheus/alertmanager/api/v2/models"
 	"github.com/stretchr/testify/require"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
@@ -49,93 +55,81 @@ func (p PrometheusClient) WaitUntilNoAlertsFiring(ctx context.Context, t testing
 }
 
 func (p PrometheusClient) getFiringAlerts(ctx context.Context, t testing.TestingT, namespace string, exceptions []string) ([]string, error) {
-	allExceptions := append(DefaultExceptions, exceptions...)
-	query := fmt.Sprintf(`sum by (alertname) (ALERTS{namespace="%s", alertname!~"%s", alertstate="firing"})`, namespace, strings.Join(allExceptions, "|"))
-
-	logger.Default.Logf(t, "running query %s", query)
-	result, _, err := p.Query(ctx, query)
+	alerts, err := p.getAlertsFromAM(ctx, t, namespace, "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute query %s: %w", query, err)
-	}
-
-	if result.Type() != prommodel.ValVector {
-		return nil, fmt.Errorf("expected vector result, got %s", result.Type())
-	}
-	vec, ok := result.(prommodel.Vector)
-	if !ok {
-		return nil, fmt.Errorf("failed to cast result to prommodel.Vector")
+		return nil, err
 	}
 
 	var firing []string
-	for _, alert := range vec {
-		if alert.Value != 0 {
-			firing = append(firing, fmt.Sprintf("%s (value: %s)", alert.Metric, alert.Value))
+	allExceptions := append(DefaultExceptions, exceptions...)
+
+	for _, alert := range alerts {
+		name := alert.Labels["alertname"]
+		isExcepted := false
+		for _, ex := range allExceptions {
+			// Exceptions are regex patterns
+			matched, err := regexp.MatchString(ex, name)
+			if err == nil && matched {
+				isExcepted = true
+				break
+			}
+		}
+		if !isExcepted {
+			firing = append(firing, fmt.Sprintf("%s (labels: %v)", name, alert.Labels))
 		}
 	}
-
 	return firing, nil
 }
 
-// CheckAlertIsFiring verifies that a specific alert is currently firing (value > 0)
-func (p PrometheusClient) CheckAlertIsFiring(ctx context.Context, t testing.TestingT, namespace, alertName string) {
-	query := fmt.Sprintf(`ALERTS{namespace="%s", alertname="%s", alertstate="firing"}`, namespace, alertName)
-
-	logger.Default.Logf(t, "running query %s", query)
-	result, _, err := p.Query(ctx, query)
-	if err != nil {
-		require.NoError(t, err, "Failed to query for alert %s for namespace %s", alertName, namespace)
-		return
-	}
-
-	if result.Type() != prommodel.ValVector {
-		require.Fail(t, fmt.Sprintf("Expected vector result for alert query, got %s", result.Type()))
-		return
-	}
-	vec, ok := result.(prommodel.Vector)
-	if !ok {
-		require.Fail(t, "Failed to cast result to prommodel.Vector")
-		return
-	}
-	require.GreaterOrEqual(t, len(vec), 1, "Alert %s should be present in results for namespace %s", alertName, namespace)
-
-	// Check that at least one alert is firing (value > 0)
-	firingCount := 0
-	for _, alert := range vec {
-		if alert.Value > 0 {
-			firingCount++
-		}
-	}
-	require.Greater(t, firingCount, 0, "Alert %s should be firing (value > 0) in namespace %s", alertName, namespace)
+// CheckAlertIsFiring verifies that a specific alert (or selector) is currently firing.
+func (p PrometheusClient) CheckAlertIsFiring(ctx context.Context, t testing.TestingT, namespace, selector string) {
+	alerts, err := p.getAlertsFromAM(ctx, t, namespace, selector)
+	require.NoError(t, err, "Failed to get alerts from Alertmanager")
+	require.NotEmpty(t, alerts, "Alert %s should be firing in namespace %s", selector, namespace)
 }
 
-// CheckAlertWasFiring verifies that a specific alert was firing (value > 0) at some point in the past
-func (p PrometheusClient) CheckAlertWasFiringSince(ctx context.Context, t testing.TestingT, namespace, alertName, lookbackTime string) {
-	query := fmt.Sprintf(`sum_over_time(sum by (alertname,namespace) (ALERTS{namespace="%s", alertname="%s", alertstate="firing"})[%s]) > 0`, namespace, alertName, lookbackTime)
+// CheckAlertWasFiringSince verifies that a specific alert (or selector) was firing.
+// When using Alertmanager, it checks if the alert is currently active.
+func (p PrometheusClient) CheckAlertWasFiringSince(ctx context.Context, t testing.TestingT, namespace, selector, lookbackTime string) {
+	alerts, err := p.getAlertsFromAM(ctx, t, namespace, selector)
+	require.NoError(t, err, "Failed to get alerts from Alertmanager")
+	require.NotEmpty(t, alerts, "Alert %s should be firing in namespace %s", selector, namespace)
+}
 
-	logger.Default.Logf(t, "running query %s", query)
-	result, _, err := p.Query(ctx, query)
+func (p PrometheusClient) getAlertsFromAM(ctx context.Context, t testing.TestingT, namespace, selector string) ([]*models.GettableAlert, error) {
+	amHost := consts.AlertManagerHost(namespace)
+	u, err := url.Parse(fmt.Sprintf("http://%s", amHost))
 	if err != nil {
-		require.NoError(t, err, "Failed to query for alert %s for namespace %s", alertName, namespace)
-		return
+		return nil, err
 	}
 
-	if result.Type() != prommodel.ValVector {
-		require.Fail(t, fmt.Sprintf("Expected vector result for alert query, got %s", result.Type()))
-		return
-	}
-	vec, ok := result.(prommodel.Vector)
-	if !ok {
-		require.Fail(t, "Failed to cast result to prommodel.Vector")
-		return
-	}
-	require.GreaterOrEqual(t, len(vec), 1, "Alert %s should be present in results for namespace %s", alertName, namespace)
+	transport := httptransport.New(u.Host, "/api/v2", []string{u.Scheme})
+	c := amclient.New(transport, strfmt.Default)
 
-	// Check that at least one alert is firing (value > 0)
-	firingCount := 0
-	for _, alert := range vec {
-		if alert.Value > 0 {
-			firingCount++
+	params := alert.NewGetAlertsParams().WithContext(ctx)
+	params.Filter = []string{
+		fmt.Sprintf("namespace=%s", namespace),
+		"state=active",
+	}
+
+	if selector != "" {
+		if strings.Contains(selector, "=") {
+			// Assume comma-separated list of filters
+			parts := strings.Split(selector, ",")
+			for _, part := range parts {
+				params.Filter = append(params.Filter, strings.Trim(strings.TrimSpace(part), "{}"))
+			}
+		} else {
+			params.Filter = append(params.Filter, fmt.Sprintf("alertname=%s", selector))
 		}
 	}
-	require.Greater(t, firingCount, 0, "Alert %s should be firing (value > 0) in namespace %s", alertName, namespace)
+
+	logger.Default.Logf(t, "Requesting alerts from AM: %s with filters %v", amHost, params.Filter)
+
+	resp, err := c.Alert.GetAlerts(params)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
 }

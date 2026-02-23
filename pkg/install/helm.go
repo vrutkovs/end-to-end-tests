@@ -24,6 +24,8 @@ func buildVMK8StackValues(namespace string) map[string]string {
 	setValues := map[string]string{
 		"vmcluster.ingress.select.hosts[0]": consts.VMSelectHost(namespace),
 		"vmcluster.ingress.insert.hosts[0]": consts.VMInsertHost(namespace),
+		"alertmanager.ingress.enabled":      "true",
+		"alertmanager.ingress.hosts[0]":     consts.AlertManagerHost(namespace),
 	}
 
 	if consts.OperatorImageRegistry() != "" {

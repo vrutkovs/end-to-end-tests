@@ -3,6 +3,9 @@ package install
 import (
 	"context"
 	"fmt"
+	"os"
+
+	"sigs.k8s.io/yaml"
 
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	vmclient "github.com/VictoriaMetrics/operator/api/client/versioned"
@@ -66,6 +69,25 @@ func WaitForVMAlertToBeOperational(ctx context.Context, t terratesting.TestingT,
 // AddCustomAlertRules creates a VMRule with custom alerts
 func AddCustomAlertRules(ctx context.Context, t terratesting.TestingT, namespace string) {
 	manifestPath := "../../manifests/custom-alerts.yaml"
-	kubeOpts := k8s.NewKubectlOptions("", "", consts.DefaultVMNamespace)
-	k8s.KubectlApply(t, kubeOpts, manifestPath)
+	manifest, err := os.ReadFile(manifestPath)
+	require.NoError(t, err)
+
+	docJson, err := yaml.YAMLToJSON(manifest)
+	require.NoError(t, err)
+
+	patchOps := []PatchOp{
+		{
+			Op:    "replace",
+			Path:  "/metadata/namespace",
+			Value: namespace,
+		},
+	}
+	patch, err := CreateJsonPatch(patchOps)
+	require.NoError(t, err)
+
+	docJson, err = patch.Apply(docJson)
+	require.NoError(t, err)
+
+	kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+	k8s.KubectlApplyFromString(t, kubeOpts, string(docJson))
 }

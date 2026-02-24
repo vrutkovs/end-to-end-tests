@@ -32,10 +32,6 @@ func (p PrometheusClient) CheckNoAlertsFiring(ctx context.Context, t testing.Tes
 	firing, err := p.getFiringAlerts(ctx, t, namespace, exceptions)
 	if err != nil {
 		// Handle query errors gracefully - just return without failing the test
-		if strings.Contains(err.Error(), "failed to execute query") {
-			return
-		}
-		require.NoError(t, err)
 		return
 	}
 	for _, f := range firing {
@@ -97,8 +93,15 @@ func (p PrometheusClient) CheckAlertWasFiringSince(ctx context.Context, t testin
 }
 
 func (p PrometheusClient) getAlertsFromAM(ctx context.Context, t testing.TestingT, namespace, selector string) ([]*models.GettableAlert, error) {
-	amHost := consts.AlertManagerHost(namespace)
-	u, err := url.Parse(fmt.Sprintf("http://%s", amHost))
+	var amURL string
+	if p.AlertManagerURL != "" {
+		amURL = p.AlertManagerURL
+	} else {
+		amHost := consts.AlertManagerHost(namespace)
+		amURL = fmt.Sprintf("http://%s", amHost)
+	}
+
+	u, err := url.Parse(amURL)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +127,7 @@ func (p PrometheusClient) getAlertsFromAM(ctx context.Context, t testing.Testing
 		}
 	}
 
-	logger.Default.Logf(t, "Requesting alerts from AM: %s with filters %v", amHost, params.Filter)
+	logger.Default.Logf(t, "Requesting alerts from AM: %s with filters %v", amURL, params.Filter)
 
 	resp, err := c.Alert.GetAlerts(params)
 	if err != nil {

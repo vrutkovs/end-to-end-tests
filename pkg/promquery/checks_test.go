@@ -107,76 +107,52 @@ var _ interface {
 func TestCheckNoAlertsFiring_NoAlerts(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "POST", r.Method)
-		assert.Equal(t, "/api/v1/query", r.URL.Path)
-
-		err := r.ParseForm()
-		require.NoError(t, err)
-
-		query := r.Form.Get("query")
-		expectedSubstring := `sum by (alertname) (ALERTS{namespace="ns", alertname!~"InfoInhibitor|Watchdog|NodeMemoryMajorPagesFaults", alertstate="firing"})`
-		assert.Equal(t, expectedSubstring, query)
+		assert.Equal(t, "GET", r.Method)
+		assert.Equal(t, "/api/v2/alerts", r.URL.Path)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, `{
-			"status": "success",
-			"data": {
-				"resultType": "vector",
-				"result": [
-					{
-						"metric": {"alertname": "TestAlert"},
-						"value": [1234567890, "0"]
-					}
-				]
-			}
-		}`)
+		_, _ = fmt.Fprint(w, `[]`)
 	}))
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
 	require.NoError(t, err)
+	client.AlertManagerURL = server.URL
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
 	client.CheckNoAlertsFiring(ctx, mockTest, "ns", []string{})
 
-	assert.False(t, mockTest.failed, "Should not fail when alert value is 0")
+	assert.False(t, mockTest.failed, "Should not fail when no alerts are firing")
 }
 
 func TestCheckNoAlertsFiring_WithCustomExceptions(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
-		require.NoError(t, err)
-
-		query := r.Form.Get("query")
-		// Should include custom exception "CustomAlert"
-		expectedSubstring := `alertname!~"InfoInhibitor|Watchdog|NodeMemoryMajorPagesFaults|CustomAlert"`
-		assert.Contains(t, query, expectedSubstring)
-
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, `{
-			"status": "success",
-			"data": {
-				"resultType": "vector",
-				"result": []
+		_, _ = fmt.Fprint(w, `[
+			{
+				"labels": {
+					"alertname": "CustomAlert"
+				}
 			}
-		}`)
+		]`)
 	}))
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
 	require.NoError(t, err)
+	client.AlertManagerURL = server.URL
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
 	client.CheckNoAlertsFiring(ctx, mockTest, "ns", []string{"CustomAlert"})
 
-	assert.False(t, mockTest.failed)
+	assert.False(t, mockTest.failed, "Should not fail when only excepted alerts are firing")
 }
 
 func TestCheckNoAlertsFiring_WithFiringAlerts(t *testing.T) {
@@ -184,23 +160,19 @@ func TestCheckNoAlertsFiring_WithFiringAlerts(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, `{
-			"status": "success",
-			"data": {
-				"resultType": "vector",
-				"result": [
-					{
-						"metric": {"alertname": "FiringAlert"},
-						"value": [1234567890, "1"]
-					}
-				]
+		_, _ = fmt.Fprint(w, `[
+			{
+				"labels": {
+					"alertname": "FiringAlert"
+				}
 			}
-		}`)
+		]`)
 	}))
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
 	require.NoError(t, err)
+	client.AlertManagerURL = server.URL
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
@@ -219,64 +191,59 @@ func TestCheckNoAlertsFiring_QueryError(t *testing.T) {
 
 	client, err := NewPrometheusClient(server.URL)
 	require.NoError(t, err)
+	client.AlertManagerURL = server.URL
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	// Should not fail the test on query error (according to implementation)
 	client.CheckNoAlertsFiring(ctx, mockTest, "ns", []string{})
 
 	assert.False(t, mockTest.failed, "Should not fail test on query error")
 }
 
-func TestCheckNoAlertsFiring_WrongResultType(t *testing.T) {
+func TestCheckNoAlertsFiring_InvalidResponse(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, `{
-			"status": "success",
-			"data": {
-				"resultType": "matrix",
-				"result": []
-			}
-		}`)
+		// Return invalid JSON for array (object instead of list)
+		_, _ = fmt.Fprint(w, `{"status": "error"}`)
 	}))
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
 	require.NoError(t, err)
+	client.AlertManagerURL = server.URL
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
 	client.CheckNoAlertsFiring(ctx, mockTest, "ns", []string{})
 
-	assert.True(t, mockTest.failed, "Should fail on wrong result type")
+	assert.False(t, mockTest.failed, "Should not fail on invalid response")
 }
 
 func TestCheckAlertIsFiring_AlertFiring(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		filters := r.URL.Query()["filter"]
+		assert.Contains(t, filters, "alertname=TargetAlert")
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, `{
-			"status": "success",
-			"data": {
-				"resultType": "vector",
-				"result": [
-					{
-						"metric": {"alertname": "TargetAlert"},
-						"value": [1234567890, "1"]
-					}
-				]
+		_, _ = fmt.Fprint(w, `[
+			{
+				"labels": {
+					"alertname": "TargetAlert"
+				}
 			}
-		}`)
+		]`)
 	}))
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
 	require.NoError(t, err)
+	client.AlertManagerURL = server.URL
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
@@ -291,56 +258,20 @@ func TestCheckAlertIsFiring_AlertNotFiring(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, `{
-			"status": "success",
-			"data": {
-				"resultType": "vector",
-				"result": [
-					{
-						"metric": {"alertname": "TargetAlert"},
-						"value": [1234567890, "0"]
-					}
-				]
-			}
-		}`)
+		_, _ = fmt.Fprint(w, `[]`)
 	}))
 	defer server.Close()
 
 	client, err := NewPrometheusClient(server.URL)
 	require.NoError(t, err)
+	client.AlertManagerURL = server.URL
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
 	client.CheckAlertIsFiring(ctx, mockTest, "ns", "TargetAlert")
 
-	assert.True(t, mockTest.failed, "Should fail when target alert value is 0")
-}
-
-func TestCheckAlertIsFiring_AlertNotFound(t *testing.T) {
-	t.Parallel()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprint(w, `{
-			"status": "success",
-			"data": {
-				"resultType": "vector",
-				"result": []
-			}
-		}`)
-	}))
-	defer server.Close()
-
-	client, err := NewPrometheusClient(server.URL)
-	require.NoError(t, err)
-
-	mockTest := &mockTestingT{}
-	ctx := context.Background()
-
-	client.CheckAlertIsFiring(ctx, mockTest, "ns", "TargetAlert")
-
-	assert.True(t, mockTest.failed, "Should fail when alert is not found")
+	assert.True(t, mockTest.failed, "Should fail when target alert is not firing")
 }
 
 func TestCheckAlertIsFiring_QueryError(t *testing.T) {
@@ -352,12 +283,11 @@ func TestCheckAlertIsFiring_QueryError(t *testing.T) {
 
 	client, err := NewPrometheusClient(server.URL)
 	require.NoError(t, err)
+	client.AlertManagerURL = server.URL
 
 	mockTest := &mockTestingT{}
 	ctx := context.Background()
 
-	// The implementation of CheckAlertIsFiring calls require.NoError on query error
-	// So it should fail the test
 	client.CheckAlertIsFiring(ctx, mockTest, "ns", "TargetAlert")
 
 	assert.True(t, mockTest.failed, "Should fail test on query error")

@@ -20,6 +20,9 @@ const (
 type PrometheusClient struct {
 	client promv1.API
 	Start  time.Time
+	// AlertManagerURL is the URL of the Alertmanager to use for alert checks.
+	// If empty, the URL is derived from the namespace.
+	AlertManagerURL string
 }
 
 // NewPrometheusClient creates a new PrometheusClient for the given URL.

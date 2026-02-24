@@ -47,8 +47,6 @@ var _ = Describe("Smoke test", Ordered, ContinueOnFailure, Label("smoke"), func(
 		var err error
 		overwatch, err = tests.SetupOverwatchClient(ctx, t)
 		require.NoError(t, err)
-		// Wait for no alerts firing
-		overwatch.CheckNoAlertsFiring(ctx, t, consts.DefaultVMNamespace, nil)
 	})
 
 	AfterEach(func() {

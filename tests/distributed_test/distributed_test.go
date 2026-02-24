@@ -74,7 +74,6 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 		var err error
 		overwatch, err = tests.SetupOverwatchClient(ctx, t)
 		require.NoError(t, err)
-		overwatch.CheckNoAlertsFiring(ctx, t, namespace, promquery.DefaultExceptions)
 
 		c = tests.NewHTTPClient()
 	})

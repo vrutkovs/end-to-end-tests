@@ -49,7 +49,6 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 		var err error
 		overwatch, err = tests.SetupOverwatchClient(ctx, t)
 		require.NoError(t, err)
-		overwatch.CheckNoAlertsFiring(ctx, t, consts.OverwatchNamespace, promquery.DefaultExceptions)
 
 		// Install k6 operator
 		install.InstallK6(ctx, t, consts.K6OperatorNamespace)

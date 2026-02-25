@@ -112,7 +112,10 @@ func InstallVMK8StackWithHelm(ctx context.Context, helmChart, valuesFile string,
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmagent-vmks", consts.Retries, consts.PollingInterval)
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmalert-vmks", consts.Retries, consts.PollingInterval)
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vminsert-vmks", consts.Retries, consts.PollingInterval)
-	k8s.RunKubectl(t, kubeOpts, "wait", "--for=condition=Ready", "pod", "-l", "app.kubernetes.io/name=vmalertmanager", "--timeout=300s")
+	require.Eventually(t, func() bool {
+		_, err := k8s.RunKubectlAndGetOutputE(t, kubeOpts, "wait", "--for=condition=Ready", "pod", "-l", "app.kubernetes.io/name=vmalertmanager", "--timeout=300s")
+		return err == nil
+	}, consts.ResourceWaitTimeout, consts.PollingInterval)
 
 	// Extract version information from ingress labels
 	vmSelectIngress := k8s.GetIngress(t, kubeOpts, "vmselect-vmks")

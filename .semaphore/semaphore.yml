@@ -1,9 +1,8 @@
 version: v1.0
 name: VictoriaMetrics E2E Tests
-
 agent:
   machine:
-    type: e1-standard-2
+    type: e2-standard-2
     os_image: ubuntu2404
 execution_time_limit:
   hours: 2
@@ -12,28 +11,18 @@ auto_cancel:
     when: 'true'
 global_job_config:
   env_vars:
-    # Set LICENSE_FILE to /home/semaphore to enable passing the license file to VictoriaMetrics components
-    # - name: LICENSE_FILE
-    #   value: "/home/semaphore/license.txt"
-    # Set VMSingle version (image tag) here
     - name: VM_VMSINGLEDEFAULT_VERSION
-      # value: "v1.122.15-enterprise"
-      value: "v1.136.0"
-    # Set VMCluster version (image tag) here
+      value: v1.136.0
     - name: VM_VMCLUSTERDEFAULT_VERSION
-      # value: "v1.122.15-cluster-enterprise"
-      value: "v1.136.0-cluster"
-    # Set to non-empty value if enterprise features are enabled
+      value: v1.136.0-cluster
     - name: VM_ENTERPRISE
-      # value: "true"
-      value: ""
+      value: ''
     - name: GO_VERSION
-      value: "1.25.3"
+      value: 1.25.3
     - name: GCP_REGION
-      value: "europe-central2"
+      value: europe-central2
     - name: DISTRIBUTED_ZONES
-      value: "europe-central2-a,europe-central2-b,europe-central2-c"
-
+      value: 'europe-central2-a,europe-central2-b,europe-central2-c'
 blocks:
   - name: Unit Tests
     dependencies: []
@@ -62,6 +51,10 @@ blocks:
         always:
           commands:
             - artifact push workflow /tmp/allure-results
+      agent:
+        machine:
+          type: e2-standard-2
+          os_image: ubuntu2204
   - name: GKE Tests
     dependencies:
       - Smoke Test
@@ -83,11 +76,11 @@ blocks:
           matrix:
             - env_var: TEST
               values:
-                - "load 1"
-                - "distributed 10"
-                - "vmsingle 10"
-                - "vmcluster 10"
-                - "chaos 10"
+                - load 1
+                - distributed 10
+                - vmsingle 10
+                - vmcluster 10
+                - chaos 10
       epilogue:
         always:
           commands:

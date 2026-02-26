@@ -129,6 +129,19 @@ func TestOperatorVersion(t *testing.T) {
 	assert.Equal(t, testValue, result)
 }
 
+func TestVMVersion(t *testing.T) {
+	testValue := "v1.77.0"
+	testValue2 := "v1.78.0"
+
+	SetVMVersion(testValue)
+	result := VMVersion()
+	assert.Equal(t, testValue, result)
+
+	SetVMVersion(testValue2)
+	result = VMVersion()
+	assert.Equal(t, testValue2, result)
+}
+
 func TestOperatorImageSettings(t *testing.T) {
 	testRegistry := "test-registry"
 	testRepository := "test-repository"
@@ -162,6 +175,7 @@ func TestConcurrentAccess(t *testing.T) {
 				SetNginxHost(testValue)
 				SetHelmChartVersion(testValue)
 				SetOperatorVersion(testValue)
+				SetVMVersion(testValue)
 				SetOperatorImageRegistry(testValue)
 				SetOperatorImageRepository(testValue)
 				SetOperatorImageTag(testValue)
@@ -185,6 +199,7 @@ func TestConcurrentAccess(t *testing.T) {
 				_ = VMSelectHost("test")
 				_ = HelmChartVersion()
 				_ = OperatorVersion()
+				_ = VMVersion()
 				_ = OperatorImageRegistry()
 				_ = OperatorImageRepository()
 				_ = OperatorImageTag()
@@ -205,6 +220,7 @@ func TestInitialValues(t *testing.T) {
 	SetNginxHost("")
 	SetHelmChartVersion("")
 	SetOperatorVersion("")
+	SetVMVersion("")
 	SetOperatorImageRegistry("")
 	SetOperatorImageRepository("")
 	SetOperatorImageTag("")
@@ -227,6 +243,7 @@ func TestInitialValues(t *testing.T) {
 
 	assert.Empty(t, HelmChartVersion(), "Initial HelmChartVersion should be empty")
 	assert.Empty(t, OperatorVersion(), "Initial OperatorVersion should be empty")
+	assert.Empty(t, VMVersion(), "Initial VMVersion should be empty")
 	assert.Empty(t, OperatorImageRegistry(), "Initial OperatorImageRegistry should be empty")
 	assert.Empty(t, OperatorImageRepository(), "Initial OperatorImageRepository should be empty")
 	assert.Empty(t, OperatorImageTag(), "Initial OperatorImageTag should be empty")
@@ -538,6 +555,7 @@ func TestConstantsValidity(t *testing.T) {
 	}{
 		{"HelmChartVersion", HelmChartVersion(), false}, // May be empty in test environment
 		{"OperatorVersion", OperatorVersion(), false},   // May be empty in test environment
+		{"VMVersion", VMVersion(), false},
 		{"OperatorImageRegistry", OperatorImageRegistry(), false},
 		{"OperatorImageRepository", OperatorImageRepository(), false},
 		{"OperatorImageTag", OperatorImageTag(), false},

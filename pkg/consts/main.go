@@ -152,6 +152,7 @@ var (
 
 	helmChartVersion string
 	operatorVersion  string
+	vmVersion        string
 
 	operatorImageRegistry   string
 	operatorImageRepository string
@@ -223,6 +224,13 @@ func SetOperatorVersion(val string) {
 	mu.Lock()
 	defer mu.Unlock()
 	operatorVersion = val
+}
+
+// SetVMVersion sets the detected VictoriaMetrics Operator version.
+func SetVMVersion(val string) {
+	mu.Lock()
+	defer mu.Unlock()
+	vmVersion = val
 }
 
 // SetOperatorImageRegistry sets the operator image registry.
@@ -539,6 +547,13 @@ func OperatorVersion() string {
 	mu.Lock()
 	defer mu.Unlock()
 	return operatorVersion
+}
+
+// VMVersion returns the stored Operator version.
+func VMVersion() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return vmVersion
 }
 
 // OperatorImageRegistry returns the stored operator image registry.

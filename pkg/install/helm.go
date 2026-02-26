@@ -126,6 +126,7 @@ func InstallVMK8StackWithHelm(ctx context.Context, helmChart, valuesFile string,
 	} else {
 		fmt.Printf("Found VM version label: %s\n", vmVersion)
 	}
+	consts.SetVMVersion(vmVersion)
 
 	helmChartVersion := vmOperator.Labels["helm.sh/chart"]
 	if helmChartVersion == "" {

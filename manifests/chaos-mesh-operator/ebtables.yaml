@@ -26,7 +26,7 @@ spec:
         command: ["/bin/bash", "-c"]
         args:
         - |
-          set -ex
+          set -x
 
           echo "Entering host filesystem at /host..."
           chroot /host /bin/bash <<'EOF'

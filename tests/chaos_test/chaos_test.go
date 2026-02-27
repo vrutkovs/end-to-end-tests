@@ -109,7 +109,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		ScenarioName string
 		Category     string
 		ChaosType    string
-		CheckAlert   string
+		CheckAlerts  []string
 	}
 
 	// Helper function to run a chaos scenario
@@ -117,12 +117,14 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		By(fmt.Sprintf("Running %s scenario", scenario.ScenarioName))
 		install.RunChaosScenario(ctx, t, namespace, scenario.Category, scenario.ScenarioName, scenario.ChaosType)
 
-		if scenario.CheckAlert != "" {
-			By(fmt.Sprintf("Only %s is firing", scenario.CheckAlert))
-			overwatch.CheckAlertIsFiring(ctx, t, namespace, scenario.CheckAlert)
+		if len(scenario.CheckAlerts) > 0 {
+			for _, alert := range scenario.CheckAlerts {
+				By(fmt.Sprintf("Alert %s is firing", alert))
+				overwatch.CheckAlertIsFiring(ctx, t, namespace, alert)
+			}
 		} else {
 			By("No alerts are firing")
-			overwatch.CheckNoAlertsFiring(ctx, t, namespace, []string{scenario.CheckAlert})
+			overwatch.CheckNoAlertsFiring(ctx, t, namespace, nil)
 		}
 	}
 
@@ -137,7 +139,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vminsert-pod-failure",
 					Category:     "pods",
 					ChaosType:    "podchaos",
-					CheckAlert:   "ServiceDown",
+					CheckAlerts:  []string{"ServiceDown"},
 				},
 			),
 			Entry("vmstorage pod failure",
@@ -146,7 +148,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vmstorage-pod-failure",
 					Category:     "pods",
 					ChaosType:    "podchaos",
-					CheckAlert:   "ServiceDown",
+					CheckAlerts:  []string{"ServiceDown"},
 				},
 			),
 			Entry("vmselect pod failure",
@@ -155,7 +157,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vmselect-pod-failure",
 					Category:     "pods",
 					ChaosType:    "podchaos",
-					CheckAlert:   "ServiceDown",
+					CheckAlerts:  []string{"ServiceDown"},
 				},
 			),
 		)
@@ -172,7 +174,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vminsert-cpu-usage",
 					Category:     "cpu",
 					ChaosType:    "stresschaos",
-					CheckAlert:   "CustomTooHighSlowInsertsRate",
+					CheckAlerts:  []string{"CustomTooHighSlowInsertsRate"},
 				},
 			),
 			Entry("vmstorage CPU stress",
@@ -181,7 +183,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vmstorage-cpu-usage",
 					Category:     "cpu",
 					ChaosType:    "stresschaos",
-					// CheckAlert:   "CPUThrottlingHigh",
+					// CheckAlerts:  []string{"CPUThrottlingHigh"},
 				},
 			),
 			Entry("vmselect CPU stress",
@@ -190,7 +192,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vmselect-cpu-usage",
 					Category:     "cpu",
 					ChaosType:    "stresschaos",
-					// CheckAlert:   "CPUThrottlingHigh",
+					// CheckAlerts:  []string{"CPUThrottlingHigh"},
 				},
 			),
 		)
@@ -280,7 +282,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vmselect-to-vmstorage-packet-delay",
 					Category:     "network",
 					ChaosType:    "networkchaos",
-					CheckAlert:   "ServiceDown",
+					CheckAlerts:  []string{"ServiceDown"},
 				},
 			),
 			Entry("vmstorage from vminsert packet loss",
@@ -289,7 +291,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vmstorage-from-vminsert-packet-loss",
 					Category:     "network",
 					ChaosType:    "networkchaos",
-					CheckAlert:   "ServiceDown",
+					CheckAlerts:  []string{"ServiceDown"},
 				},
 			),
 			Entry("vmstorage from vmselect packet delay",
@@ -320,7 +322,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vminsert-response-abort",
 					Category:     "http",
 					ChaosType:    "httpchaos",
-					CheckAlert:   "ServiceDown",
+					CheckAlerts:  []string{"ServiceDown"},
 				},
 			),
 			Entry("vmselect request delay",
@@ -329,7 +331,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vmselect-request-delay",
 					Category:     "http",
 					ChaosType:    "httpchaos",
-					CheckAlert:   "ServiceDown",
+					CheckAlerts:  []string{"ServiceDown"},
 				},
 			),
 			Entry("vmselect response abort",

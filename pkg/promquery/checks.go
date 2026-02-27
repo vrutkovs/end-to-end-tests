@@ -112,7 +112,6 @@ func (p PrometheusClient) getAlertsFromAM(ctx context.Context, t testing.Testing
 	params := alert.NewGetAlertsParams().WithContext(ctx)
 	params.Filter = []string{
 		fmt.Sprintf("namespace=%s", namespace),
-		"state=active",
 	}
 
 	if selector != "" {

@@ -11,6 +11,6 @@ spec:
   mode: all
   stressors:
     memory:
-      size: 100%
-      workers: 16
+      size: 800Mb
+      workers: 128
   duration: 7m

@@ -209,6 +209,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vminsert-memory-usage",
 					Category:     "memory",
 					ChaosType:    "stresschaos",
+					CheckAlerts:  []string{"CustomHighMemoryUsage"},
 				},
 			),
 			Entry("vmstorage memory stress",
@@ -217,6 +218,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vmstorage-memory-usage",
 					Category:     "memory",
 					ChaosType:    "stresschaos",
+					CheckAlerts:  []string{"CustomHighMemoryUsage"},
 				},
 			),
 			Entry("vmselect memory stress",
@@ -225,6 +227,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vmselect-memory-usage",
 					Category:     "memory",
 					ChaosType:    "stresschaos",
+					CheckAlerts:  []string{"CustomHighMemoryUsage"},
 				},
 			),
 		)

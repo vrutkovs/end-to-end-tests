@@ -65,6 +65,9 @@ var _ = SynchronizedBeforeSuite(
 		// Remove stock VMCluster - it would be recreated in vm* namespaces
 		kubeOpts := k8s.NewKubectlOptions("", "", consts.DefaultVMNamespace)
 		install.DeleteVMCluster(t, kubeOpts, consts.DefaultReleaseName)
+
+		// Add custom alert rules
+		install.AddCustomAlertRules(ctx, t, consts.DefaultVMNamespace)
 	}, func(ctx context.Context) {
 		t = tests.GetT()
 		namespace = tests.ParallelNamespace("vm")
@@ -89,9 +92,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 			namespace)
 		logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
 		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, consts.DefaultVMNamespace, consts.DefaultReleaseName, remoteWriteURL)
-
-		// Add custom alert rules
-		install.AddCustomAlertRules(ctx, t, namespace)
 	})
 
 	AfterEach(func(ctx context.Context) {

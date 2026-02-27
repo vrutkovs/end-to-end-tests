@@ -111,6 +111,30 @@ variable "vm_preemptible_nodes" {
   default     = true
 }
 
+variable "monitoring_min_node_count" {
+  description = "Minimum number of nodes for the monitoring node pool autoscaling"
+  type        = number
+  default     = 1
+}
+
+variable "monitoring_max_node_count" {
+  description = "Maximum number of nodes for the monitoring node pool autoscaling"
+  type        = number
+  default     = 2
+}
+
+variable "monitoring_machine_type" {
+  description = "Machine type for monitoring nodes"
+  type        = string
+  default     = "e2-standard-4"
+}
+
+variable "monitoring_disk_size_gb" {
+  description = "Disk size for monitoring nodes in GB"
+  type        = number
+  default     = 50
+}
+
 variable "update_domain" {
   description = "Whether to update the DNS record for the k8s.cloud.vrutkovs.eu domain"
   type        = bool

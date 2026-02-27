@@ -103,6 +103,42 @@ resource "google_container_cluster" "primary" {
       }
     }
   }
+  node_pool {
+    name       = "monitoring-nodes"
+    node_count = var.monitoring_min_node_count
+
+    autoscaling {
+      min_node_count  = var.monitoring_min_node_count
+      max_node_count  = var.monitoring_max_node_count
+      location_policy = "ANY"
+    }
+
+    management {
+      auto_repair  = true
+      auto_upgrade = true
+    }
+
+    node_config {
+      preemptible  = false
+      machine_type = var.monitoring_machine_type
+      disk_size_gb = var.monitoring_disk_size_gb
+      disk_type    = "pd-standard"
+      image_type   = "UBUNTU_CONTAINERD"
+
+      service_account = google_service_account.kubernetes.email
+
+      labels = {
+        monitoring = "true"
+      }
+
+      taint {
+        key    = "monitoring"
+        value  = "true"
+        effect = "NO_SCHEDULE"
+      }
+    }
+  }
+
   monitoring_config {
     managed_prometheus {
       enabled = false

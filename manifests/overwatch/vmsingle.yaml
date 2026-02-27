@@ -3,6 +3,12 @@ kind: VMSingle
 metadata:
   name: overwatch
 spec:
+  nodeSelector:
+    monitoring: "true"
+  tolerations:
+    - key: monitoring
+      value: "true"
+      effect: NoSchedule
   extraArgs:
     maxLabelsPerTimeseries: "50"
   initContainers:

@@ -97,7 +97,7 @@ func (p PrometheusClient) getAlertsFromAM(ctx context.Context, t testing.Testing
 	if p.AlertManagerURL != "" {
 		amURL = p.AlertManagerURL
 	} else {
-		amHost := consts.AlertManagerHost(namespace)
+		amHost := consts.AlertManagerHost(consts.DefaultVMNamespace)
 		amURL = fmt.Sprintf("http://%s", amHost)
 	}
 

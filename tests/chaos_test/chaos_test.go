@@ -186,7 +186,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					CheckAlerts:  []string{"CustomCPUThrottlingHigh"},
 				},
 			),
-			FEntry("vmselect CPU stress",
+			Entry("vmselect CPU stress",
 				Label("id=f6637d83-be2a-44ab-b446-9c755bad4292"),
 				ChaosScenario{
 					ScenarioName: "vmselect-cpu-usage",

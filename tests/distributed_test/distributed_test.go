@@ -89,7 +89,7 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 		// tests.GatherOnFailure(ctx, t, kubeOpts, namespace, consts.DefaultReleaseName)
 	})
 
-	FIt("should support reading and writing over global and local endpoints", Label("id=b81bf219-e97c-49fc-8050-8d80153224c7"), func(ctx context.Context) {
+	It("should support reading and writing over global and local endpoints", Label("id=b81bf219-e97c-49fc-8050-8d80153224c7"), func(ctx context.Context) {
 		By(fmt.Sprintf("Installing distributed-chart in namespace %s", namespace))
 		install.InstallVMDistributedWithHelm(
 			ctx,

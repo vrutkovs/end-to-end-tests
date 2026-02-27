@@ -77,7 +77,7 @@ blocks:
             - env_var: TEST
               values:
                 - load 1
-                - distributed 10
+                - distributed 1
                 - vmsingle 10
                 - vmcluster 10
                 - chaos 10

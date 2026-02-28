@@ -12,11 +12,13 @@ auto_cancel:
 global_job_config:
   env_vars:
     - name: VM_VMSINGLEDEFAULT_VERSION
-      value: v1.137.0-rc0
+      value: v1.137.0-enterprise-rc0
     - name: VM_VMCLUSTERDEFAULT_VERSION
-      value: v1.137.0-cluster-rc0
+      value: v1.137.0-enterprise-cluster-rc0
     - name: VM_ENTERPRISE
-      value: ''
+      value: 'true'
+    - name: LICENSE_FILE
+      value: "/home/semaphore/license.txt"
     - name: GO_VERSION
       value: 1.25.3
     - name: GCP_REGION

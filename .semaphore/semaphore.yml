@@ -12,9 +12,9 @@ auto_cancel:
 global_job_config:
   env_vars:
     - name: VM_VMSINGLEDEFAULT_VERSION
-      value: v1.136.0
+      value: v1.137.0-rc0
     - name: VM_VMCLUSTERDEFAULT_VERSION
-      value: v1.136.0-cluster
+      value: v1.137.0-cluster-rc0
     - name: VM_ENTERPRISE
       value: ''
     - name: GO_VERSION

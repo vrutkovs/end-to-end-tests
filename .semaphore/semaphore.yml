@@ -12,14 +12,14 @@ auto_cancel:
 global_job_config:
   env_vars:
     # LTS release
-    # - name: VM_VMSINGLEDEFAULT_VERSION
-    #   value: v1.136.1-enterprise
-    # - name: VM_VMCLUSTERDEFAULT_VERSION
-    #   value: v1.136.1-enterprise-cluster
-    # - name: VM_ENTERPRISE
-    #   value: 'true'
-    # - name: LICENSE_FILE
-    #   value: "/home/semaphore/license.txt"
+    - name: VM_VMSINGLEDEFAULT_VERSION
+      value: v1.136.1-enterprise
+    - name: VM_VMCLUSTERDEFAULT_VERSION
+      value: v1.136.1-enterprise-cluster
+    - name: VM_ENTERPRISE
+      value: 'true'
+    - name: LICENSE_FILE
+      value: "/home/semaphore/license.txt"
 
     # Enterprise release
     # - name: VM_VMSINGLEDEFAULT_VERSION
@@ -32,12 +32,12 @@ global_job_config:
     #   value: "/home/semaphore/license.txt"
 
     # Latest release
-    - name: VM_VMSINGLEDEFAULT_VERSION
-      value: v1.137.0
-    - name: VM_VMCLUSTERDEFAULT_VERSION
-      value: v1.137.0-cluster
-    - name: VM_ENTERPRISE
-      value: ''
+    # - name: VM_VMSINGLEDEFAULT_VERSION
+    #   value: v1.137.0
+    # - name: VM_VMCLUSTERDEFAULT_VERSION
+    #   value: v1.137.0-cluster
+    # - name: VM_ENTERPRISE
+    #   value: ''
 
     - name: GO_VERSION
       value: 1.25.3

@@ -103,7 +103,7 @@ else
 endif
 
 ifneq ($(FLAKE_ATTEMPTS),)
-	EXTRA_FLAGS += --flake-attempts=$(FLAKE_ATTEMPTS)
+	EXTRA_FLAGS += --ginkgo.flake-attempts=$(FLAKE_ATTEMPTS)
 endif
 
 # Targets

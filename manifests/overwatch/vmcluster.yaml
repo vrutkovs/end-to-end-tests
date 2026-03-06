@@ -17,6 +17,10 @@ spec:
       requests:
         cpu: 150m
         memory: 200Mi
+    tolerations:
+    - effect: NoSchedule
+      key: monitoring
+      operator: Exists
   vmselect:
     cacheMountPath: /select-cache
     extraArgs:
@@ -39,6 +43,10 @@ spec:
           resources:
             requests:
               storage: 2Gi
+    tolerations:
+    - effect: NoSchedule
+      key: monitoring
+      operator: Exists
   vmstorage:
     replicaCount: 2
     persistentVolumeClaimRetentionPolicy:
@@ -60,5 +68,5 @@ spec:
     storageDataPath: /vm-data
     tolerations:
     - effect: NoSchedule
-      key: storage
+      key: monitoring
       operator: Exists

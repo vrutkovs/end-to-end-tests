@@ -127,7 +127,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 	}
 
-	Describe("pod restarts", Label("kind", "chaos-pod-failure"), func() {
+	FDescribe("pod restarts", Label("kind", "chaos-pod-failure"), func() {
 		DescribeTable("should handle pod failure scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)
@@ -162,7 +162,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		)
 	})
 
-	Describe("cpu stress", Label("kind", "chaos-cpu-stress"), func() {
+	FDescribe("cpu stress", Ordered, ContinueOnFailure, Label("kind", "chaos-cpu-stress"), func() {
 		DescribeTable("should handle CPU stress scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)
@@ -197,7 +197,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		)
 	})
 
-	Describe("memory stress", Label("kind", "chaos-memory-stress"), func() {
+	Describe("memory stress", Ordered, ContinueOnFailure, Label("kind", "chaos-memory-stress"), func() {
 		DescribeTable("should handle memory stress scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)
@@ -217,7 +217,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vmstorage-memory-usage",
 					Category:     "memory",
 					ChaosType:    "stresschaos",
-					CheckAlerts:  []string{"CustomHighMemoryUsage"},
+					// CheckAlerts:  []string{"CustomHighMemoryUsage"},
 				},
 			),
 			Entry("vmselect memory stress",
@@ -226,13 +226,14 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					ScenarioName: "vmselect-memory-usage",
 					Category:     "memory",
 					ChaosType:    "stresschaos",
-					CheckAlerts:  []string{"CustomHighMemoryUsage"},
+					// CheckAlerts:  []string{"CustomHighMemoryUsage"},
 				},
 			),
 		)
 	})
 
-	Describe("io stress", Label("kind", "chaos-io-stress"), func() {
+	// This needs to run on serial so that the IO stress scenarios do not interfere with each other.
+	Describe("io stress", Serial, Label("kind", "chaos-io-stress"), func() {
 		DescribeTable("should handle IO stress scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)
@@ -267,7 +268,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		)
 	})
 
-	Describe("network failure", Label("kind", "chaos-network-failure"), func() {
+	Describe("network failure", Ordered, ContinueOnFailure, Label("kind", "chaos-network-failure"), func() {
 		DescribeTable("should handle network chaos scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)

@@ -17,6 +17,8 @@ spec:
       requests:
         cpu: 150m
         memory: 200Mi
+    nodeSelector:
+      monitoring: "true"
     tolerations:
     - effect: NoSchedule
       key: monitoring
@@ -43,6 +45,8 @@ spec:
           resources:
             requests:
               storage: 2Gi
+    nodeSelector:
+      monitoring: "true"
     tolerations:
     - effect: NoSchedule
       key: monitoring
@@ -66,6 +70,8 @@ spec:
             requests:
               storage: 10Gi
     storageDataPath: /vm-data
+    nodeSelector:
+      monitoring: "true"
     tolerations:
     - effect: NoSchedule
       key: monitoring

@@ -114,10 +114,6 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 							"matchExpressions": []map[string]interface{}{
 								{
 									"key":      "app.kubernetes.io/instance",
-									"operator": "Exists",
-								},
-								{
-									"key":      "app.kubernetes.io/instance",
 									"operator": "NotIn",
 									"values":   []string{clusterName},
 								},
@@ -195,7 +191,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		)
 	})
 
-	Describe("cpu stress", Serial, Label("kind", "chaos-cpu-stress"), func() {
+	Describe("cpu stress", Label("kind", "chaos-cpu-stress"), func() {
 		DescribeTable("should handle CPU stress scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)
@@ -265,8 +261,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		)
 	})
 
-	// This needs to run on serial so that the IO stress scenarios do not interfere with each other.
-	Describe("io stress", Serial, Label("kind", "chaos-io-stress"), func() {
+	Describe("io stress", Label("kind", "chaos-io-stress"), func() {
 		DescribeTable("should handle IO stress scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)

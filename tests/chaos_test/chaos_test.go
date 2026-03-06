@@ -28,8 +28,7 @@ func TestChaosTestsTests(t *testing.T) {
 }
 
 var (
-	t         terratesting.TestingT
-	overwatch promquery.PrometheusClient
+	t terratesting.TestingT
 )
 
 // Install VM from helm chart for the first process, set namespace for the rest
@@ -104,7 +103,38 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 
 		// Create new VMCluster object
 		vmclient := install.GetVMClient(t, kubeOpts)
-		install.InstallVMCluster(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{})
+
+		clusterName := namespace
+		affinity := map[string]interface{}{
+			"podAntiAffinity": map[string]interface{}{
+				"requiredDuringSchedulingIgnoredDuringExecution": []map[string]interface{}{
+					{
+						"topologyKey": "kubernetes.io/hostname",
+						"labelSelector": map[string]interface{}{
+							"matchExpressions": []map[string]interface{}{
+								{
+									"key":      "app.kubernetes.io/instance",
+									"operator": "Exists",
+								},
+								{
+									"key":      "app.kubernetes.io/instance",
+									"operator": "NotIn",
+									"values":   []string{clusterName},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		patches := []jsonpatch.Patch{
+			tests.NewJSONPatchBuilder().
+				Add("/metadata/name", clusterName).
+				Add("/spec/vminsert/affinity", affinity).
+				MustBuild(),
+		}
+		install.InstallVMCluster(ctx, t, kubeOpts, namespace, vmclient, patches)
 		By("VMCluster is available")
 
 		// Ensure VMAgent remote write URL is set up
@@ -128,7 +158,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		}
 	}
 
-	FDescribe("pod restarts", Label("kind", "chaos-pod-failure"), func() {
+	Describe("pod restarts", Label("kind", "chaos-pod-failure"), func() {
 		DescribeTable("should handle pod failure scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)
@@ -163,7 +193,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		)
 	})
 
-	FDescribe("cpu stress", Ordered, ContinueOnFailure, Label("kind", "chaos-cpu-stress"), func() {
+	Describe("cpu stress", Label("kind", "chaos-cpu-stress"), func() {
 		DescribeTable("should handle CPU stress scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)
@@ -198,7 +228,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		)
 	})
 
-	Describe("memory stress", Ordered, ContinueOnFailure, Label("kind", "chaos-memory-stress"), func() {
+	Describe("memory stress", Label("kind", "chaos-memory-stress"), func() {
 		DescribeTable("should handle memory stress scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)
@@ -269,7 +299,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		)
 	})
 
-	Describe("network failure", Ordered, ContinueOnFailure, Label("kind", "chaos-network-failure"), func() {
+	Describe("network failure", Label("kind", "chaos-network-failure"), func() {
 		DescribeTable("should handle network chaos scenarios",
 			func(ctx context.Context, scenario ChaosScenario) {
 				runChaosScenario(ctx, scenario)

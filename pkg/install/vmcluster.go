@@ -60,7 +60,8 @@ func InstallVMCluster(ctx context.Context, t terratesting.TestingT, kubeOpts *k8
 
 	// Apply the VMCluster manifest
 	fmt.Printf("Installing VMCluster in namespace %s\n", namespace)
-	k8s.KubectlApplyFromString(t, kubeOpts, string(vmclusterJson))
+	vmclusterString := string(vmclusterJson)
+	k8s.KubectlApplyFromString(t, kubeOpts, vmclusterString)
 
 	// Wait for VMCluster to become operational
 	WaitForVMClusterToBeOperational(ctx, t, kubeOpts, namespace, vmclient)

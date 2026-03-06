@@ -95,9 +95,18 @@ func NewJSONPatchBuilder() *JSONPatchBuilder {
 	}
 }
 
-func (b *JSONPatchBuilder) add(path string, value interface{}) *JSONPatchBuilder {
+func (b *JSONPatchBuilder) Add(path string, value interface{}) *JSONPatchBuilder {
 	b.operations = append(b.operations, patchOperation{
 		Op:    "add",
+		Path:  path,
+		Value: value,
+	})
+	return b
+}
+
+func (b *JSONPatchBuilder) Replace(path string, value interface{}) *JSONPatchBuilder {
+	b.operations = append(b.operations, patchOperation{
+		Op:    "replace",
 		Path:  path,
 		Value: value,
 	})
@@ -110,17 +119,17 @@ func (b *JSONPatchBuilder) WithVMSingleConfig(cfgMapName, extraArgKey, configFil
 	// Ensure parent paths exist before adding child entries to avoid
 	// "doc is missing path" errors when applying the JSON patch.
 	return b.
-		add("/spec/extraArgs", map[string]string{}).
-		add("/spec/extraArgs/"+extraArgKey, configPath).
-		add("/spec/configMaps", []string{}).
-		add("/spec/configMaps/-", cfgMapName)
+		Add("/spec/extraArgs", map[string]string{}).
+		Add("/spec/extraArgs/"+extraArgKey, configPath).
+		Add("/spec/configMaps", []string{}).
+		Add("/spec/configMaps/-", cfgMapName)
 }
 
 // WithExtraArg adds an extra argument to the VMSingle configuration.
 func (b *JSONPatchBuilder) WithExtraArg(key, value string) *JSONPatchBuilder {
 	return b.
-		add("/spec/extraArgs", map[string]string{}).
-		add("/spec/extraArgs/"+key, value)
+		Add("/spec/extraArgs", map[string]string{}).
+		Add("/spec/extraArgs/"+key, value)
 }
 
 func (b *JSONPatchBuilder) build() (jsonpatch.Patch, error) {

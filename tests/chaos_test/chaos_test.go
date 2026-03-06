@@ -29,7 +29,6 @@ func TestChaosTestsTests(t *testing.T) {
 
 var (
 	t         terratesting.TestingT
-	namespace string
 	overwatch promquery.PrometheusClient
 )
 
@@ -70,37 +69,10 @@ var _ = SynchronizedBeforeSuite(
 		install.AddCustomAlertRules(ctx, t, consts.DefaultVMNamespace)
 	}, func(ctx context.Context) {
 		t = tests.GetT()
-		namespace = tests.RandomNamespace("vm")
 	},
 )
 
 var _ = Describe("Chaos tests", Label("chaos-test"), func() {
-	BeforeEach(func(ctx context.Context) {
-		var err error
-		overwatch, err = tests.SetupOverwatchClient(ctx, t)
-		require.NoError(t, err)
-		overwatch.CheckNoAlertsFiring(ctx, t, namespace, promquery.DefaultExceptions)
-
-		// Create new VMCluster object
-		kubeOpts := k8s.NewKubectlOptions("", "", namespace)
-		vmclient := install.GetVMClient(t, kubeOpts)
-		install.InstallVMCluster(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{})
-
-		// Ensure VMAgent remote write URL is set up
-		remoteWriteURL := fmt.Sprintf(
-			"http://vminsert-vm.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write",
-			namespace)
-		logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
-		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, consts.DefaultVMNamespace, consts.DefaultReleaseName, remoteWriteURL)
-	})
-
-	AfterEach(func(ctx context.Context) {
-		kubeOpts := k8s.NewKubectlOptions("", "", namespace)
-
-		tests.GatherOnFailure(ctx, t, kubeOpts, namespace, consts.DefaultReleaseName)
-		install.DeleteVMCluster(t, kubeOpts, namespace)
-		tests.CleanupNamespace(t, kubeOpts, namespace)
-	})
 
 	// ChaosScenario represents a chaos test scenario configuration
 	type ChaosScenario struct {
@@ -113,6 +85,35 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 
 	// Helper function to run a chaos scenario
 	runChaosScenario := func(ctx context.Context, scenario ChaosScenario) {
+		overwatch, err := tests.SetupOverwatchClient(ctx, t)
+		require.NoError(t, err)
+
+		namespace := fmt.Sprintf("vm-%s", scenario.ScenarioName)
+		kubeOpts := k8s.NewKubectlOptions("", "", namespace)
+
+		tests.CleanupNamespace(t, kubeOpts, namespace)
+		tests.EnsureNamespaceExists(t, kubeOpts, namespace)
+
+		defer func() {
+			tests.GatherOnFailure(ctx, t, kubeOpts, namespace, consts.DefaultReleaseName)
+			install.DeleteVMCluster(t, kubeOpts, namespace)
+			tests.CleanupNamespace(t, kubeOpts, namespace)
+		}()
+
+		overwatch.CheckNoAlertsFiring(ctx, t, namespace, promquery.DefaultExceptions)
+
+		// Create new VMCluster object
+		vmclient := install.GetVMClient(t, kubeOpts)
+		install.InstallVMCluster(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{})
+		By("VMCluster is available")
+
+		// Ensure VMAgent remote write URL is set up
+		remoteWriteURL := fmt.Sprintf(
+			"http://vminsert-vm.%s.svc.cluster.local.:8480/insert/0/prometheus/api/v1/write",
+			namespace)
+		logger.Default.Logf(t, "Setting vmagent remote write URL to %s", remoteWriteURL)
+		install.EnsureVMAgentRemoteWriteURL(ctx, t, vmclient, kubeOpts, consts.DefaultVMNamespace, consts.DefaultReleaseName, remoteWriteURL)
+
 		By(fmt.Sprintf("Running %s scenario", scenario.ScenarioName))
 		install.RunChaosScenario(ctx, t, namespace, scenario.Category, scenario.ScenarioName, scenario.ChaosType)
 

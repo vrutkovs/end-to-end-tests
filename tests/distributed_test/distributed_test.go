@@ -114,7 +114,6 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 		err := globalWriter.Send(fooTimeSeries)
 		require.NoError(t, err)
 
-		tests.WaitForDataPropagation()
 
 		By("Read data from global read endpoint")
 		globalProm := tests.NewPromClientBuilder().
@@ -122,7 +121,7 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 			WithStartTime(overwatch.Start).
 			MustBuild()
 
-		_, value, err := globalProm.VectorScan(ctx, "foo_2")
+		_, value, err := tests.RetryVectorScan(ctx, t, namespace, globalProm, "foo_2", 5)
 		require.NoError(t, err)
 		require.Equal(t, value, model.SampleValue(1))
 
@@ -136,7 +135,7 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			_, value, err := zoneProm.VectorScan(ctx, "foo_2")
+			_, value, err := tests.RetryVectorScan(ctx, t, namespace, zoneProm, "foo_2", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
 		}

@@ -19,6 +19,8 @@ import (
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/gather"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/install"
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/promquery"
+
+	prommodel "github.com/prometheus/common/model"
 )
 
 // OverwatchStart records the time tests started collecting metrics via overwatch.
@@ -261,4 +263,30 @@ func DefaultChaosMeshConfig() ChaosMeshConfig {
 		Namespace:   consts.ChaosMeshNamespace,
 		ReleaseName: consts.ChaosMeshReleaseName,
 	}
+}
+
+// RetryVectorScan retries a VectorScan query up to a specified number of times,
+// waiting for data propagation between attempts. It is useful for intermittent 502s
+// or data propagation delays.
+func RetryVectorScan(ctx context.Context, t terratesting.TestingT, namespace string, prom promquery.PrometheusClient, query string, maxRetries int) (prommodel.Metric, prommodel.SampleValue, error) {
+	var lastErr error
+	var lastMetric prommodel.Metric
+	var lastValue prommodel.SampleValue
+
+	for i := 0; i < maxRetries; i++ {
+		metric, value, err := prom.VectorScan(ctx, query)
+		lastErr = err
+		lastMetric = metric
+		lastValue = value
+		if err == nil {
+			return metric, value, nil
+		}
+		logger.Default.Logf(t, "Attempt %d: VectorScan for %q failed: %v", i+1, query, err)
+		WaitForDataPropagation()
+	}
+
+	if lastErr != nil {
+		logger.Default.Logf(t, "Final VectorScan failure for %q: %v", query, lastErr)
+	}
+	return lastMetric, lastValue, lastErr
 }

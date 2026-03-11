@@ -118,8 +118,6 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 			err = tenant1Writer.Send(barTimeSeries)
 			require.NoError(t, err)
 
-			tests.WaitForDataPropagation()
-
 			By("Verifying tenant 0 data is isolated")
 			tenant0Prom := tests.NewPromClientBuilder().
 				WithNamespace(namespace).
@@ -127,7 +125,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			_, value, err := tenant0Prom.VectorScan(ctx, "foo_2")
+			_, value, err := tests.RetryVectorScan(ctx, t, namespace, tenant0Prom, "foo_2", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
 
@@ -142,7 +140,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			_, value, err = tenant1Prom.VectorScan(ctx, "bar_2")
+			_, value, err = tests.RetryVectorScan(ctx, t, namespace, tenant1Prom, "bar_2", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
 
@@ -157,11 +155,11 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			_, value, err = multitenantProm.VectorScan(ctx, "foo_2")
+			_, value, err = tests.RetryVectorScan(ctx, t, namespace, multitenantProm, "foo_2", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
 
-			_, value, err = multitenantProm.VectorScan(ctx, "bar_2")
+			_, value, err = tests.RetryVectorScan(ctx, t, namespace, multitenantProm, "bar_2", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
 		})
@@ -190,8 +188,6 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 			err = multitenantWriter.Send(barTimeSeries)
 			require.NoError(t, err)
 
-			tests.WaitForDataPropagation()
-
 			By("Verifying tenant 0 data is isolated")
 			tenant0Prom := tests.NewPromClientBuilder().
 				WithNamespace(namespace).
@@ -199,7 +195,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			_, value, err := tenant0Prom.VectorScan(ctx, "foo_2")
+			_, value, err := tests.RetryVectorScan(ctx, t, namespace, tenant0Prom, "foo_2", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
 
@@ -214,7 +210,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			_, value, err = tenant1Prom.VectorScan(ctx, "bar_2")
+			_, value, err = tests.RetryVectorScan(ctx, t, namespace, tenant1Prom, "bar_2", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
 
@@ -249,8 +245,6 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 			err = tenant1Writer.Send(barTimeSeries)
 			require.NoError(t, err)
 
-			tests.WaitForDataPropagation()
-
 			By("Verifying data can be retrieved via multitenant URL")
 			multitenantProm := tests.NewPromClientBuilder().
 				WithNamespace(namespace).
@@ -258,11 +252,11 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			_, value, err := multitenantProm.VectorScan(ctx, "foo_2")
+			_, value, err := tests.RetryVectorScan(ctx, t, namespace, multitenantProm, "foo_2", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
 
-			_, value, err = multitenantProm.VectorScan(ctx, "bar_2")
+			_, value, err = tests.RetryVectorScan(ctx, t, namespace, multitenantProm, "bar_2", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
 		})
@@ -327,8 +321,6 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 			err = vmagentWriter.Send(barTimeSeries)
 			require.NoError(t, err)
 
-			tests.WaitForDataPropagation()
-
 			By("foo has cluster=dev label")
 			tenantProm := tests.NewPromClientBuilder().
 				WithNamespace(namespace).
@@ -336,7 +328,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			labels, value, err := tenantProm.VectorScan(ctx, "foo_2")
+			labels, value, err := tests.RetryVectorScan(ctx, t, namespace, tenantProm, "foo_2", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
 			require.Contains(t, labels, model.LabelName("cluster"))
@@ -419,7 +411,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			_, value, err := prom.VectorScan(ctx, "sum_over_time(cluster_aggr_test_0:30s_without_bar_baz_foo_sum_samples[5m])")
+			_, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "sum_over_time(cluster_aggr_test_0:30s_without_bar_baz_foo_sum_samples[5m])", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
 
@@ -470,8 +462,6 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				require.Equal(t, http.StatusNoContent, resp.StatusCode)
 				_ = resp.Body.Close()
 
-				tests.WaitForDataPropagation()
-
 				By("Verifying data via Prometheus protocol")
 				prom := tests.NewPromClientBuilder().
 					WithNamespace(namespace).
@@ -479,7 +469,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 					WithStartTime(overwatch.Start).
 					MustBuild()
 
-				labels, value, err := prom.VectorScan(ctx, "influx_test_value")
+				labels, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "influx_test_value", 5)
 				require.NoError(t, err)
 				require.Equal(t, value, model.SampleValue(123))
 				require.Equal(t, labels["foo"], model.LabelValue("bar"))
@@ -497,8 +487,6 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				require.Equal(t, http.StatusNoContent, resp.StatusCode)
 				_ = resp.Body.Close()
 
-				tests.WaitForDataPropagation()
-
 				By("Verifying data via Prometheus protocol")
 				prom := tests.NewPromClientBuilder().
 					WithNamespace(namespace).
@@ -506,7 +494,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 					WithStartTime(overwatch.Start).
 					MustBuild()
 
-				labels, value, err := prom.VectorScan(ctx, "influx_vminsert_test_value")
+				labels, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "influx_vminsert_test_value", 5)
 				require.NoError(t, err)
 				require.Equal(t, value, model.SampleValue(123))
 				require.Equal(t, labels["foo"], model.LabelValue("bar"))
@@ -566,8 +554,6 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				require.Equal(t, resp.StatusCode, http.StatusAccepted)
 				_ = resp.Body.Close()
 
-				tests.WaitForDataPropagation()
-
 				By("Verifying data via Prometheus protocol")
 				prom := tests.NewPromClientBuilder().
 					WithNamespace(namespace).
@@ -575,7 +561,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 					WithStartTime(overwatch.Start).
 					MustBuild()
 
-				labels, value, err := prom.VectorScan(ctx, "datadog.test.metric")
+				labels, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "datadog.test.metric", 5)
 				require.NoError(t, err)
 				require.Equal(t, value, model.SampleValue(123))
 				require.Equal(t, labels["env"], model.LabelValue("test"))
@@ -614,8 +600,6 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				require.Equal(t, http.StatusAccepted, resp.StatusCode)
 				_ = resp.Body.Close()
 
-				tests.WaitForDataPropagation()
-
 				By("Verifying data via Prometheus protocol")
 				prom := tests.NewPromClientBuilder().
 					WithNamespace(namespace).
@@ -623,7 +607,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 					WithStartTime(overwatch.Start).
 					MustBuild()
 
-				labels, value, err := prom.VectorScan(ctx, "datadog.vminsert.test.metric")
+				labels, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "datadog.vminsert.test.metric", 5)
 				require.NoError(t, err)
 				require.Equal(t, value, model.SampleValue(123))
 				require.Equal(t, labels["env"], model.LabelValue("test"))
@@ -689,8 +673,6 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				require.Equal(t, http.StatusOK, resp.StatusCode)
 				_ = resp.Body.Close()
 
-				tests.WaitForDataPropagation()
-
 				By("Verifying data via Prometheus protocol")
 				prom := tests.NewPromClientBuilder().
 					WithNamespace(namespace).
@@ -698,7 +680,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 					WithStartTime(overwatch.Start).
 					MustBuild()
 
-				labels, value, err := prom.VectorScan(ctx, "otel_test_metric")
+				labels, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "otel_test_metric", 5)
 				require.NoError(t, err)
 				require.Equal(t, value, model.SampleValue(123))
 				require.Equal(t, labels["foo"], model.LabelValue("bar"))
@@ -781,8 +763,6 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 				require.Equal(t, http.StatusOK, resp.StatusCode)
 				_ = resp.Body.Close()
 
-				tests.WaitForDataPropagation()
-
 				By("Verifying data via Prometheus protocol")
 				prom := tests.NewPromClientBuilder().
 					WithNamespace(namespace).
@@ -790,7 +770,7 @@ var _ = Describe("VMCluster test", Label("vmcluster"), func() {
 					WithStartTime(overwatch.Start).
 					MustBuild()
 
-				labels, value, err := prom.VectorScan(ctx, "otel_vmagent_test_metric")
+				labels, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "otel_vmagent_test_metric", 5)
 				require.NoError(t, err)
 				require.Equal(t, value, model.SampleValue(456))
 				require.Equal(t, labels["foo"], model.LabelValue("baz"))

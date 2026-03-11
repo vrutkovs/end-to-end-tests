@@ -135,15 +135,13 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 			err = remoteWriter.Send(barTimeSeries)
 			require.NoError(t, err)
 
-			tests.WaitForDataPropagation()
-
 			By("foo has cluster=dev label")
 			prom := tests.NewPromClientBuilder().
 				ForVMSingle(namespace).
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			labels, value, err := prom.VectorScan(ctx, "foo_2")
+			labels, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "foo_2", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(1))
 			require.Contains(t, labels, model.LabelName("cluster"))
@@ -217,7 +215,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			_, value, err := prom.VectorScan(ctx, "sum_over_time(aggr_test_0:30s_without_bar_baz_foo_sum_samples[5m])")
+			_, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "sum_over_time(aggr_test_0:30s_without_bar_baz_foo_sum_samples[5m])", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(5))
 
@@ -250,15 +248,13 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 				require.Equal(t, http.StatusNoContent, resp.StatusCode)
 				_ = resp.Body.Close()
 
-				tests.WaitForDataPropagation()
-
 				By("Verifying data via Prometheus protocol")
 				prom := tests.NewPromClientBuilder().
 					ForVMSingle(namespace).
 					WithStartTime(overwatch.Start).
 					MustBuild()
 
-				labels, value, err := prom.VectorScan(ctx, "influx_test_value")
+				labels, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "influx_test_value", 5)
 				require.NoError(t, err)
 				require.Equal(t, value, model.SampleValue(123))
 				require.Equal(t, labels["foo"], model.LabelValue("bar"))
@@ -300,15 +296,13 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 				require.Equal(t, resp.StatusCode, http.StatusAccepted)
 				_ = resp.Body.Close()
 
-				tests.WaitForDataPropagation()
-
 				By("Verifying data via Prometheus protocol")
 				prom := tests.NewPromClientBuilder().
 					ForVMSingle(namespace).
 					WithStartTime(overwatch.Start).
 					MustBuild()
 
-				labels, value, err := prom.VectorScan(ctx, "datadog.test.metric")
+				labels, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "datadog.test.metric", 5)
 				require.NoError(t, err)
 				require.Equal(t, value, model.SampleValue(123))
 				require.Equal(t, labels["env"], model.LabelValue("test"))
@@ -377,15 +371,13 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 				require.Equal(t, http.StatusOK, resp.StatusCode)
 				_ = resp.Body.Close()
 
-				tests.WaitForDataPropagation()
-
 				By("Verifying data via Prometheus protocol")
 				prom := tests.NewPromClientBuilder().
 					ForVMSingle(namespace).
 					WithStartTime(overwatch.Start).
 					MustBuild()
 
-				labels, value, err := prom.VectorScan(ctx, "otel_test_metric")
+				labels, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "otel_test_metric", 5)
 				require.NoError(t, err)
 				require.Equal(t, value, model.SampleValue(123))
 				require.Equal(t, labels["foo"], model.LabelValue("bar"))
@@ -419,15 +411,13 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 			err := remoteWriter.Send(ts)
 			require.NoError(t, err)
 
-			tests.WaitForDataPropagation()
-
 			By("Verifying data before backup")
 			prom := tests.NewPromClientBuilder().
 				ForVMSingle(namespace).
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			_, value, err := prom.VectorScan(ctx, "backup_test_10")
+			_, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "backup_test_10", 5)
 			require.NoError(t, err)
 			require.Equal(t, value, model.SampleValue(10))
 
@@ -601,7 +591,6 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 				time.Sleep(time.Second)
 			}
 
-			tests.WaitForDataPropagation()
 			// Wait a bit for merge to complete
 			time.Sleep(1 * time.Minute)
 
@@ -611,7 +600,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 				WithStartTime(overwatch.Start).
 				MustBuild()
 
-			labels, value, err := prom.VectorScan(ctx, "count_over_time(downsample_test_0[5m])")
+			labels, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "count_over_time(downsample_test_0[5m])", 5)
 			require.NoError(t, err)
 			require.Equal(t, model.SampleValue(1), value, "Expected one sample after downsampling")
 			_ = labels
@@ -669,7 +658,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 				MustBuild()
 
 			// Check dropped data
-			_, value, err := prom.VectorScan(ctx, "retention_drop_0")
+			_, value, err := tests.RetryVectorScan(ctx, t, namespace, prom, "retention_drop_0", 5)
 			require.EqualError(t, err, consts.ErrNoDataReturned)
 			require.Equal(t, model.SampleValue(0), value)
 

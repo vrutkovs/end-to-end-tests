@@ -42,12 +42,15 @@ func InstallChaosMesh(ctx context.Context, helmChart, valuesFile string, t terra
 		KubectlOptions: kubeOpts,
 		ValuesFiles:    []string{valuesFile},
 		ExtraArgs: map[string][]string{
-			"upgrade": {"--create-namespace", "--wait"},
+			"upgrade": {"--create-namespace", "--wait", "--debug", "--timeout", "10m"},
 		},
 	}
 
 	By(fmt.Sprintf("Install %s chart", helmChart))
-	helm.Upgrade(t, helmOpts, helmChart, releaseName)
+	err := helm.UpgradeE(t, helmOpts, helmChart, releaseName)
+	if err != nil {
+		t.Fatalf("Failed to install chart %s: %v", helmChart, err)
+	}
 
 	// Install ebtables on the node
 	manifestPath := "../../manifests/chaos-mesh-operator/ebtables.yaml"

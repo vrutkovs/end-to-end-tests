@@ -40,10 +40,13 @@ func InstallPrometheusBenchmark(ctx context.Context, t terratesting.TestingT, na
 		KubectlOptions: kubeOpts,
 		SetValues:      setValues,
 		ExtraArgs: map[string][]string{
-			"upgrade": {"--create-namespace", "--wait"},
+			"upgrade": {"--create-namespace", "--wait", "--debug", "--timeout", "10m"},
 		},
 	}
 
 	By("Install prometheus-benchmark chart")
-	helm.Upgrade(t, helmOpts, chartPath, PrometheusBenchmarkReleaseName)
+	err = helm.UpgradeE(t, helmOpts, chartPath, PrometheusBenchmarkReleaseName)
+	if err != nil {
+		t.Fatalf("Failed to install prometheus-benchmark chart: %v", err)
+	}
 }

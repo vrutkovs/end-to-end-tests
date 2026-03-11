@@ -91,12 +91,15 @@ func InstallVMK8StackWithHelm(ctx context.Context, helmChart, valuesFile string,
 		SetValues:      setValues,
 		SetFiles:       setFiles,
 		ExtraArgs: map[string][]string{
-			"upgrade": {"--create-namespace", "--wait"},
+			"upgrade": {"--create-namespace", "--wait", "--debug", "--timeout", "10m"},
 		},
 	}
 
 	By(fmt.Sprintf("Install %s chart", helmChart))
-	helm.Upgrade(t, helmOpts, helmChart, releaseName)
+	err := helm.UpgradeE(t, helmOpts, helmChart, releaseName)
+	if err != nil {
+		t.Fatalf("Failed to install chart %s: %v", helmChart, err)
+	}
 
 	k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmks-victoria-metrics-operator", consts.Retries, consts.PollingInterval)
 	vmOperator := k8s.GetDeployment(t, kubeOpts, "vmks-victoria-metrics-operator")
@@ -189,12 +192,15 @@ func InstallVMDistributedWithHelm(ctx context.Context, helmChart, valuesFile str
 		SetValues:      setValues,
 		SetFiles:       setFiles,
 		ExtraArgs: map[string][]string{
-			"upgrade": {"--create-namespace", "--wait"},
+			"upgrade": {"--create-namespace", "--wait", "--debug", "--timeout", "10m"},
 		},
 	}
 
 	By(fmt.Sprintf("Install %s chart", helmChart))
-	helm.Upgrade(t, helmOpts, helmChart, releaseName)
+	err := helm.UpgradeE(t, helmOpts, helmChart, releaseName)
+	if err != nil {
+		t.Fatalf("Failed to install chart %s: %v", helmChart, err)
+	}
 
 	for _, vmAuthType := range []string{"read", "write"} {
 		vmAuthName := fmt.Sprintf("vmauth-vmauth-global-%s-vmks-vm-distributed", vmAuthType)

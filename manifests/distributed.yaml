@@ -71,17 +71,11 @@ zoneTpl:
     # affinity, topologySpreadConstraint, etc
     spec:
       nodeSelector:
-        beta.kubernetes.io/os: linux
-        # topology.kubernetes.io/zone: '{{ (.zone).name }}'
-      affinity: {}
-        # preferredDuringSchedulingIgnoredDuringExecution:
-        # - weight: 1
-        #   preference:
-        #     matchExpressions:
-        #     - key: topology.kubernetes.io/zone
-        #       operator: In
-        #       values:
-        #       - us-central1-b
+        monitoring: "true"
+      tolerations:
+        - key: monitoring
+          value: "true"
+          effect: NoSchedule
   write:
     # -- Allow data ingestion to this zone
     allow: true
@@ -95,6 +89,12 @@ zoneTpl:
       name: "vmauth-read-proxy-{{ (.zone).name }}"
       # -- Spec for VMAuth CRD, see [here](https://docs.victoriametrics.com/operator/api/#vmauthspec)
       spec:
+        nodeSelector:
+          monitoring: "true"
+        tolerations:
+          - key: monitoring
+            value: "true"
+            effect: NoSchedule
         ingress:
           class_name: nginx
           host: "vmselect-{{ (.zone).name }}.127.0.0.1.nip.io"
@@ -114,6 +114,12 @@ zoneTpl:
     # -- Spec for VMAgent CRD, see [here](https://docs.victoriametrics.com/operator/api/#vmagentspec)
     spec:
       ingestOnlyMode: true
+      nodeSelector:
+        monitoring: "true"
+      tolerations:
+        - key: monitoring
+          value: "true"
+          effect: NoSchedule
   vmcluster:
     # -- Create VMCluster
     enabled: true

@@ -226,40 +226,40 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		)
 	})
 
-	// Describe("memory stress", Label("kind", "chaos-memory-stress"), func() {
-	// 	DescribeTable("should handle memory stress scenarios",
-	// 		func(ctx context.Context, scenario ChaosScenario) {
-	// 			runChaosScenario(ctx, scenario)
-	// 		},
-	// 		Entry("vminsert memory stress",
-	// 			Label("id=47690837-45e5-4cae-9e60-abadf59e4e66"),
-	// 			ChaosScenario{
-	// 				ScenarioName: "vminsert-memory-usage",
-	// 				Category:     "memory",
-	// 				ChaosType:    "stresschaos",
-	// 				// CheckAlerts:  []string{"CustomHighMemoryUsage"},
-	// 			},
-	// 		),
-	// 		Entry("vmstorage memory stress",
-	// 			Label("id=357cef7e-c2ce-4a76-8768-7b142a4e7997"),
-	// 			ChaosScenario{
-	// 				ScenarioName: "vmstorage-memory-usage",
-	// 				Category:     "memory",
-	// 				ChaosType:    "stresschaos",
-	// 				// CheckAlerts:  []string{"CustomHighMemoryUsage"},
-	// 			},
-	// 		),
-	// 		Entry("vmselect memory stress",
-	// 			Label("id=f9c922b8-104a-4baf-bad3-b00188ccddb1"),
-	// 			ChaosScenario{
-	// 				ScenarioName: "vmselect-memory-usage",
-	// 				Category:     "memory",
-	// 				ChaosType:    "stresschaos",
-	// 				// CheckAlerts:  []string{"CustomHighMemoryUsage"},
-	// 			},
-	// 		),
-	// 	)
-	// })
+	Describe("memory stress", Label("kind", "chaos-memory-stress"), func() {
+		DescribeTable("should handle memory stress scenarios",
+			func(ctx context.Context, scenario ChaosScenario) {
+				runChaosScenario(ctx, scenario)
+			},
+			Entry("vminsert memory stress",
+				Label("id=47690837-45e5-4cae-9e60-abadf59e4e66"),
+				ChaosScenario{
+					ScenarioName: "vminsert-memory-usage",
+					Category:     "memory",
+					ChaosType:    "stresschaos",
+					// CheckAlerts:  []string{"CustomHighMemoryUsage"},
+				},
+			),
+			Entry("vmstorage memory stress",
+				Label("id=357cef7e-c2ce-4a76-8768-7b142a4e7997"),
+				ChaosScenario{
+					ScenarioName: "vmstorage-memory-usage",
+					Category:     "memory",
+					ChaosType:    "stresschaos",
+					// CheckAlerts:  []string{"CustomHighMemoryUsage"},
+				},
+			),
+			Entry("vmselect memory stress",
+				Label("id=f9c922b8-104a-4baf-bad3-b00188ccddb1"),
+				ChaosScenario{
+					ScenarioName: "vmselect-memory-usage",
+					Category:     "memory",
+					ChaosType:    "stresschaos",
+					// CheckAlerts:  []string{"CustomHighMemoryUsage"},
+				},
+			),
+		)
+	})
 
 	// Describe("io stress", Label("kind", "chaos-io-stress"), func() {
 	// 	DescribeTable("should handle IO stress scenarios",

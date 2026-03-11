@@ -233,6 +233,8 @@ type PromBenchmarkConfig struct {
 	TargetsCount      string
 	WriteURL          string
 	ReadURL           string
+	WriteReplicaMem   string
+	WriteReplicaCPU   string
 }
 
 // ToHelmValues converts the config to Helm values map.
@@ -242,6 +244,13 @@ func (c PromBenchmarkConfig) ToHelmValues() map[string]string {
 		"targetsCount":               c.TargetsCount,
 		"remoteStorages.vm.writeURL": c.WriteURL,
 		"remoteStorages.vm.readURL":  c.ReadURL,
+	}
+
+	if c.WriteReplicaMem != "" {
+		values["writeReplicaMem"] = c.WriteReplicaMem
+	}
+	if c.WriteReplicaCPU != "" {
+		values["writeReplicaCPU"] = c.WriteReplicaCPU
 	}
 
 	return values

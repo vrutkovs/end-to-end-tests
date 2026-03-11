@@ -114,7 +114,6 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 		err := globalWriter.Send(fooTimeSeries)
 		require.NoError(t, err)
 
-
 		By("Read data from global read endpoint")
 		globalProm := tests.NewPromClientBuilder().
 			WithBaseURL(tests.GlobalSelectURL(namespace)).
@@ -161,6 +160,8 @@ var _ = Describe("Distributed chart", Label("vmcluster"), func() {
 			TargetsCount:      "500",
 			WriteURL:          globalWriteURL,
 			ReadURL:           globalReadURL,
+			WriteReplicaMem:   "2G",
+			WriteReplicaCPU:   "1",
 		}
 		install.InstallPrometheusBenchmark(ctx, t, consts.BenchmarkNamespace, prombenchConfig.ToHelmValues())
 

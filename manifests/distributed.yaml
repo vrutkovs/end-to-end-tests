@@ -70,7 +70,8 @@ zoneTpl:
     # [VMCluster](https://docs.victoriametrics.com/operator/api/#vmclusterspec) spec params, like nodeSelector,
     # affinity, topologySpreadConstraint, etc
     spec:
-      nodeSelector: {}
+      nodeSelector:
+        beta.kubernetes.io/os: linux
         # topology.kubernetes.io/zone: '{{ (.zone).name }}'
       affinity: {}
         # preferredDuringSchedulingIgnoredDuringExecution:
@@ -81,10 +82,6 @@ zoneTpl:
         #       operator: In
         #       values:
         #       - us-central1-b
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: ScheduleAnyway
   write:
     # -- Allow data ingestion to this zone
     allow: true

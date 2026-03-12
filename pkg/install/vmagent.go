@@ -157,10 +157,11 @@ func EnsureVMAgentRemoteWriteURL(ctx context.Context, t terratesting.TestingT, v
 	}
 	if !found {
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			var errInt error
 			// Get the fresh VMAgent resource version as it may have been updated by another test
-			vmAgent, err := vmclient.OperatorV1beta1().VMAgents(namespace).Get(ctx, vmAgentName, metav1.GetOptions{})
-			if err != nil {
-				return err
+			vmAgent, errInt := vmclient.OperatorV1beta1().VMAgents(namespace).Get(ctx, vmAgentName, metav1.GetOptions{})
+			if errInt != nil {
+				return errInt
 			}
 
 			// Check again if the URL is already present to avoid duplicates during retries
@@ -173,8 +174,8 @@ func EnsureVMAgentRemoteWriteURL(ctx context.Context, t terratesting.TestingT, v
 			vmAgent.Spec.RemoteWrite = append(vmAgent.Spec.RemoteWrite, vmv1beta1.VMAgentRemoteWriteSpec{
 				URL: url,
 			})
-			_, err = vmclient.OperatorV1beta1().VMAgents(namespace).Update(ctx, vmAgent, metav1.UpdateOptions{})
-			return err
+			_, errInt = vmclient.OperatorV1beta1().VMAgents(namespace).Update(ctx, vmAgent, metav1.UpdateOptions{})
+			return errInt
 		})
 		require.NoError(t, err)
 		WaitForVMAgentToBeOperational(ctx, t, kubeOpts, namespace, vmclient)

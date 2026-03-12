@@ -11,7 +11,7 @@ GINKGO_VERSION ?= v2.27.4
 # Image versions
 OPERATOR_REGISTRY ?= quay.io
 OPERATOR_REPOSITORY ?= victoriametrics/operator
-OPERATOR_TAG ?= v0.67.0
+OPERATOR_TAG ?= v0.68.2
 
 # VM_VMSINGLEDEFAULT_VERSION ?= v1.122.14-enterprise
 # VM_VMCLUSTERDEFAULT_VERSION ?= v1.122.14-cluster-enterprise

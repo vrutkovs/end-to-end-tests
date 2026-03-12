@@ -62,25 +62,15 @@ resource "google_container_cluster" "primary" {
       minimum       = (var.min_node_count * 8)
       maximum       = (var.max_node_count * 16)
     }
-    auto_provisioning_defaults {
-      service_account = google_service_account.kubernetes.email
-      management {
-        auto_repair  = true
-        auto_upgrade = true
-      }
-      disk_size        = 50
-      disk_type        = "pd-standard"
-      min_cpu_platform = "Intel Broadwell"
-    }
   }
 
   node_pool {
     name       = "default-nodes"
-    node_count = var.min_node_count
+    initial_node_count = 1
 
     autoscaling {
-      min_node_count  = var.min_node_count
-      max_node_count  = var.max_node_count
+      total_min_node_count  = var.min_node_count
+      total_max_node_count  = var.max_node_count
       location_policy = "ANY"
     }
 
@@ -105,11 +95,11 @@ resource "google_container_cluster" "primary" {
   }
   node_pool {
     name       = "monitoring-nodes"
-    node_count = var.monitoring_min_node_count
+    initial_node_count = 1
 
     autoscaling {
-      min_node_count  = var.monitoring_min_node_count
-      max_node_count  = var.monitoring_max_node_count
+      total_min_node_count  = var.monitoring_min_node_count
+      total_max_node_count  = var.monitoring_max_node_count
       location_policy = "ANY"
     }
 

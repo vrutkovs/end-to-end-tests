@@ -15,9 +15,9 @@ cluster_name       = "my-gke-cluster"
 kubernetes_version = "1.33"
 
 # Node pool configuration
-node_count        = 3
+node_count        = 1
 min_node_count    = 1
-max_node_count    = 10
+max_node_count    = 5
 machine_type      = "e2-medium"
 disk_size_gb      = 50
 preemptible_nodes = true
@@ -34,7 +34,7 @@ enable_metrics        = true
 
 # VM Node Pool Configuration
 # This node pool is dedicated for VM workloads with taints and labels
-vm_node_count        = 2
+vm_node_count        = 1
 vm_min_node_count    = 1
 vm_max_node_count    = 5
 vm_machine_type      = "e2-medium"

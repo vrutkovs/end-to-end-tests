@@ -36,7 +36,7 @@ variable "min_node_count" {
 variable "max_node_count" {
   description = "Maximum number of nodes for the default node pool autoscaling"
   type        = number
-  default     = 3
+  default     = 5
 }
 
 variable "machine_type" {
@@ -90,7 +90,7 @@ variable "vm_min_node_count" {
 variable "vm_max_node_count" {
   description = "Maximum number of nodes for the VictoriaMetrics node pool autoscaling"
   type        = number
-  default     = 3
+  default     = 5
 }
 
 variable "vm_machine_type" {
@@ -120,7 +120,7 @@ variable "monitoring_min_node_count" {
 variable "monitoring_max_node_count" {
   description = "Maximum number of nodes for the monitoring node pool autoscaling"
   type        = number
-  default     = 2
+  default     = 10
 }
 
 variable "monitoring_machine_type" {

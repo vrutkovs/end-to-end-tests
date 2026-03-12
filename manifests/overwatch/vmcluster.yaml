@@ -22,7 +22,8 @@ spec:
     tolerations:
     - effect: NoSchedule
       key: monitoring
-      operator: Exists
+      operator: Equal
+      value: "true"
   vmselect:
     cacheMountPath: /select-cache
     extraArgs:
@@ -50,7 +51,8 @@ spec:
     tolerations:
     - effect: NoSchedule
       key: monitoring
-      operator: Exists
+      operator: Equal
+      value: "true"
   vmstorage:
     replicaCount: 2
     persistentVolumeClaimRetentionPolicy:
@@ -72,7 +74,9 @@ spec:
     storageDataPath: /vm-data
     nodeSelector:
       monitoring: "true"
+      cloud.google.com/gke-nodepool: monitoring-nodes
     tolerations:
     - effect: NoSchedule
       key: monitoring
-      operator: Exists
+      operator: Equal
+      value: "true"

@@ -107,22 +107,22 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 		clusterName := namespace
 		affinity := map[string]interface{}{
 			"podAntiAffinity": map[string]interface{}{
-				"requiredDuringSchedulingIgnoredDuringExecution": []map[string]interface{}{
+				"preferredDuringSchedulingIgnoredDuringExecution": []map[string]interface{}{
 					{
-						"topologyKey": "kubernetes.io/hostname",
-						"labelSelector": map[string]interface{}{
-							"matchLabels": map[string]interface{}{
-								"managed-by": "vm-operator",
-							},
-							"matchExpressions": []map[string]interface{}{
-								{
-									"key":      "app.kubernetes.io/instance",
-									"operator": "NotIn",
-									"values":   []string{clusterName},
+						"weight": 100,
+						"podAffinityTerm": map[string]interface{}{
+							"topologyKey": "kubernetes.io/hostname",
+							"labelSelector": map[string]interface{}{
+								"matchExpressions": []map[string]interface{}{
+									{
+										"key":      "app.kubernetes.io/instance",
+										"operator": "NotIn",
+										"values":   []string{clusterName},
+									},
 								},
 							},
+							"namespaceSelector": map[string]interface{}{},
 						},
-						"namespaceSelector": map[string]interface{}{},
 					},
 				},
 			},

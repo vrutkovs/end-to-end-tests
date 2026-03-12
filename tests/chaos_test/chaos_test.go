@@ -126,6 +126,21 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					},
 				},
 			},
+			"podAffinity": map[string]interface{}{
+				"preferredDuringSchedulingIgnoredDuringExecution": []map[string]interface{}{
+					{
+						"weight": 100,
+						"podAffinityTerm": map[string]interface{}{
+							"topologyKey": "kubernetes.io/hostname",
+							"labelSelector": map[string]interface{}{
+								"matchLabels": map[string]interface{}{
+									"app.kubernetes.io/instance": clusterName,
+								},
+							},
+						},
+					},
+				},
+			},
 		}
 
 		patches := []jsonpatch.Patch{}

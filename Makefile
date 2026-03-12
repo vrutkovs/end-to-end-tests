@@ -71,7 +71,8 @@ TEST_SUITE ?= smoke
 PROCS ?= 1
 TIMEOUT ?= 60m
 REPORT_DIR ?= /tmp/allure-results
-SEMAPHORE_WORKFLOW_NUMBER ?= 0
+SEMAPHORE_JOB_ID ?= a26d42cf-89ac-4c3f-9e2d-51bb231897bf
+JOB_SUFFIX := $(shell echo -n "$(SEMAPHORE_JOB_ID)" | sha256sum | cut -c1-8)
 
 EXTRA_FLAGS := -operator-registry=$(OPERATOR_REGISTRY) \
 	-operator-repository=$(OPERATOR_REPOSITORY) \
@@ -229,12 +230,12 @@ gke-provision: gcloud-auth
 	cd terraform/gke && \
 		export GOOGLE_APPLICATION_CREDENTIALS="$(HOME)/gcloud-service-key.json" && \
 		terraform init && \
-		terraform apply -auto-approve -var="cluster_name=$(TEST_SUITE)-$(SEMAPHORE_WORKFLOW_NUMBER)" -var="region=$(GCP_REGION)"
+		terraform apply -auto-approve -var="cluster_name=$(TEST_SUITE)-$(JOB_SUFFIX)" -var="region=$(GCP_REGION)"
 
 .PHONY: gke-prepare-access
 gke-prepare-access: gcloud-auth
 	@if [ -z "$(PROJECT_ID)" ]; then echo "PROJECT_ID is not set"; exit 1; fi
-	gcloud container clusters get-credentials "$(TEST_SUITE)-$(SEMAPHORE_WORKFLOW_NUMBER)" --region=$(GCP_REGION) --project="$(PROJECT_ID)"
+	gcloud container clusters get-credentials "$(TEST_SUITE)-$(JOB_SUFFIX)" --region=$(GCP_REGION) --project="$(PROJECT_ID)"
 	$(BIN_DIR)/kubectl -n kube-system create serviceaccount cluster-admin || true
 	$(BIN_DIR)/kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --serviceaccount=kube-system:cluster-admin || true
 	# Generate dedicated kubeconfig for test
@@ -266,7 +267,7 @@ clean-gke: gcloud-auth
 	cd terraform/gke && \
 		export GOOGLE_APPLICATION_CREDENTIALS="$(HOME)/gcloud-service-key.json" && \
 		terraform init && \
-		terraform destroy -auto-approve -var="cluster_name=$(TEST_SUITE)-$(SEMAPHORE_WORKFLOW_NUMBER)" -var="region=$(GCP_REGION)"
+		terraform destroy -auto-approve -var="cluster_name=$(TEST_SUITE)-$(JOB_SUFFIX)" -var="region=$(GCP_REGION)"
 	# Disk cleanup
 	@echo "Cleaning up unused disks in $(GCP_REGION)..."
 	@for zone_suffix in a b c; do \

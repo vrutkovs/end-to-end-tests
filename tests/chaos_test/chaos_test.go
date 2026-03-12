@@ -111,6 +111,9 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 					{
 						"topologyKey": "kubernetes.io/hostname",
 						"labelSelector": map[string]interface{}{
+							"matchLabels": map[string]interface{}{
+								"managed-by": "vm-operator",
+							},
 							"matchExpressions": []map[string]interface{}{
 								{
 									"key":      "app.kubernetes.io/instance",
@@ -119,6 +122,7 @@ var _ = Describe("Chaos tests", Label("chaos-test"), func() {
 								},
 							},
 						},
+						"namespaceSelector": map[string]interface{}{},
 					},
 				},
 			},

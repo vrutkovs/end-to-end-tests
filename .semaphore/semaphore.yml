@@ -109,6 +109,36 @@ blocks:
           commands:
             - export SUITE=$(echo $TEST | cut -d' ' -f1); make clean-gke TEST_SUITE=$SUITE
             - artifact push workflow /tmp/allure-results
+  - name: GKE Tests (PR Load)
+    run:
+      when: "branch != 'main' and pull_request.labels contains 'load'"
+    dependencies:
+      - Smoke Test
+    task:
+      secrets:
+        - name: gcp-credentials
+        - name: license
+      prologue:
+        commands:
+          - checkout
+          - sem-version go $GO_VERSION
+      jobs:
+        - name: Test matrix
+          commands:
+            - |
+              export SUITE=$(echo $TEST | cut -d' ' -f1)
+              export PROCS=$(echo $TEST | cut -d' ' -f2)
+              export FLAKE_ATTEMPTS=$(echo $TEST | cut -d' ' -f3)
+              make test-gke TEST_SUITE=$SUITE PROCS=$PROCS FLAKE_ATTEMPTS=$FLAKE_ATTEMPTS TIMEOUT=90m
+          matrix:
+            - env_var: TEST
+              values:
+                - load 1 0
+      epilogue:
+        always:
+          commands:
+            - export SUITE=$(echo $TEST | cut -d' ' -f1); make clean-gke TEST_SUITE=$SUITE
+            - artifact push workflow /tmp/allure-results
   - name: GKE Tests (Main)
     run:
       when: "branch = 'main'"

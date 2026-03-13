@@ -11,6 +11,7 @@ import (
 	"github.com/VictoriaMetrics/end-to-end-tests/pkg/consts"
 	vmclient "github.com/VictoriaMetrics/operator/api/client/versioned"
 	"github.com/gruntwork-io/terratest/modules/k8s"
+	"github.com/gruntwork-io/terratest/modules/logger"
 	terratesting "github.com/gruntwork-io/terratest/modules/testing"
 	"github.com/stretchr/testify/require"
 
@@ -156,8 +157,10 @@ func EnsureVMAgentRemoteWriteURL(ctx context.Context, t terratesting.TestingT, v
 		}
 	}
 	if !found {
+		attempt := 0
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			var errInt error
+			attempt++
 			// Get the fresh VMAgent resource version as it may have been updated by another test
 			vmAgent, errInt := vmclient.OperatorV1beta1().VMAgents(namespace).Get(ctx, vmAgentName, metav1.GetOptions{})
 			if errInt != nil {
@@ -175,6 +178,7 @@ func EnsureVMAgentRemoteWriteURL(ctx context.Context, t terratesting.TestingT, v
 				URL: url,
 			})
 			_, errInt = vmclient.OperatorV1beta1().VMAgents(namespace).Update(ctx, vmAgent, metav1.UpdateOptions{})
+			logger.Default.Logf(t, "Attempt %d: Updating vmagent remote write URL to %s", attempt, url)
 			return errInt
 		})
 		require.NoError(t, err)

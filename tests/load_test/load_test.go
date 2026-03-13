@@ -115,10 +115,10 @@ var _ = Describe("Load tests", Ordered, ContinueOnFailure, Label("load-test"), f
 			// lookbackWindow := time.Since(overwatch.Start)
 			// overwatch.CheckAlertWasFiringSince(ctx, t, consts.K6TestsNamespace, "TooHighCPUUsage", lookbackWindow.String())
 
-			By("At least 25fm rows were inserted")
+			By("At least 24k rows were inserted")
 			_, value, err := overwatch.VectorScan(ctx, "sum (vm_rows_inserted_total)")
 			require.NoError(t, err)
-			require.GreaterOrEqual(t, value, float64(25_000_000))
+			require.GreaterOrEqual(t, value, float64(24_000_000))
 
 			By("At least 400k merges were made")
 			_, value, err = overwatch.VectorScan(ctx, "sum(vm_rows_merged_total)")

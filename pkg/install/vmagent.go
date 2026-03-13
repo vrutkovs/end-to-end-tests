@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	jsonpatch "github.com/evanphx/json-patch/v5"
 	"sigs.k8s.io/yaml"
@@ -17,10 +18,18 @@ import (
 
 	vmv1beta1 "github.com/VictoriaMetrics/operator/api/operator/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	watchtools "k8s.io/client-go/tools/watch"
 	"k8s.io/client-go/util/retry"
 )
+
+var VMAgentUpdateRetry = wait.Backoff{
+	Steps:    5,
+	Duration: 1 * time.Second,
+	Factor:   1.0,
+	Jitter:   0.1,
+}
 
 // InstallVMAgent installs a single-node VictoriaMetrics instance (VMAgent) into the specified namespace.
 //
@@ -158,7 +167,7 @@ func EnsureVMAgentRemoteWriteURL(ctx context.Context, t terratesting.TestingT, v
 	}
 	if !found {
 		attempt := 0
-		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		err := retry.RetryOnConflict(VMAgentUpdateRetry, func() error {
 			var errInt error
 			attempt++
 			// Get the fresh VMAgent resource version as it may have been updated by another test

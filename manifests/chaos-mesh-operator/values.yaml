@@ -1,5 +1,9 @@
 chaosDaemon:
   runtime: containerd
   socketPath: /run/containerd/containerd.sock
+  tolerations:
+    - key: monitoring
+      operator: Equal
+      value: "true"
 controllerManager:
   replicaCount: 1

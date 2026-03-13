@@ -467,7 +467,7 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 			require.NoError(t, err)
 
 			install.InstallVMSingle(ctx, t, kubeOpts, namespace, vmclient, []jsonpatch.Patch{patch})
-			k8s.WaitUntilNumPodsCreated(t, kubeOpts, metav1.ListOptions{LabelSelector: "app.kubernetes.io/name=vmsingle,app.kubernetes.io/instance=vmsingle"}, 1, consts.Retries, consts.PollingInterval)
+			k8s.WaitUntilDeploymentAvailable(t, kubeOpts, "vmsingle-vmsingle", consts.Retries, consts.PollingInterval)
 
 			By("Running vmbackup in sidecar")
 			cmd := []string{

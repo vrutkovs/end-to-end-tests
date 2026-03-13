@@ -103,7 +103,7 @@ blocks:
                 - distributed 1 0
                 - vmsingle 10 3
                 - vmcluster 10 3
-                - chaos 10 0
+                - chaos 5 0
       epilogue:
         always:
           commands:

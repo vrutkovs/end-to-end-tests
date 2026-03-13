@@ -447,6 +447,13 @@ var _ = Describe("VMSingle test", Label("vmsingle"), func() {
 							"name":    "vmbackup",
 							"image":   vmBackupImage,
 							"command": []string{"tail", "-f", "/dev/null"},
+							"startupProbe": map[string]interface{}{
+								"exec": map[string]interface{}{
+									"command": []string{"/bin/sh", "-c", "true"},
+								},
+								"periodSeconds":    1,
+								"failureThreshold": 30,
+							},
 							"volumeMounts": []map[string]string{
 								{
 									"name":      "backups",

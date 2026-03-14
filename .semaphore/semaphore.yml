@@ -123,21 +123,13 @@ blocks:
           - checkout
           - sem-version go $GO_VERSION
       jobs:
-        - name: Test matrix
+        - name: load
           commands:
-            - |
-              export SUITE=$(echo $TEST | cut -d' ' -f1)
-              export PROCS=$(echo $TEST | cut -d' ' -f2)
-              export FLAKE_ATTEMPTS=$(echo $TEST | cut -d' ' -f3)
-              make test-gke TEST_SUITE=$SUITE PROCS=$PROCS FLAKE_ATTEMPTS=$FLAKE_ATTEMPTS TIMEOUT=90m
-          matrix:
-            - env_var: TEST
-              values:
-                - load 1 0
+            - make test-gke TEST_SUITE=load PROCS=1 FLAKE_ATTEMPTS=0 TIMEOUT=90m
       epilogue:
         always:
           commands:
-            - export SUITE=$(echo $TEST | cut -d' ' -f1); make clean-gke TEST_SUITE=$SUITE
+            - make clean-gke TEST_SUITE=load
             - artifact push workflow /tmp/allure-results
   - name: GKE Tests (PR Distributed)
     run:
@@ -153,21 +145,13 @@ blocks:
           - checkout
           - sem-version go $GO_VERSION
       jobs:
-        - name: Test matrix
+        - name: distributed
           commands:
-            - |
-              export SUITE=$(echo $TEST | cut -d' ' -f1)
-              export PROCS=$(echo $TEST | cut -d' ' -f2)
-              export FLAKE_ATTEMPTS=$(echo $TEST | cut -d' ' -f3)
-              make test-gke TEST_SUITE=$SUITE PROCS=$PROCS FLAKE_ATTEMPTS=$FLAKE_ATTEMPTS TIMEOUT=90m
-          matrix:
-            - env_var: TEST
-              values:
-                - distributed 1 0
+            - make test-gke TEST_SUITE=distributed PROCS=1 FLAKE_ATTEMPTS=0 TIMEOUT=90m
       epilogue:
         always:
           commands:
-            - export SUITE=$(echo $TEST | cut -d' ' -f1); make clean-gke TEST_SUITE=$SUITE
+            - make clean-gke TEST_SUITE=distributed
             - artifact push workflow /tmp/allure-results
   - name: GKE Tests (PR Chaos)
     run:
@@ -183,21 +167,13 @@ blocks:
           - checkout
           - sem-version go $GO_VERSION
       jobs:
-        - name: Test matrix
+        - name: chaos
           commands:
-            - |
-              export SUITE=$(echo $TEST | cut -d' ' -f1)
-              export PROCS=$(echo $TEST | cut -d' ' -f2)
-              export FLAKE_ATTEMPTS=$(echo $TEST | cut -d' ' -f3)
-              make test-gke TEST_SUITE=$SUITE PROCS=$PROCS FLAKE_ATTEMPTS=$FLAKE_ATTEMPTS TIMEOUT=90m
-          matrix:
-            - env_var: TEST
-              values:
-                - chaos 10 3
+            - make test-gke TEST_SUITE=chaos PROCS=10 FLAKE_ATTEMPTS=3 TIMEOUT=90m
       epilogue:
         always:
           commands:
-            - export SUITE=$(echo $TEST | cut -d' ' -f1); make clean-gke TEST_SUITE=$SUITE
+            - make clean-gke TEST_SUITE=chaos
             - artifact push workflow /tmp/allure-results
   - name: GKE Tests (Main)
     run:

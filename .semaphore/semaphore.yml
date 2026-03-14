@@ -109,6 +109,72 @@ blocks:
           commands:
             - export SUITE=$(echo $TEST | cut -d' ' -f1); make clean-gke TEST_SUITE=$SUITE
             - artifact push workflow /tmp/allure-results
+  - name: GKE Tests (PR Load)
+    run:
+      when: "branch != 'main' and pull_request.labels contains 'load'"
+    dependencies:
+      - Smoke Test
+    task:
+      secrets:
+        - name: gcp-credentials
+        - name: license
+      prologue:
+        commands:
+          - checkout
+          - sem-version go $GO_VERSION
+      jobs:
+        - name: load
+          commands:
+            - make test-gke TEST_SUITE=load PROCS=1 FLAKE_ATTEMPTS=0 TIMEOUT=90m
+      epilogue:
+        always:
+          commands:
+            - make clean-gke TEST_SUITE=load
+            - artifact push workflow /tmp/allure-results
+  - name: GKE Tests (PR Distributed)
+    run:
+      when: "branch != 'main' and pull_request.labels contains 'distributed'"
+    dependencies:
+      - Smoke Test
+    task:
+      secrets:
+        - name: gcp-credentials
+        - name: license
+      prologue:
+        commands:
+          - checkout
+          - sem-version go $GO_VERSION
+      jobs:
+        - name: distributed
+          commands:
+            - make test-gke TEST_SUITE=distributed PROCS=1 FLAKE_ATTEMPTS=0 TIMEOUT=90m
+      epilogue:
+        always:
+          commands:
+            - make clean-gke TEST_SUITE=distributed
+            - artifact push workflow /tmp/allure-results
+  - name: GKE Tests (PR Chaos)
+    run:
+      when: "branch != 'main' and pull_request.labels contains 'chaos'"
+    dependencies:
+      - Smoke Test
+    task:
+      secrets:
+        - name: gcp-credentials
+        - name: license
+      prologue:
+        commands:
+          - checkout
+          - sem-version go $GO_VERSION
+      jobs:
+        - name: chaos
+          commands:
+            - make test-gke TEST_SUITE=chaos PROCS=10 FLAKE_ATTEMPTS=3 TIMEOUT=90m
+      epilogue:
+        always:
+          commands:
+            - make clean-gke TEST_SUITE=chaos
+            - artifact push workflow /tmp/allure-results
   - name: GKE Tests (Main)
     run:
       when: "branch = 'main'"

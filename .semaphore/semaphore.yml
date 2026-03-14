@@ -79,7 +79,7 @@ blocks:
           os_image: ubuntu2204
   - name: GKE Tests (PR)
     run:
-      when: "branch != 'main'"
+      when: branch != 'main'
     dependencies:
       - Smoke Test
     task:
@@ -111,7 +111,7 @@ blocks:
             - artifact push workflow /tmp/allure-results
   - name: GKE Tests (Main)
     run:
-      when: "branch = 'main'"
+      when: branch = 'main'
     dependencies:
       - Smoke Test
     task:

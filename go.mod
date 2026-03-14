@@ -20,7 +20,7 @@ require (
 	github.com/prometheus/common v0.67.1
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/proto/otlp v1.8.0
-	google.golang.org/protobuf v1.36.10
+	google.golang.org/protobuf v1.36.11
 	k8s.io/api v0.34.1
 	k8s.io/apimachinery v0.34.1
 	k8s.io/client-go v0.34.1

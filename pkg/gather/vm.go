@@ -192,7 +192,11 @@ OuterLoop:
 				logger.Default.Logf(t, "vmexporter job %s failed", startExportResponse.JobID)
 				return
 			default:
-				time.Sleep(5 * time.Second)
+				select {
+				case <-pollCtx.Done():
+					break OuterLoop
+				case <-time.After(5 * time.Second):
+				}
 			}
 		}
 	}

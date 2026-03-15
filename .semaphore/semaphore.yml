@@ -27,11 +27,17 @@ blocks:
   - name: Unit Tests
     dependencies: []
     task:
+      agent:
+        machine:
+          type: e1-standard-2
+          os_image: ubuntu2404
+        containers:
+          - name: main
+            image: "golang:1.25.3"
       jobs:
         - name: run-unit-tests
           commands:
             - checkout
-            - sem-version go $GO_VERSION
             - make test-unit
   - name: Smoke Test
     dependencies:

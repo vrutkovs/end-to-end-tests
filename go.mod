@@ -1,6 +1,6 @@
 module github.com/VictoriaMetrics/end-to-end-tests
 
-go 1.25.6
+go 1.26
 
 require (
 	github.com/VictoriaMetrics/VictoriaMetrics v1.134.0
@@ -11,7 +11,7 @@ require (
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/google/uuid v1.6.0
 	github.com/grafana/k6-operator v1.1.0
-	github.com/gruntwork-io/terratest v0.53.0
+	github.com/gruntwork-io/terratest v0.56.0
 	github.com/klauspost/compress v1.18.4
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
@@ -21,9 +21,9 @@ require (
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/proto/otlp v1.8.0
 	google.golang.org/protobuf v1.36.10
-	k8s.io/api v0.34.1
-	k8s.io/apimachinery v0.34.1
-	k8s.io/client-go v0.34.1
+	k8s.io/api v0.35.0
+	k8s.io/apimachinery v0.35.0
+	k8s.io/client-go v0.35.0
 	sigs.k8s.io/yaml v1.6.0
 )
 
@@ -203,7 +203,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.34.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20250909170358-d67c058d9372 // indirect
+	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
 	sigs.k8s.io/controller-runtime v0.22.2 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect

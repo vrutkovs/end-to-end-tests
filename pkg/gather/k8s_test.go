@@ -55,7 +55,7 @@ func TestK8sAfterAll_EmptyLicense(t *testing.T) {
 	defer consts.SetLicenseFile(originalLicense)
 
 	// We use a short timeout because it will try to run commands that likely fail locally
-	K8sAfterAll(ctx, mockT, kubeOpts, 1*time.Second)
+	K8sAfterAll(ctx, mockT, kubeOpts, 10*time.Millisecond)
 
 	// It should log some errors but not panic or fail the test
 	assert.False(t, mockT.failed, "Expected K8sAfterAll not to fail when LicenseFile is empty")

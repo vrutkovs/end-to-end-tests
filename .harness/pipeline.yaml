@@ -191,7 +191,7 @@ pipeline:
         type: CI
         when:
           pipelineStatus: Success
-          condition: <+trigger.prLabels>.contains("load-test")
+          condition: <+trigger.prLabels> != null && <+trigger.prLabels>.contains("load-test")
         spec:
           cloneCodebase: true
           platform:
@@ -257,7 +257,7 @@ pipeline:
         type: CI
         when:
           pipelineStatus: Success
-          condition: <+trigger.prLabels>.contains("chaos-test")
+          condition: <+trigger.prLabels> != null && <+trigger.prLabels>.contains("chaos-test")
         spec:
           cloneCodebase: true
           platform:
@@ -323,7 +323,7 @@ pipeline:
         type: CI
         when:
           pipelineStatus: Success
-          condition: <+trigger.prLabels>.contains("distributed-test")
+          condition: <+trigger.prLabels> != null && <+trigger.prLabels>.contains("distributed-test")
         spec:
           cloneCodebase: true
           platform:

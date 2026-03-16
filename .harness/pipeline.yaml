@@ -471,7 +471,6 @@ pipeline:
                     shell: Sh
                     command: |
                       [ -f ./allure-results/.empty ] && exit 0
-                      npm install -g allure-commandline
                       for dir in $(find ./allure-results -type d -maxdepth 1 -mindepth 1); do
                         npx allure awesome --single-file -o ./report-$(basename $dir) $dir
                       done

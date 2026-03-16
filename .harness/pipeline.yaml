@@ -95,8 +95,8 @@ pipeline:
                   when:
                     stageStatus: All
                   spec:
-                    connectorRef: YOUR_GCP_CONNECTOR
-                    bucket: YOUR_GCS_BUCKET
+                    connectorRef: GCP
+                    bucket: vrutkovs-e2e-results
                     sourcePath: /tmp/allure-results
                     target: allure-results/<+pipeline.executionId>/smoke
     - stage:
@@ -137,8 +137,8 @@ pipeline:
                           connectorRef: account.harnessImage
                           image: golang:<+pipeline.variables.GO_VERSION>-alpine
                           shell: Sh
-                          command: |
-                            echo '<+secrets.getValue("gcp-credentials")>' > /tmp/gcp-creds.json
+                          command: |-
+                            echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                             export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
                             export SUITE=$(echo "<+matrix.TEST>" | cut -d' ' -f1)
                             export PROCS=$(echo "<+matrix.TEST>" | cut -d' ' -f2)
@@ -160,8 +160,8 @@ pipeline:
                           connectorRef: account.harnessImage
                           image: golang:<+pipeline.variables.GO_VERSION>-alpine
                           shell: Sh
-                          command: |
-                            echo '<+secrets.getValue("gcp-credentials")>' > /tmp/gcp-creds.json
+                          command: |-
+                            echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                             export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
                             export SUITE=$(echo "<+matrix.TEST>" | cut -d' ' -f1)
                             make clean-gke TEST_SUITE=$SUITE
@@ -174,8 +174,8 @@ pipeline:
                         when:
                           stageStatus: All
                         spec:
-                          connectorRef: YOUR_GCP_CONNECTOR
-                          bucket: YOUR_GCS_BUCKET
+                          connectorRef: GCP
+                          bucket: vrutkovs-e2e-results
                           sourcePath: /tmp/allure-results
                           target: allure-results/<+pipeline.executionId>/gke/<+matrix.TEST>
     - stage:
@@ -203,8 +203,8 @@ pipeline:
                     connectorRef: account.harnessImage
                     image: golang:<+pipeline.variables.GO_VERSION>-alpine
                     shell: Sh
-                    command: |
-                      echo '<+secrets.getValue("gcp-credentials")>' > /tmp/gcp-creds.json
+                    command: |-
+                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
                       make test-gke TEST_SUITE=load PROCS=1 FLAKE_ATTEMPTS=0 TIMEOUT=90m
                     envVariables:
@@ -223,8 +223,8 @@ pipeline:
                     connectorRef: account.harnessImage
                     image: golang:<+pipeline.variables.GO_VERSION>-alpine
                     shell: Sh
-                    command: |
-                      echo '<+secrets.getValue("gcp-credentials")>' > /tmp/gcp-creds.json
+                    command: |-
+                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
                       make clean-gke TEST_SUITE=load
                     envVariables:
@@ -236,8 +236,8 @@ pipeline:
                   when:
                     stageStatus: All
                   spec:
-                    connectorRef: YOUR_GCP_CONNECTOR
-                    bucket: YOUR_GCS_BUCKET
+                    connectorRef: GCP
+                    bucket: vrutkovs-e2e-results
                     sourcePath: /tmp/allure-results
                     target: allure-results/<+pipeline.executionId>/gke/load
     - stage:
@@ -265,8 +265,8 @@ pipeline:
                     connectorRef: account.harnessImage
                     image: golang:<+pipeline.variables.GO_VERSION>-alpine
                     shell: Sh
-                    command: |
-                      echo '<+secrets.getValue("gcp-credentials")>' > /tmp/gcp-creds.json
+                    command: |-
+                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
                       make test-gke TEST_SUITE=chaos PROCS=10 FLAKE_ATTEMPTS=3 TIMEOUT=90m
                     envVariables:
@@ -285,8 +285,8 @@ pipeline:
                     connectorRef: account.harnessImage
                     image: golang:<+pipeline.variables.GO_VERSION>-alpine
                     shell: Sh
-                    command: |
-                      echo '<+secrets.getValue("gcp-credentials")>' > /tmp/gcp-creds.json
+                    command: |-
+                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
                       make clean-gke TEST_SUITE=chaos
                     envVariables:
@@ -298,8 +298,8 @@ pipeline:
                   when:
                     stageStatus: All
                   spec:
-                    connectorRef: YOUR_GCP_CONNECTOR
-                    bucket: YOUR_GCS_BUCKET
+                    connectorRef: GCP
+                    bucket: vrutkovs-e2e-results
                     sourcePath: /tmp/allure-results
                     target: allure-results/<+pipeline.executionId>/gke/chaos
     - stage:
@@ -327,8 +327,8 @@ pipeline:
                     connectorRef: account.harnessImage
                     image: golang:<+pipeline.variables.GO_VERSION>-alpine
                     shell: Sh
-                    command: |
-                      echo '<+secrets.getValue("gcp-credentials")>' > /tmp/gcp-creds.json
+                    command: |-
+                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
                       make test-gke TEST_SUITE=distributed PROCS=1 FLAKE_ATTEMPTS=0 TIMEOUT=90m
                     envVariables:
@@ -347,8 +347,8 @@ pipeline:
                     connectorRef: account.harnessImage
                     image: golang:<+pipeline.variables.GO_VERSION>-alpine
                     shell: Sh
-                    command: |
-                      echo '<+secrets.getValue("gcp-credentials")>' > /tmp/gcp-creds.json
+                    command: |-
+                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
                       make clean-gke TEST_SUITE=distributed
                     envVariables:
@@ -360,8 +360,8 @@ pipeline:
                   when:
                     stageStatus: All
                   spec:
-                    connectorRef: YOUR_GCP_CONNECTOR
-                    bucket: YOUR_GCS_BUCKET
+                    connectorRef: GCP
+                    bucket: vrutkovs-e2e-results
                     sourcePath: /tmp/allure-results
                     target: allure-results/<+pipeline.executionId>/gke/distributed
     - stage:
@@ -388,10 +388,10 @@ pipeline:
                     connectorRef: account.harnessImage
                     image: google/cloud-sdk:alpine
                     shell: Sh
-                    command: |
-                      echo '<+secrets.getValue("gcp-credentials")>' > /tmp/gcp-creds.json
+                    command: |-
+                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
-                      gsutil -m cp -r gs://YOUR_GCS_BUCKET/allure-results/<+pipeline.executionId> ./allure-results
+                      gsutil -m cp -r gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId> ./allure-results
               - step:
                   type: Run
                   name: deploy-report
@@ -412,7 +412,7 @@ pipeline:
                   name: push-report
                   identifier: push_report
                   spec:
-                    connectorRef: YOUR_GCP_CONNECTOR
-                    bucket: YOUR_GCS_BUCKET
+                    connectorRef: GCP
+                    bucket: vrutkovs-e2e-results
                     sourcePath: ./report-*
                     target: reports/<+pipeline.executionId>

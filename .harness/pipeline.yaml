@@ -7,7 +7,7 @@ pipeline:
   properties:
     ci:
       codebase:
-        connectorRef: YOUR_GITHUB_CONNECTOR
+        connectorRef: Github_OAuth_1773653742626
         repoName: VictoriaMetrics/end-to-end-tests
         build: <+input>
   variables:

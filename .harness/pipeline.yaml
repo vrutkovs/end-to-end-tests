@@ -460,6 +460,7 @@ pipeline:
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
                       mkdir -p ./allure-results
                       gsutil -m cp -r gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId> ./allure-results
+                      mkdir -p "$(dirname "$HARNESS_OUTPUT")"
                       [ "$(ls -A ./allure-results)" ] && echo "RESULTS_FOUND=true" >> $HARNESS_OUTPUT || echo "RESULTS_FOUND=false" >> $HARNESS_OUTPUT
               - step:
                   type: Run

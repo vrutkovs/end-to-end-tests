@@ -6,7 +6,7 @@ KIND_VERSION ?= v0.31.0
 KUBECTL_VERSION ?= v1.35.0
 CRUST_GATHER_VERSION ?= v0.12.1
 VMGATHER_VERSION ?= v1.9.0
-GINKGO_VERSION ?= v2.28.1
+GINKGO_VERSION ?= latest
 
 # Image versions
 OPERATOR_REGISTRY ?= quay.io
@@ -160,7 +160,7 @@ install-vmexporter:
 	$(call download-github-release,$(BIN_DIR)/vmexporter,VictoriaMetrics/vmgather,$(VMGATHER_VERSION),vmgather-$(VMGATHER_VERSION)-$(OS)-$(ARCH),vmgather)
 
 .PHONY: install-ginkgo
-install-ginkgo:
+install-ginkgo: install-go
 	@if [ ! -f $(BIN_DIR)/ginkgo ]; then \
 		GOBIN=$(BIN_DIR) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION); \
 	fi

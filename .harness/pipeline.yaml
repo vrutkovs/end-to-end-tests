@@ -129,6 +129,7 @@ pipeline:
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
+                      echo '<+secrets.getValue("terraform_tfvars")>' > terraform/gke/terraform.tfvars
                       make test-gke TEST_SUITE=load PROCS=1 FLAKE_ATTEMPTS=0 TIMEOUT=90m
                       cp -r /tmp/allure-results ./allure-results
                     envVariables:
@@ -195,6 +196,7 @@ pipeline:
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
+                      echo '<+secrets.getValue("terraform_tfvars")>' > terraform/gke/terraform.tfvars
                       make test-gke TEST_SUITE=chaos PROCS=10 FLAKE_ATTEMPTS=3 TIMEOUT=90m
                       cp -r /tmp/allure-results ./allure-results
                     envVariables:
@@ -261,6 +263,7 @@ pipeline:
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
+                      echo '<+secrets.getValue("terraform_tfvars")>' > terraform/gke/terraform.tfvars
                       make test-gke TEST_SUITE=distributed PROCS=1 FLAKE_ATTEMPTS=0 TIMEOUT=90m
                       cp -r /tmp/allure-results ./allure-results
                     envVariables:
@@ -327,6 +330,7 @@ pipeline:
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
+                      echo '<+secrets.getValue("terraform_tfvars")>' > terraform/gke/terraform.tfvars
                       make test-gke TEST_SUITE=vmsingle PROCS=10 FLAKE_ATTEMPTS=3 TIMEOUT=90m
                       cp -r /tmp/allure-results ./allure-results
                     envVariables:
@@ -393,6 +397,7 @@ pipeline:
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
+                      echo '<+secrets.getValue("terraform_tfvars")>' > terraform/gke/terraform.tfvars
                       make test-gke TEST_SUITE=vmcluster PROCS=10 FLAKE_ATTEMPTS=3 TIMEOUT=90m
                       cp -r /tmp/allure-results ./allure-results
                     envVariables:

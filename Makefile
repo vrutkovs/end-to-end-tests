@@ -220,8 +220,6 @@ gcloud-auth:
 
 .PHONY: gke-provision
 gke-provision: gcloud-auth
-	@if [ -z "$(TF_VAR_BASE64)" ]; then echo "TF_VAR_BASE64 is not set"; exit 1; fi
-	echo "$(TF_VAR_BASE64)" | base64 --decode > terraform/gke/terraform.tfvars
 	cd terraform/gke && \
 		export GOOGLE_APPLICATION_CREDENTIALS="$(HOME)/gcloud-service-key.json" && \
 		terraform init && \

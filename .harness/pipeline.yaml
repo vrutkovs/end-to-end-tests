@@ -460,20 +460,17 @@ pipeline:
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
                       mkdir -p ./allure-results
                       gsutil -m cp -r gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId> ./allure-results
-                      mkdir -p "$(dirname "$HARNESS_OUTPUT")"
-                      [ "$(ls -A ./allure-results)" ] && echo "RESULTS_FOUND=true" >> $HARNESS_OUTPUT || echo "RESULTS_FOUND=false" >> $HARNESS_OUTPUT
+                      [ "$(ls -A ./allure-results)" ] || touch ./allure-results/.empty
               - step:
                   type: Run
                   name: deploy-report
                   identifier: deploy_report
-                  when:
-                    stageStatus: Success
-                    condition: <+execution.steps.pull_allure_results.output.outputVariables.RESULTS_FOUND> == "true"
                   spec:
                     connectorRef: account.harnessImage
                     image: node:22-alpine
                     shell: Sh
                     command: |
+                      [ -f ./allure-results/.empty ] && exit 0
                       npm install -g allure-commandline
                       for dir in $(find ./allure-results -type d -maxdepth 1 -mindepth 1); do
                         npx allure awesome --single-file -o ./report-$(basename $dir) $dir
@@ -484,14 +481,12 @@ pipeline:
                   type: Run
                   name: push-report
                   identifier: push_report
-                  when:
-                    stageStatus: Success
-                    condition: <+execution.steps.pull_allure_results.output.outputVariables.RESULTS_FOUND> == "true"
                   spec:
                     connectorRef: account.harnessImage
                     image: google/cloud-sdk:alpine
                     shell: Sh
                     command: |
+                      [ -f ./allure-results/.empty ] && exit 0
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
                       for dir in report-*/; do

@@ -111,7 +111,19 @@ endif
 all: install-dependencies
 
 .PHONY: install-dependencies
-install-dependencies: install-kubectl install-helm install-kind install-crust-gather install-vmexporter install-ginkgo
+install-dependencies: install-go install-kubectl install-helm install-kind install-crust-gather install-vmexporter install-ginkgo
+
+.PHONY: install-go
+install-go:
+	@mkdir -p $(BIN_DIR)
+	@if [ ! -x $(BIN_DIR)/go ]; then \
+		curl -LO https://go.dev/dl/go$(GO_VERSION).$(OS)-$(ARCH).tar.gz; \
+		mkdir -p $(BIN_DIR)/.go; \
+		tar -C $(BIN_DIR)/.go --strip-components=1 -xzf go$(GO_VERSION).$(OS)-$(ARCH).tar.gz; \
+		rm go$(GO_VERSION).$(OS)-$(ARCH).tar.gz; \
+		ln -sf $(BIN_DIR)/.go/bin/go $(BIN_DIR)/go; \
+		ln -sf $(BIN_DIR)/.go/bin/gofmt $(BIN_DIR)/gofmt; \
+	fi
 
 .PHONY: install-kubectl
 install-kubectl:

@@ -107,7 +107,7 @@ pipeline:
         type: CI
         when:
           pipelineStatus: Success
-          condition: <+pipeline.stages.smoke_test.status> == "SUCCEEDED" && (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("load-test")))
+          condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("load-test")))
         spec:
           cloneCodebase: true
           platform:
@@ -174,7 +174,7 @@ pipeline:
         type: CI
         when:
           pipelineStatus: Success
-          condition: <+pipeline.stages.smoke_test.status> == "SUCCEEDED" && (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("chaos-test")))
+          condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("chaos-test")))
         spec:
           cloneCodebase: true
           platform:
@@ -241,7 +241,7 @@ pipeline:
         type: CI
         when:
           pipelineStatus: Success
-          condition: <+pipeline.stages.smoke_test.status> == "SUCCEEDED" && (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("distributed-test")))
+          condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("distributed-test")))
         spec:
           cloneCodebase: true
           platform:
@@ -308,7 +308,7 @@ pipeline:
         type: CI
         when:
           pipelineStatus: Success
-          condition: <+pipeline.stages.smoke_test.status> == "SUCCEEDED" && (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("vmsingle-test")))
+          condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("vmsingle-test")))
         spec:
           cloneCodebase: true
           platform:
@@ -375,7 +375,7 @@ pipeline:
         type: CI
         when:
           pipelineStatus: Success
-          condition: <+pipeline.stages.smoke_test.status> == "SUCCEEDED" && (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("vmcluster-test")))
+          condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("vmcluster-test")))
         spec:
           cloneCodebase: true
           platform:

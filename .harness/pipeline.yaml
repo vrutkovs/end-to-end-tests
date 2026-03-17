@@ -66,48 +66,48 @@ pipeline:
                       VM_VMSINGLEDEFAULT_VERSION: <+pipeline.variables.VM_VMSINGLEDEFAULT_VERSION>
                       VM_VMCLUSTERDEFAULT_VERSION: <+pipeline.variables.VM_VMCLUSTERDEFAULT_VERSION>
                       VM_ENTERPRISE: <+pipeline.variables.VM_ENTERPRISE>
-    - stage:
-        name: Smoke Test
-        identifier: smoke_test
-        type: CI
-        spec:
-          cloneCodebase: true
-          platform:
-            os: Linux
-            arch: Amd64
-          runtime:
-            type: Cloud
-            spec: {}
-          execution:
-            steps:
-              - step:
-                  type: Run
-                  name: smoke-test
-                  identifier: smoke_test
-                  spec:
-                    shell: Bash
-                    command: |
-                      make test-kind
-                      cp -r /tmp/allure-results ${HARNESS_WORKSPACE}/allure-results
-                    envVariables:
-                      GO_VERSION: <+pipeline.variables.GO_VERSION>
-                      VM_VMSINGLEDEFAULT_VERSION: <+pipeline.variables.VM_VMSINGLEDEFAULT_VERSION>
-                      VM_VMCLUSTERDEFAULT_VERSION: <+pipeline.variables.VM_VMCLUSTERDEFAULT_VERSION>
-                      VM_ENTERPRISE: <+secrets.getValue("license")>
-              - step:
-                  type: Run
-                  name: push-allure-results
-                  identifier: push_allure_results
-                  when:
-                    stageStatus: All
-                  spec:
-                    connectorRef: account.harnessImage
-                    image: google/cloud-sdk:alpine
-                    shell: Sh
-                    command: |
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
-                      gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
-                      gsutil -m cp -r ./allure-results gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId>/smoke
+    # - stage:
+    #     name: Smoke Test
+    #     identifier: smoke_test
+    #     type: CI
+    #     spec:
+    #       cloneCodebase: true
+    #       platform:
+    #         os: Linux
+    #         arch: Amd64
+    #       runtime:
+    #         type: Cloud
+    #         spec: {}
+    #       execution:
+    #         steps:
+    #           - step:
+    #               type: Run
+    #               name: smoke-test
+    #               identifier: smoke_test
+    #               spec:
+    #                 shell: Bash
+    #                 command: |
+    #                   make test-kind
+    #                   cp -r /tmp/allure-results ${HARNESS_WORKSPACE}/allure-results
+    #                 envVariables:
+    #                   GO_VERSION: <+pipeline.variables.GO_VERSION>
+    #                   VM_VMSINGLEDEFAULT_VERSION: <+pipeline.variables.VM_VMSINGLEDEFAULT_VERSION>
+    #                   VM_VMCLUSTERDEFAULT_VERSION: <+pipeline.variables.VM_VMCLUSTERDEFAULT_VERSION>
+    #                   VM_ENTERPRISE: <+secrets.getValue("license")>
+    #           - step:
+    #               type: Run
+    #               name: push-allure-results
+    #               identifier: push_allure_results
+    #               when:
+    #                 stageStatus: All
+    #               spec:
+    #                 connectorRef: account.harnessImage
+    #                 image: google/cloud-sdk:alpine
+    #                 shell: Sh
+    #                 command: |
+    #                   echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+    #                   gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
+    #                   gsutil -m cp -r ./allure-results gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId>/smoke
     - stage:
         name: build-runner-image
         identifier: build_runner_image

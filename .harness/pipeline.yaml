@@ -30,6 +30,9 @@ pipeline:
     - name: DISTRIBUTED_ZONES
       type: String
       value: europe-central2-a,europe-central2-b,europe-central2-c
+    - name: TERRAFORM_VERSION
+      type: String
+      value: 1.9.0
   stages:
     - stage:
         name: Unit Tests
@@ -103,6 +106,38 @@ pipeline:
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
                       gsutil -m cp -r ./allure-results gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId>/smoke
     - stage:
+        name: build-runner-image
+        identifier: build_runner_image
+        type: CI
+        when:
+          pipelineStatus: Success
+        spec:
+          cloneCodebase: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: build-and-push
+                  identifier: build_and_push
+                  spec:
+                    connectorRef: account.harnessImage
+                    image: google/cloud-sdk:alpine
+                    shell: Sh
+                    command: |
+                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
+                      gcloud config set project victoriametrics-vrutkovsky
+                      gcloud builds submit \
+                        --config=cloudbuild.yaml \
+                        --substitutions=_GO_VERSION=<+pipeline.variables.GO_VERSION>,_TERRAFORM_VERSION=<+pipeline.variables.TERRAFORM_VERSION> \
+                        .
+    - stage:
         name: load-tests
         identifier: gke_load_tests_pr
         type: CI
@@ -125,7 +160,7 @@ pipeline:
                   identifier: run_load_test
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: gcr.io/victoriametrics-vrutkovsky/e2e-runner:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -147,7 +182,7 @@ pipeline:
                     stageStatus: All
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: gcr.io/victoriametrics-vrutkovsky/e2e-runner:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -192,7 +227,7 @@ pipeline:
                   identifier: run_chaos_test
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: gcr.io/victoriametrics-vrutkovsky/e2e-runner:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -214,7 +249,7 @@ pipeline:
                     stageStatus: All
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: gcr.io/victoriametrics-vrutkovsky/e2e-runner:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -259,7 +294,7 @@ pipeline:
                   identifier: run_distributed_test
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: gcr.io/victoriametrics-vrutkovsky/e2e-runner:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -281,7 +316,7 @@ pipeline:
                     stageStatus: All
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: gcr.io/victoriametrics-vrutkovsky/e2e-runner:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -325,7 +360,7 @@ pipeline:
                   identifier: run_vmsingle_test
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: gcr.io/victoriametrics-vrutkovsky/e2e-runner:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -347,7 +382,7 @@ pipeline:
                     stageStatus: All
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: gcr.io/victoriametrics-vrutkovsky/e2e-runner:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -392,7 +427,7 @@ pipeline:
                   identifier: run_vmcluster_test
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: gcr.io/victoriametrics-vrutkovsky/e2e-runner:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -414,7 +449,7 @@ pipeline:
                     stageStatus: All
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: gcr.io/victoriametrics-vrutkovsky/e2e-runner:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json

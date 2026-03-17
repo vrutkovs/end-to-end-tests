@@ -580,7 +580,10 @@ pipeline:
                         suite="${report_dir%/}"
                         suite="${suite#report-}"
                         gsutil -m cp -r "$report_dir" gs://vrutkovs-e2e-results/reports/<+pipeline.executionId>/
-                        [ -d "$report_dir/history" ] && gsutil -m cp -r "$report_dir/history" gs://vrutkovs-e2e-results/reports/history/$suite/
+                        if [ "$BRANCH" = "main" ] && [ -d "$report_dir/history" ]; then
+                          gsutil -m cp -r "$report_dir/history" gs://vrutkovs-e2e-results/reports/history/$suite/
+                        fi
                       done
                     envVariables:
                       GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      BRANCH: <+trigger.branch>

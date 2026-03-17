@@ -117,6 +117,7 @@ pipeline:
         name: build-runner-image
         identifier: build_runner_image
         type: CI
+        timeout: 1h
         when:
           pipelineStatus: Success
         spec:
@@ -148,6 +149,7 @@ pipeline:
         name: load-tests
         identifier: gke_load_tests_pr
         type: CI
+        timeout: 1h
         when:
           pipelineStatus: Success
           condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("load-test")))
@@ -165,6 +167,7 @@ pipeline:
                   type: Run
                   name: run-load-test
                   identifier: run_load_test
+                  timeout: 1h
                   spec:
                     connectorRef: account.harnessImage
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
@@ -220,6 +223,7 @@ pipeline:
         name: chaos-tests
         identifier: gke_chaos_tests_pr
         type: CI
+        timeout: 1h
         when:
           pipelineStatus: Success
           condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("chaos-test")))
@@ -237,6 +241,7 @@ pipeline:
                   type: Run
                   name: run-chaos-test
                   identifier: run_chaos_test
+                  timeout: 1h
                   spec:
                     connectorRef: account.harnessImage
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
@@ -292,6 +297,7 @@ pipeline:
         name: distributed-tests
         identifier: gke_distributed_tests_pr
         type: CI
+        timeout: 1h
         when:
           pipelineStatus: Success
           condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("distributed-test")))
@@ -309,6 +315,7 @@ pipeline:
                   type: Run
                   name: run-distributed-test
                   identifier: run_distributed_test
+                  timeout: 1h
                   spec:
                     connectorRef: account.harnessImage
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
@@ -364,6 +371,7 @@ pipeline:
         name: vmsingle-tests
         identifier: gke_vmsingle_tests_pr
         type: CI
+        timeout: 1h
         when:
           pipelineStatus: Success
         spec:
@@ -380,6 +388,7 @@ pipeline:
                   type: Run
                   name: run-vmsingle-test
                   identifier: run_vmsingle_test
+                  timeout: 1h
                   spec:
                     connectorRef: account.harnessImage
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
@@ -435,6 +444,7 @@ pipeline:
         name: vmcluster-tests
         identifier: gke_vmcluster_tests_pr
         type: CI
+        timeout: 1h
         when:
           pipelineStatus: Success
           condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("vmcluster-test")))
@@ -452,6 +462,7 @@ pipeline:
                   type: Run
                   name: run-vmcluster-test
                   identifier: run_vmcluster_test
+                  timeout: 1h
                   spec:
                     connectorRef: account.harnessImage
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
@@ -507,6 +518,7 @@ pipeline:
         name: Deploy Report
         identifier: deploy_report
         type: CI
+        timeout: 1h
         when:
           pipelineStatus: All
         spec:

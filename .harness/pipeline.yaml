@@ -105,9 +105,11 @@ pipeline:
     #                 image: google/cloud-sdk:alpine
     #                 shell: Sh
     #                 command: |
-    #                   echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+    #                   printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
     #                   gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
     #                   gsutil -m cp -r ./allure-results gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId>/smoke
+    #                 envVariables:
+    #                   GCP_CREDS: <+secrets.getValue("GCP_creds")>
     - stage:
         name: build-runner-image
         identifier: build_runner_image
@@ -165,9 +167,9 @@ pipeline:
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
-                      echo '<+secrets.getValue("terraform_tfvars")>' > terraform/gke/terraform.tfvars
+                      printf '%s' "$TERRAFORM_TFVARS" > terraform/gke/terraform.tfvars
                       make test-gke TEST_SUITE=load PROCS=1 FLAKE_ATTEMPTS=0 TIMEOUT=90m
                       cp -r /tmp/allure-results ./allure-results
                     envVariables:
@@ -176,6 +178,8 @@ pipeline:
                       VM_ENTERPRISE: <+secrets.getValue("license")>
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       DISTRIBUTED_ZONES: <+pipeline.variables.DISTRIBUTED_ZONES>
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      TERRAFORM_TFVARS: <+secrets.getValue("terraform_tfvars")>
               - step:
                   type: Run
                   name: cleanup-gke
@@ -187,11 +191,12 @@ pipeline:
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
                       make clean-gke TEST_SUITE=load
                     envVariables:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
               - step:
                   type: Run
                   name: push-allure-results
@@ -203,9 +208,11 @@ pipeline:
                     image: google/cloud-sdk:alpine
                     shell: Sh
                     command: |
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
                       gsutil -m cp -r ./allure-results gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId>/gke/load
+                    envVariables:
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
     - stage:
         name: chaos-tests
         identifier: gke_chaos_tests_pr
@@ -232,9 +239,9 @@ pipeline:
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
-                      echo '<+secrets.getValue("terraform_tfvars")>' > terraform/gke/terraform.tfvars
+                      printf '%s' "$TERRAFORM_TFVARS" > terraform/gke/terraform.tfvars
                       make test-gke TEST_SUITE=chaos PROCS=10 FLAKE_ATTEMPTS=3 TIMEOUT=90m
                       cp -r /tmp/allure-results ./allure-results
                     envVariables:
@@ -243,6 +250,8 @@ pipeline:
                       VM_ENTERPRISE: <+secrets.getValue("license")>
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       DISTRIBUTED_ZONES: <+pipeline.variables.DISTRIBUTED_ZONES>
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      TERRAFORM_TFVARS: <+secrets.getValue("terraform_tfvars")>
               - step:
                   type: Run
                   name: cleanup-gke
@@ -254,11 +263,12 @@ pipeline:
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
                       make clean-gke TEST_SUITE=chaos
                     envVariables:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
               - step:
                   type: Run
                   name: push-allure-results
@@ -270,9 +280,11 @@ pipeline:
                     image: google/cloud-sdk:alpine
                     shell: Sh
                     command: |
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
                       gsutil -m cp -r ./allure-results gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId>/gke/chaos
+                    envVariables:
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
     - stage:
         name: distributed-tests
         identifier: gke_distributed_tests_pr
@@ -299,9 +311,9 @@ pipeline:
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
-                      echo '<+secrets.getValue("terraform_tfvars")>' > terraform/gke/terraform.tfvars
+                      printf '%s' "$TERRAFORM_TFVARS" > terraform/gke/terraform.tfvars
                       make test-gke TEST_SUITE=distributed PROCS=1 FLAKE_ATTEMPTS=0 TIMEOUT=90m
                       cp -r /tmp/allure-results ./allure-results
                     envVariables:
@@ -310,6 +322,8 @@ pipeline:
                       VM_ENTERPRISE: <+secrets.getValue("license")>
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       DISTRIBUTED_ZONES: <+pipeline.variables.DISTRIBUTED_ZONES>
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      TERRAFORM_TFVARS: <+secrets.getValue("terraform_tfvars")>
               - step:
                   type: Run
                   name: cleanup-gke
@@ -321,11 +335,12 @@ pipeline:
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
                       make clean-gke TEST_SUITE=distributed
                     envVariables:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
               - step:
                   type: Run
                   name: push-allure-results
@@ -337,9 +352,11 @@ pipeline:
                     image: google/cloud-sdk:alpine
                     shell: Sh
                     command: |
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
                       gsutil -m cp -r ./allure-results gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId>/gke/distributed
+                    envVariables:
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
     - stage:
         name: vmsingle-tests
         identifier: gke_vmsingle_tests_pr
@@ -365,9 +382,9 @@ pipeline:
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
-                      echo '<+secrets.getValue("terraform_tfvars")>' > terraform/gke/terraform.tfvars
+                      printf '%s' "$TERRAFORM_TFVARS" > terraform/gke/terraform.tfvars
                       make test-gke TEST_SUITE=vmsingle PROCS=10 FLAKE_ATTEMPTS=3 TIMEOUT=90m
                       cp -r /tmp/allure-results ./allure-results
                     envVariables:
@@ -376,6 +393,8 @@ pipeline:
                       VM_ENTERPRISE: <+secrets.getValue("license")>
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       DISTRIBUTED_ZONES: <+pipeline.variables.DISTRIBUTED_ZONES>
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      TERRAFORM_TFVARS: <+secrets.getValue("terraform_tfvars")>
               - step:
                   type: Run
                   name: cleanup-gke
@@ -387,11 +406,12 @@ pipeline:
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
                       make clean-gke TEST_SUITE=vmsingle
                     envVariables:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
               - step:
                   type: Run
                   name: push-allure-results
@@ -403,9 +423,11 @@ pipeline:
                     image: google/cloud-sdk:alpine
                     shell: Sh
                     command: |
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
                       gsutil -m cp -r ./allure-results gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId>/gke/vmsingle
+                    envVariables:
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
     - stage:
         name: vmcluster-tests
         identifier: gke_vmcluster_tests_pr
@@ -432,9 +454,9 @@ pipeline:
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
-                      echo '<+secrets.getValue("terraform_tfvars")>' > terraform/gke/terraform.tfvars
+                      printf '%s' "$TERRAFORM_TFVARS" > terraform/gke/terraform.tfvars
                       make test-gke TEST_SUITE=vmcluster PROCS=10 FLAKE_ATTEMPTS=3 TIMEOUT=90m
                       cp -r /tmp/allure-results ./allure-results
                     envVariables:
@@ -443,6 +465,8 @@ pipeline:
                       VM_ENTERPRISE: <+secrets.getValue("license")>
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       DISTRIBUTED_ZONES: <+pipeline.variables.DISTRIBUTED_ZONES>
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      TERRAFORM_TFVARS: <+secrets.getValue("terraform_tfvars")>
               - step:
                   type: Run
                   name: cleanup-gke
@@ -454,11 +478,12 @@ pipeline:
                     image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
                       make clean-gke TEST_SUITE=vmcluster
                     envVariables:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
               - step:
                   type: Run
                   name: push-allure-results
@@ -470,9 +495,11 @@ pipeline:
                     image: google/cloud-sdk:alpine
                     shell: Sh
                     command: |
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
                       gsutil -m cp -r ./allure-results gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId>/gke/vmcluster
+                    envVariables:
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
     - stage:
         name: Deploy Report
         identifier: deploy_report
@@ -498,11 +525,13 @@ pipeline:
                     image: google/cloud-sdk:alpine
                     shell: Sh
                     command: |-
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
                       mkdir -p ./allure-results
                       gsutil -m cp -r gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId> ./allure-results
                       [ "$(ls -A ./allure-results)" ] || touch ./allure-results/.empty
+                    envVariables:
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>
               - step:
                   type: Run
                   name: deploy-report
@@ -528,8 +557,10 @@ pipeline:
                     shell: Sh
                     command: |
                       [ -f ./allure-results/.empty ] && exit 0
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+                      printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
                       for dir in report-*/; do
                         gsutil -m cp -r "$dir" gs://vrutkovs-e2e-results/reports/<+pipeline.executionId>/
                       done
+                    envVariables:
+                      GCP_CREDS: <+secrets.getValue("GCP_creds")>

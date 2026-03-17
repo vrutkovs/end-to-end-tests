@@ -543,7 +543,8 @@ pipeline:
                       printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
                       mkdir -p ./allure-results
-                      gsutil -m cp -r gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId> ./allure-results
+                      gsutil -m cp -r gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId> ./allure-results || true
+                      gsutil -m cp -r gs://vrutkovs-e2e-results/reports/history ./allure-history || true
                       [ "$(ls -A ./allure-results)" ] || touch ./allure-results/.empty
                     envVariables:
                       GCP_CREDS: <+secrets.getValue("GCP_creds")>
@@ -557,11 +558,12 @@ pipeline:
                     shell: Sh
                     command: |
                       [ -f ./allure-results/.empty ] && exit 0
-                      for dir in $(find ./allure-results -type d -maxdepth 1 -mindepth 1); do
-                        npx allure awesome --single-file -o ./report-$(basename $dir) $dir
+                      npm install -g allure-commandline
+                      for results_dir in $(find ./allure-results -mindepth 1 -maxdepth 1 -type d); do
+                        suite=$(basename "$results_dir")
+                        [ -d "./allure-history/$suite" ] && cp -r "./allure-history/$suite" "$results_dir/history"
+                        allure generate --clean -o "./report-$suite" "$results_dir"
                       done
-                    envVariables:
-                      GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-creds.json
               - step:
                   type: Run
                   name: push-report
@@ -574,8 +576,11 @@ pipeline:
                       [ -f ./allure-results/.empty ] && exit 0
                       printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                       gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
-                      for dir in report-*/; do
-                        gsutil -m cp -r "$dir" gs://vrutkovs-e2e-results/reports/<+pipeline.executionId>/
+                      for report_dir in report-*/; do
+                        suite="${report_dir%/}"
+                        suite="${suite#report-}"
+                        gsutil -m cp -r "$report_dir" gs://vrutkovs-e2e-results/reports/<+pipeline.executionId>/
+                        [ -d "$report_dir/history" ] && gsutil -m cp -r "$report_dir/history" gs://vrutkovs-e2e-results/reports/history/$suite/
                       done
                     envVariables:
                       GCP_CREDS: <+secrets.getValue("GCP_creds")>

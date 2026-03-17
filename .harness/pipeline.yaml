@@ -30,6 +30,12 @@ pipeline:
     - name: DISTRIBUTED_ZONES
       type: String
       value: europe-central2-a,europe-central2-b,europe-central2-c
+    - name: TERRAFORM_VERSION
+      type: String
+      value: 1.9.0
+    - name: RUNNER_IMAGE_REPO
+      type: String
+      value: quay.io/vrutkovs/e2e-runner
   stages:
     - stage:
         name: Unit Tests
@@ -60,10 +66,54 @@ pipeline:
                       VM_VMSINGLEDEFAULT_VERSION: <+pipeline.variables.VM_VMSINGLEDEFAULT_VERSION>
                       VM_VMCLUSTERDEFAULT_VERSION: <+pipeline.variables.VM_VMCLUSTERDEFAULT_VERSION>
                       VM_ENTERPRISE: <+pipeline.variables.VM_ENTERPRISE>
+    # - stage:
+    #     name: Smoke Test
+    #     identifier: smoke_test
+    #     type: CI
+    #     spec:
+    #       cloneCodebase: true
+    #       platform:
+    #         os: Linux
+    #         arch: Amd64
+    #       runtime:
+    #         type: Cloud
+    #         spec: {}
+    #       execution:
+    #         steps:
+    #           - step:
+    #               type: Run
+    #               name: smoke-test
+    #               identifier: smoke_test
+    #               spec:
+    #                 shell: Bash
+    #                 command: |
+    #                   make test-kind
+    #                   cp -r /tmp/allure-results ${HARNESS_WORKSPACE}/allure-results
+    #                 envVariables:
+    #                   GO_VERSION: <+pipeline.variables.GO_VERSION>
+    #                   VM_VMSINGLEDEFAULT_VERSION: <+pipeline.variables.VM_VMSINGLEDEFAULT_VERSION>
+    #                   VM_VMCLUSTERDEFAULT_VERSION: <+pipeline.variables.VM_VMCLUSTERDEFAULT_VERSION>
+    #                   VM_ENTERPRISE: <+secrets.getValue("license")>
+    #           - step:
+    #               type: Run
+    #               name: push-allure-results
+    #               identifier: push_allure_results
+    #               when:
+    #                 stageStatus: All
+    #               spec:
+    #                 connectorRef: account.harnessImage
+    #                 image: google/cloud-sdk:alpine
+    #                 shell: Sh
+    #                 command: |
+    #                   echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
+    #                   gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
+    #                   gsutil -m cp -r ./allure-results gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId>/smoke
     - stage:
-        name: Smoke Test
-        identifier: smoke_test
+        name: build-runner-image
+        identifier: build_runner_image
         type: CI
+        when:
+          pipelineStatus: Success
         spec:
           cloneCodebase: true
           platform:
@@ -75,33 +125,19 @@ pipeline:
           execution:
             steps:
               - step:
-                  type: Run
-                  name: smoke-test
-                  identifier: smoke_test
+                  type: BuildAndPushDockerRegistry
+                  name: build-and-push
+                  identifier: build_and_push
                   spec:
-                    shell: Bash
-                    command: |
-                      make test-kind
-                      cp -r /tmp/allure-results ${HARNESS_WORKSPACE}/allure-results
-                    envVariables:
+                    connectorRef: account.e2e_runner
+                    repo: <+pipeline.variables.RUNNER_IMAGE_REPO>
+                    tags:
+                      - <+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
+                    dockerfile: Dockerfile
+                    context: .
+                    buildArgs:
                       GO_VERSION: <+pipeline.variables.GO_VERSION>
-                      VM_VMSINGLEDEFAULT_VERSION: <+pipeline.variables.VM_VMSINGLEDEFAULT_VERSION>
-                      VM_VMCLUSTERDEFAULT_VERSION: <+pipeline.variables.VM_VMCLUSTERDEFAULT_VERSION>
-                      VM_ENTERPRISE: <+secrets.getValue("license")>
-              - step:
-                  type: Run
-                  name: push-allure-results
-                  identifier: push_allure_results
-                  when:
-                    stageStatus: All
-                  spec:
-                    connectorRef: account.harnessImage
-                    image: google/cloud-sdk:alpine
-                    shell: Sh
-                    command: |
-                      echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
-                      gcloud auth activate-service-account --key-file=/tmp/gcp-creds.json
-                      gsutil -m cp -r ./allure-results gs://vrutkovs-e2e-results/allure-results/<+pipeline.executionId>/smoke
+                      TERRAFORM_VERSION: <+pipeline.variables.TERRAFORM_VERSION>
     - stage:
         name: load-tests
         identifier: gke_load_tests_pr
@@ -125,7 +161,7 @@ pipeline:
                   identifier: run_load_test
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -147,7 +183,7 @@ pipeline:
                     stageStatus: All
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -192,7 +228,7 @@ pipeline:
                   identifier: run_chaos_test
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -214,7 +250,7 @@ pipeline:
                     stageStatus: All
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -259,7 +295,7 @@ pipeline:
                   identifier: run_distributed_test
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -281,7 +317,7 @@ pipeline:
                     stageStatus: All
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -325,7 +361,7 @@ pipeline:
                   identifier: run_vmsingle_test
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -347,7 +383,7 @@ pipeline:
                     stageStatus: All
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -392,7 +428,7 @@ pipeline:
                   identifier: run_vmcluster_test
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json
@@ -414,7 +450,7 @@ pipeline:
                     stageStatus: All
                   spec:
                     connectorRef: account.harnessImage
-                    image: golang:<+pipeline.variables.GO_VERSION>
+                    image: <+pipeline.variables.RUNNER_IMAGE_REPO>:<+pipeline.variables.GO_VERSION>-tf<+pipeline.variables.TERRAFORM_VERSION>
                     shell: Sh
                     command: |-
                       echo '<+secrets.getValue("GCP_creds")>' > /tmp/gcp-creds.json

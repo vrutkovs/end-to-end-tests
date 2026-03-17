@@ -24,10 +24,12 @@
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/^Makefile$/"
+        "/^Makefile$/",
+        "/^Dockerfile$/"
       ],
       "matchStrings": [
-        "GO_VERSION \\?= (?<currentValue>.*)"
+        "GO_VERSION \\?= (?<currentValue>.*)",
+        "ARG GO_VERSION=(?<currentValue>.*)"
       ],
       "datasourceTemplate": "golang-version",
       "depNameTemplate": "golang",
@@ -98,6 +100,21 @@
       ],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "VictoriaMetrics/operator"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^Makefile$/",
+        "/^Dockerfile$/"
+      ],
+      "matchStrings": [
+        "TERRAFORM_VERSION \\?= (?<currentValue>.*)",
+        "ARG TERRAFORM_VERSION=(?<currentValue>.*)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "hashicorp/terraform",
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "versioningTemplate": "semver"
     }
   ]
 }

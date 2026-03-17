@@ -135,6 +135,7 @@ pipeline:
                       gcloud config set project victoriametrics-vrutkovsky
                       gcloud builds submit \
                         --config=cloudbuild.yaml \
+                        --gcs-source-staging-dir=gs://vrutkovs-e2e-results/cloudbuild \
                         --substitutions=_GO_VERSION=<+pipeline.variables.GO_VERSION>,_TERRAFORM_VERSION=<+pipeline.variables.TERRAFORM_VERSION> \
                         .
     - stage:

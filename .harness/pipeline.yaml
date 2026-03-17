@@ -36,6 +36,9 @@ pipeline:
     - name: RUNNER_IMAGE_REPO
       type: String
       value: quay.io/vrutkovs/e2e-runner
+    - name: PROJECT_ID
+      type: String
+      value: victoriametrics-vrutkovsky
   stages:
     # - stage:
     #     name: Unit Tests
@@ -178,6 +181,7 @@ pipeline:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       DISTRIBUTED_ZONES: <+pipeline.variables.DISTRIBUTED_ZONES>
                       GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      PROJECT_ID: <+pipeline.variables.PROJECT_ID>
               - step:
                   type: Run
                   name: cleanup-gke
@@ -195,6 +199,7 @@ pipeline:
                     envVariables:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      PROJECT_ID: <+pipeline.variables.PROJECT_ID>
               - step:
                   type: Run
                   name: push-allure-results
@@ -248,6 +253,7 @@ pipeline:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       DISTRIBUTED_ZONES: <+pipeline.variables.DISTRIBUTED_ZONES>
                       GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      PROJECT_ID: <+pipeline.variables.PROJECT_ID>
               - step:
                   type: Run
                   name: cleanup-gke
@@ -265,6 +271,7 @@ pipeline:
                     envVariables:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      PROJECT_ID: <+pipeline.variables.PROJECT_ID>
               - step:
                   type: Run
                   name: push-allure-results
@@ -318,6 +325,7 @@ pipeline:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       DISTRIBUTED_ZONES: <+pipeline.variables.DISTRIBUTED_ZONES>
                       GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      PROJECT_ID: <+pipeline.variables.PROJECT_ID>
               - step:
                   type: Run
                   name: cleanup-gke
@@ -335,6 +343,7 @@ pipeline:
                     envVariables:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      PROJECT_ID: <+pipeline.variables.PROJECT_ID>
               - step:
                   type: Run
                   name: push-allure-results
@@ -387,6 +396,7 @@ pipeline:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       DISTRIBUTED_ZONES: <+pipeline.variables.DISTRIBUTED_ZONES>
                       GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      PROJECT_ID: <+pipeline.variables.PROJECT_ID>
               - step:
                   type: Run
                   name: cleanup-gke
@@ -404,6 +414,7 @@ pipeline:
                     envVariables:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      PROJECT_ID: <+pipeline.variables.PROJECT_ID>
               - step:
                   type: Run
                   name: push-allure-results
@@ -457,6 +468,7 @@ pipeline:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       DISTRIBUTED_ZONES: <+pipeline.variables.DISTRIBUTED_ZONES>
                       GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      PROJECT_ID: <+pipeline.variables.PROJECT_ID>
               - step:
                   type: Run
                   name: cleanup-gke
@@ -474,6 +486,7 @@ pipeline:
                     envVariables:
                       GCP_REGION: <+pipeline.variables.GCP_REGION>
                       GCP_CREDS: <+secrets.getValue("GCP_creds")>
+                      PROJECT_ID: <+pipeline.variables.PROJECT_ID>
               - step:
                   type: Run
                   name: push-allure-results

@@ -152,7 +152,7 @@ pipeline:
             type: CI
             timeout: 1h30m
             when:
-              pipelineStatus: Success
+              pipelineStatus: All
               condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("load-test")))
             spec:
               cloneCodebase: true
@@ -228,7 +228,7 @@ pipeline:
             type: CI
             timeout: 1h30m
             when:
-              pipelineStatus: Success
+              pipelineStatus: All
               condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("chaos-test")))
             spec:
               cloneCodebase: true
@@ -304,7 +304,7 @@ pipeline:
             type: CI
             timeout: 1h30m
             when:
-              pipelineStatus: Success
+              pipelineStatus: All
               condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("distributed-test")))
             spec:
               cloneCodebase: true
@@ -380,7 +380,7 @@ pipeline:
             type: CI
             timeout: 1h30m
             when:
-              pipelineStatus: Success
+              pipelineStatus: All
               condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("vmsingle-test")))
             spec:
               cloneCodebase: true
@@ -456,7 +456,7 @@ pipeline:
             type: CI
             timeout: 1h30m
             when:
-              pipelineStatus: Success
+              pipelineStatus: All
               condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("vmcluster-test")))
             spec:
               cloneCodebase: true

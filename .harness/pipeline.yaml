@@ -574,7 +574,7 @@ pipeline:
                       for results_dir in $(find ./allure-results -mindepth 1 -maxdepth 1 -type d); do
                         suite=$(basename "$results_dir")
                         [ -d "./allure-history/$suite" ] && cp -r "./allure-history/$suite" "$results_dir/history"
-                        npx allure@3 generate --clean -o "./report-$suite" "$results_dir"
+                        npx allure@3 generate -o "./report-$suite" "$results_dir"
                       done
               - step:
                   type: Run

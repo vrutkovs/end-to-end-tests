@@ -264,7 +264,7 @@ pipeline:
                         command: |-
                           printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
-                          make test-gke TEST_SUITE=chaos PROCS=10 FLAKE_ATTEMPTS=3 TIMEOUT=90m
+                          make test-gke TEST_SUITE=chaos PROCS=5 FLAKE_ATTEMPTS=3 TIMEOUT=90m
                           cp -r /tmp/allure-results ./allure-results
                         envVariables:
                           VM_VMSINGLEDEFAULT_VERSION: <+pipeline.variables.VM_VMSINGLEDEFAULT_VERSION>
@@ -416,7 +416,7 @@ pipeline:
                         command: |-
                           printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
-                          make test-gke TEST_SUITE=vmsingle PROCS=10 FLAKE_ATTEMPTS=3 TIMEOUT=90m
+                          make test-gke TEST_SUITE=vmsingle PROCS=5 FLAKE_ATTEMPTS=3 TIMEOUT=90m
                           cp -r /tmp/allure-results ./allure-results
                         envVariables:
                           VM_VMSINGLEDEFAULT_VERSION: <+pipeline.variables.VM_VMSINGLEDEFAULT_VERSION>
@@ -492,7 +492,7 @@ pipeline:
                         command: |-
                           printf '%s' "$GCP_CREDS" > /tmp/gcp-creds.json
                           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-creds.json
-                          make test-gke TEST_SUITE=vmcluster PROCS=10 FLAKE_ATTEMPTS=3 TIMEOUT=90m
+                          make test-gke TEST_SUITE=vmcluster PROCS=5 FLAKE_ATTEMPTS=3 TIMEOUT=90m
                           cp -r /tmp/allure-results ./allure-results
                         envVariables:
                           VM_VMSINGLEDEFAULT_VERSION: <+pipeline.variables.VM_VMSINGLEDEFAULT_VERSION>

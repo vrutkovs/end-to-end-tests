@@ -122,11 +122,13 @@ pipeline:
           pipelineStatus: Success
         spec:
           cloneCodebase: true
+          delegateSelectors:
+            - docker-delegate
           platform:
             os: Linux
             arch: Amd64
           runtime:
-            type: Cloud
+            type: Docker
             spec: {}
           execution:
             steps:
@@ -168,11 +170,13 @@ pipeline:
               condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("load-test")))
             spec:
               cloneCodebase: true
+              delegateSelectors:
+                - docker-delegate
               platform:
                 os: Linux
                 arch: Amd64
               runtime:
-                type: Cloud
+                type: Docker
                 spec: {}
               execution:
                 steps:
@@ -244,11 +248,13 @@ pipeline:
               condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("chaos-test")))
             spec:
               cloneCodebase: true
+              delegateSelectors:
+                - docker-delegate
               platform:
                 os: Linux
                 arch: Amd64
               runtime:
-                type: Cloud
+                type: Docker
                 spec: {}
               execution:
                 steps:
@@ -320,11 +326,13 @@ pipeline:
               condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("distributed-test")))
             spec:
               cloneCodebase: true
+              delegateSelectors:
+                - docker-delegate
               platform:
                 os: Linux
                 arch: Amd64
               runtime:
-                type: Cloud
+                type: Docker
                 spec: {}
               execution:
                 steps:
@@ -396,11 +404,13 @@ pipeline:
               condition: (<+trigger.branch> == "main" || (<+trigger.prLabels> != null && <+trigger.prLabels>.contains("functional-test")))
             spec:
               cloneCodebase: true
+              delegateSelectors:
+                - docker-delegate
               platform:
                 os: Linux
                 arch: Amd64
               runtime:
-                type: Cloud
+                type: Docker
                 spec: {}
               execution:
                 steps:
@@ -471,11 +481,13 @@ pipeline:
           pipelineStatus: All
         spec:
           cloneCodebase: false
+          delegateSelectors:
+            - docker-delegate
           platform:
             os: Linux
             arch: Amd64
           runtime:
-            type: Cloud
+            type: Docker
             spec: {}
           execution:
             steps:
